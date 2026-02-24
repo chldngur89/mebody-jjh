@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check } from 'lucide-react';
+import { Check, ArrowLeft } from 'lucide-react';
 import { fetchQuestions, saveDraft, submitQuestionnaire } from '../api/questionnaire';
 import type { Question } from '../api/questionnaire';
+import { QuestionPlaceholderImage } from './QuestionPlaceholderImage';
+import { AXIS_ICON_SRC } from '../data/axisIcons';
 
 interface QuestionnaireScreenProps {
+  onBack?: () => void;
   onComplete: (questionnaireId: string, code: string) => void;
 }
  
-export function QuestionnaireScreen({ onComplete }: QuestionnaireScreenProps) {
+export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -86,10 +89,10 @@ export function QuestionnaireScreen({ onComplete }: QuestionnaireScreenProps) {
   }
 
   const axisLabels: Record<string, string> = {
-    neck: '목 위치 측정',
-    shoulder: '어깨 높이 측정',
-    pelvis: '골반 회전 측정',
-    flexibility: '하체 유연성 측정'
+    neck: '1축 목 (F/C)',
+    shoulder: '2축 어깨 (R/L)',
+    pelvis: '3축 골반 (R/L)',
+    flexibility: '4축 하체 (S/F)',
   };
 
   return (
@@ -99,9 +102,20 @@ export function QuestionnaireScreen({ onComplete }: QuestionnaireScreenProps) {
         {/* Progress Header */}
         <div className="px-6 pt-8 pb-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-600">
-              질문 {currentQuestion} / {totalQuestions}
-            </span>
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4 text-gray-600" />
+                </button>
+              )}
+              <span className="text-sm font-medium text-gray-600">
+                질문 {currentQuestion} / {totalQuestions}
+              </span>
+            </div>
             <span className="text-sm font-semibold text-emerald-600">
               {Math.round(progress)}%
             </span>
@@ -117,17 +131,31 @@ export function QuestionnaireScreen({ onComplete }: QuestionnaireScreenProps) {
         </div>
         
         {/* Question Content */}
-        <div className="flex-1 px-6 flex flex-col justify-center">
-          {/* Question Number Badge */}
-          <div className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+        <div className="flex-1 px-6 flex flex-col justify-center overflow-y-auto">
+          {/* Question Number + Axis (Ver2 축 아이콘) */}
+          <div className="inline-flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-emerald-600 font-semibold">{currentQuestion}</span>
             </div>
+            <img
+              src={AXIS_ICON_SRC[currentQuestionData.axis]}
+              alt=""
+              className="w-10 h-10 object-contain flex-shrink-0"
+            />
             <span className="text-sm text-gray-500">{axisLabels[currentQuestionData.axis] || ''}</span>
+          </div>
+
+          {/* 문항별 placeholder 이미지 (Ver2) */}
+          <div className="mb-4">
+            <QuestionPlaceholderImage
+              questionNumber={currentQuestion}
+              axis={currentQuestionData.axis}
+              className="w-full aspect-video"
+            />
           </div>
         
           {/* Question Text */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-12 leading-relaxed">
+          <h2 className="text-xl font-bold text-gray-900 mb-8 leading-relaxed whitespace-pre-line">
             {currentQuestionData.question_text}
           </h2>
         
@@ -162,6 +190,20 @@ export function QuestionnaireScreen({ onComplete }: QuestionnaireScreenProps) {
                 <Check className="w-5 h-5 text-transparent group-hover:text-white transition-colors" />
               </div>
             </button>
+
+            {/* 3번째 버튼 아래: 이전 질문(왼쪽 정렬) / 1번째면 진단 소개로 */}
+            {onBack && (
+              <div className="mt-6 flex justify-start">
+                <button
+                  type="button"
+                  onClick={currentQuestion > 1 ? () => setCurrentQuestion((q) => q - 1) : onBack}
+                  className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors text-sm font-medium"
+                >
+                  <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+                  {currentQuestion > 1 ? '이전 질문' : '진단 소개로'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
         

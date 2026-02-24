@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { MoveHorizontal, Waves, RotateCcw, Zap, Play, Lock, Share2, Download, ArrowLeft } from 'lucide-react';
+import { Play, Share2, Download, ArrowLeft } from 'lucide-react';
 import { fetchQuestionnaireResult } from '../api/questionnaire';
-import { getAxisLabels, getBodyCodeKeywords, allCodes } from '../utils/bodyCodeCalculator';
+import { fetchAppImages } from '../api/content';
+import { AXIS_ICON_SRC } from '../data/axisIcons';
+import { getAxisLabels, getBodyCodeKeywords, getAxisScoreBreakdown, characterNames } from '../utils/bodyCodeCalculator';
 import type { QuestionnaireResponse, BodyCodeContent } from '../api/questionnaire';
 
 // Figma Character Images
@@ -26,12 +28,20 @@ import bodyTypesImage from './figma/bodyTypesImage.png';
 interface ResultScreenProps {
   questionnaireId?: string;
   onRestart?: () => void;
+  onBack?: () => void;
+  onNextPage?: () => void;
+  onResultLoad?: (bodyCode: string) => void;
 }
 
-export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) {
+export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, onResultLoad }: ResultScreenProps) {
   const [result, setResult] = useState<QuestionnaireResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [appImages, setAppImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchAppImages().then(setAppImages);
+  }, []);
 
   useEffect(() => {
     async function loadResult() {
@@ -43,6 +53,7 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
       try {
         const data = await fetchQuestionnaireResult(questionnaireId);
         setResult(data);
+        if (data?.calculated_code) onResultLoad?.(data.calculated_code);
         setIsLoading(false);
       } catch (err) {
         console.error('Failed to load result:', err);
@@ -52,34 +63,51 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
     }
 
     loadResult();
-  }, [questionnaireId]);
+  }, [questionnaireId, onResultLoad]);
 
   const bodyCode = result?.calculated_code || '----';
   const content = result?.body_code_content as BodyCodeContent | null;
   const axisLabels = result?.calculated_code ? getAxisLabels(result.calculated_code) : null;
   const keywords = result?.calculated_code ? getBodyCodeKeywords(result.calculated_code) : [];
+  const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers) : null;
 
-  // Figma Character Image Mapping
   const characterImages: Record<string, string> = {
-    'FRRS': FRRS_img,
-    'FRRF': FRRF_img,
-    'FRLS': FRLS_img,
-    'FRLF': FRLF_img,
-    'FLRS': FLRS_img,
-    'FLRF': FLRF_img,
-    'FLLS': FLLS_img,
-    'FLLF': FLLF_img,
-    'CRRS': CRRS_img,
-    'CRRF': CRRF_img,
-    'CRLS': CRLS_img,
-    'CRLF': CRLF_img,
-    'CLRS': CLRS_img,
-    'CLRF': CLRF_img,
-    'CLLS': CLLS_img,
-    'CLLF': CLLF_img,
+    FRRS: appImages.character_FRRS ?? FRRS_img,
+    FRRF: appImages.character_FRRF ?? FRRF_img,
+    FRLS: appImages.character_FRLS ?? FRLS_img,
+    FRLF: appImages.character_FRLF ?? FRLF_img,
+    FLRS: appImages.character_FLRS ?? FLRS_img,
+    FLRF: appImages.character_FLRF ?? FLRF_img,
+    FLLS: appImages.character_FLLS ?? FLLS_img,
+    FLLF: appImages.character_FLLF ?? FLLF_img,
+    CRRS: appImages.character_CRRS ?? CRRS_img,
+    CRRF: appImages.character_CRRF ?? CRRF_img,
+    CRLS: appImages.character_CRLS ?? CRLS_img,
+    CRLF: appImages.character_CRLF ?? CRLF_img,
+    CLRS: appImages.character_CLRS ?? CLRS_img,
+    CLRF: appImages.character_CLRF ?? CLRF_img,
+    CLLS: appImages.character_CLLS ?? CLLS_img,
+    CLLF: appImages.character_CLLF ?? CLLF_img,
   };
 
   const currentCharacterImage = bodyCode !== '----' ? characterImages[bodyCode] : null;
+  const bodyTypesImageUrl = appImages.body_types_image || bodyTypesImage;
+
+  /** 축 순서별 고정 색상: 1 파랑, 2 보라, 3 주황, 4 초록 (하체는 트랙을 진하게 해서 가시성 확보) */
+  const axisBarColors = [
+    { fill: 'bg-blue-500', track: 'bg-blue-100' },
+    { fill: 'bg-purple-500', track: 'bg-purple-100' },
+    { fill: 'bg-orange-500', track: 'bg-orange-100' },
+    { fill: 'bg-green-500', track: 'bg-green-200' },
+  ] as const;
+
+  /** 4축 분석 결과 영문 표시: API 값이 없으면 bodyCode에서 추출 (1축 F/C, 2·3축 R/L, 4축 S/F) */
+  const axisResultLetters = {
+    neck: content?.neck_result ?? (bodyCode[0] || ''),
+    shoulder: content?.shoulder_result ?? (bodyCode[1] || ''),
+    pelvis: content?.pelvis_result ?? (bodyCode[2] || ''),
+    flexibility: content?.flexibility_result ?? (bodyCode[3] || ''),
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +130,7 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
     );
   }
 
-  if (!result || !content) {
+  if (!result) {
     return (
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ height: '844px' }}>
         <div className="text-gray-500">결과를 찾을 수 없습니다</div>
@@ -119,8 +147,8 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold text-gray-900">진단 결과</h1>
             <div className="flex gap-2">
-              {onRestart && (
-                <button onClick={onRestart} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+              {(onBack ?? onRestart) && (
+                <button onClick={onBack ?? onRestart} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors" title="뒤로">
                   <ArrowLeft className="w-4 h-4 text-gray-600" />
                 </button>
               )}
@@ -135,6 +163,17 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
         </div>
         
         <div className="px-6 pb-8">
+          
+          {/* 진단 완료 프로그레스바 */}
+          <div className="mt-4 mb-6">
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+              <span>진단 완료</span>
+              <span className="font-semibold text-emerald-600">100%</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full w-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" style={{ width: '100%' }} />
+            </div>
+          </div>
           
           {/* Hero Body Code Badge with Character Image */}
           <div className="mt-8 mb-8 text-center">
@@ -159,9 +198,9 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
                 <div className="text-sm text-gray-600 font-medium">
                   나의 mebody CODE
                 </div>
-                {content?.character_name && (
+                {(content?.character_name || characterNames[bodyCode]) && (
                   <div className="text-xs text-gray-500 mt-2">
-                    {content.character_name}
+                    {content?.character_name || characterNames[bodyCode]}
                   </div>
                 )}
               </div>
@@ -169,66 +208,114 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
           </div>
           
           {/* Character Name */}
-          {content.character_name && (
+          {(content?.character_name || characterNames[bodyCode]) && (
             <div className="text-center mb-6">
               <div className="inline-block bg-gradient-to-r from-gray-100 to-gray-50 px-6 py-3 rounded-full border border-gray-200">
-                <span className="text-gray-700 font-semibold">{content.character_name}</span>
+                <span className="text-gray-700 font-semibold">{content?.character_name || characterNames[bodyCode]}</span>
               </div>
             </div>
           )}
           
-          {/* 4-Axis Breakdown Card */}
+          {/* 4축 점수 기반 퍼센트 + 퍼센트에 따른 색상 프로그레스바 */}
+          {axisPercent && (
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">생체 정보 분석</h3>
+              <div className="space-y-5">
+                {[
+                  { key: 'neck', title: '목 위치 (Neck position)', ...axisPercent.neck },
+                  { key: 'shoulder', title: '어깨 높이 (Shoulder height)', ...axisPercent.shoulder },
+                  { key: 'pelvis', title: '골반 회전 (Pelvis rotation)', ...axisPercent.pelvis },
+                  { key: 'flexibility', title: '하체 유연성 (Lower body flexibility)', ...axisPercent.flexibility },
+                ].map((item, index) => {
+                  const pct = item.percentLeft;
+                  const { fill, track } = axisBarColors[index];
+                  const isFourth = index === 3;
+                  const trackStyle = isFourth ? { backgroundColor: '#bbf7d0' } : undefined; // green-200
+                  const fillStyle = {
+                    width: `${Math.max(0, Math.min(100, pct))}%`,
+                    ...(isFourth ? { backgroundColor: '#22c55e' } : {}), // green-500
+                  };
+                  return (
+                    <div key={item.key}>
+                      <div className="text-xs font-medium text-gray-600 mb-2">{item.title}</div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 shrink-0 w-20">{item.labelLeft}</span>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className={`h-5 rounded-full overflow-hidden flex ${track}`}
+                            style={trackStyle}
+                          >
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${fill}`}
+                              style={fillStyle}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 shrink-0 w-20 text-right">{item.labelRight}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-sm font-bold text-gray-900">{pct}%</span>
+                        <span className="text-sm font-bold text-gray-900">{item.percentRight}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          {/* 4-Axis Breakdown Card (축 라벨 + Ver2 아이콘, 결과 영문은 content 없으면 bodyCode에서 표시) */}
           {axisLabels && (
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">4가지 축 분석 결과</h3>
-              
               <div className="space-y-3">
-                {/* Axis 1 */}
                 <div className="flex items-center gap-3 bg-blue-50/80 rounded-xl p-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MoveHorizontal className="w-5 h-5 text-white" />
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                    <img src={AXIS_ICON_SRC.neck} alt="" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-blue-600 font-medium mb-0.5">목 위치</div>
+                    <div className="text-xs text-blue-600 font-medium mb-0.5">1축 목 (FORWARD/CENTRAL)</div>
                     <div className="font-semibold text-gray-900">{axisLabels.neck}</div>
                   </div>
-                  <div className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg">{content.neck_result}</div>
+                  <div className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg min-w-[2rem] text-center">{axisResultLetters.neck}</div>
                 </div>
-                
-                {/* Axis 2 */}
                 <div className="flex items-center gap-3 bg-purple-50/80 rounded-xl p-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Waves className="w-5 h-5 text-white" />
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                    <img src={AXIS_ICON_SRC.shoulder} alt="" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-purple-600 font-medium mb-0.5">어깨 높이</div>
+                    <div className="text-xs text-purple-600 font-medium mb-0.5">2축 어깨 (RIGHT UP/LEFT UP)</div>
                     <div className="font-semibold text-gray-900">{axisLabels.shoulder}</div>
                   </div>
-                  <div className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-lg">{content.shoulder_result}</div>
+                  <div className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-lg min-w-[2rem] text-center">{axisResultLetters.shoulder}</div>
                 </div>
-                
-                {/* Axis 3 */}
                 <div className="flex items-center gap-3 bg-orange-50/80 rounded-xl p-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <RotateCcw className="w-5 h-5 text-white" />
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                    <img src={AXIS_ICON_SRC.pelvis} alt="" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-orange-600 font-medium mb-0.5">골반 회전</div>
+                    <div className="text-xs text-orange-600 font-medium mb-0.5">3축 골반 (RIGHT/LEFT ROTATION)</div>
                     <div className="font-semibold text-gray-900">{axisLabels.pelvis}</div>
                   </div>
-                  <div className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-lg">{content.pelvis_result}</div>
+                  <div className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-lg min-w-[2rem] text-center">{axisResultLetters.pelvis}</div>
                 </div>
-                
-                {/* Axis 4 */}
-                <div className="flex items-center gap-3 bg-emerald-50/80 rounded-xl p-3">
-                  <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-5 h-5 text-white" />
+                <div
+                  className="flex items-center gap-3 bg-green-50 rounded-xl p-3 border-0"
+                  style={{ backgroundColor: 'rgb(240 253 244)' }}
+                >
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                    <img src={AXIS_ICON_SRC.flexibility} alt="" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-emerald-600 font-medium mb-0.5">다리 유연성</div>
+                    <div className="text-xs text-green-600 font-medium mb-0.5">4축 하체 (STIFF/FLEXIBLE)</div>
                     <div className="font-semibold text-gray-900">{axisLabels.flexibility}</div>
                   </div>
-                  <div className="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">{content.flexibility_result}</div>
+                  <div
+                    className="px-3 py-1 text-xs font-bold rounded-lg min-w-[2rem] text-center"
+                    style={{ backgroundColor: '#059669', color: '#ffffff' }}
+                  >
+                    {axisResultLetters.flexibility}
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,7 +331,7 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
                     ['from-blue-100 to-blue-50', 'text-blue-700', 'border-blue-200'],
                     ['from-purple-100 to-purple-50', 'text-purple-700', 'border-purple-200'],
                     ['from-orange-100 to-orange-50', 'text-orange-700', 'border-orange-200'],
-                    ['from-emerald-100 to-emerald-50', 'text-emerald-700', 'border-emerald-200']
+                    ['from-green-100 to-green-50', 'text-green-700', 'border-green-200']
                   ];
                   const [bg, text, border] = colors[index % 4];
                   return (
@@ -264,7 +351,7 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
             {/* Full Image Display */}
             <div className="bg-white rounded-xl overflow-hidden mb-4 shadow-sm">
               <img
-                src={bodyTypesImage}
+                src={bodyTypesImageUrl}
                 alt="16 Body Types"
                 className="w-full h-auto"
               />
@@ -280,13 +367,14 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
             <h3 className="text-sm font-semibold text-gray-700 mb-3">맞춤 운동 프로그램</h3>
             
             {/* Video Cards */}
-            {content.exercises && content.exercises.length > 0 && (
+            {content && content.exercises && content.exercises.length > 0 && (
               <div className="space-y-3 mb-4">
                 {content.exercises.slice(0, 3).map((exercise, index) => {
                   const gradients = [
                     'from-blue-400 to-blue-500',
                     'from-purple-400 to-purple-500',
-                    'from-orange-400 to-orange-500'
+                    'from-orange-400 to-orange-500',
+                    'from-green-400 to-green-500'
                   ];
                   return (
                     <div key={index} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex gap-3 hover:shadow-md transition-shadow">
@@ -304,7 +392,7 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
             )}
             
             {/* Lifestyle Tips */}
-            {content.lifestyle_tips && content.lifestyle_tips.length > 0 && (
+            {content && content.lifestyle_tips && content.lifestyle_tips.length > 0 && (
               <div className="bg-emerald-50 rounded-xl p-4 mb-4 border border-emerald-100">
                 <div className="text-sm font-semibold text-emerald-900 mb-2">생활 습관 팁</div>
                 <ul className="space-y-1.5 text-sm text-emerald-800">
@@ -319,7 +407,7 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
             )}
             
             {/* Health Products */}
-            {content.health_products && content.health_products.length > 0 && (
+            {content && content.health_products && content.health_products.length > 0 && (
               <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                 <div className="text-sm font-semibold text-gray-900 mb-2">추천 헬스 케어 용품</div>
                 <div className="space-y-2">
@@ -334,11 +422,21 @@ export function ResultScreen({ questionnaireId, onRestart }: ResultScreenProps) 
             )}
             
             {/* Unlock CTA */}
-            <button className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
-              <Lock className="w-5 h-5" />
-              전체 프로그램 시작하기
-            </button>
           </div>
+
+          {/* 프로그램 시작 (다음 페이지: 자세 사용 설명서) */}
+          {onNextPage && (
+            <div className="mt-6 pb-4">
+              <button
+                type="button"
+                onClick={onNextPage}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                프로그램 시작
+                <span className="text-lg">&gt;</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

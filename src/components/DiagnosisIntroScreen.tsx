@@ -1,16 +1,27 @@
-import { ArrowRight, MoveHorizontal, Waves, RotateCcw, Zap } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { AXIS_ICON_SRC } from '../data/axisIcons';
 
 interface DiagnosisIntroScreenProps {
+  onBack?: () => void;
   onBegin: () => void;
 }
 
-export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
+export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenProps) {
   return (
     <div className="bg-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
       <div className="h-full flex flex-col">
         
         {/* Header */}
-        <div className="px-6 pt-8 pb-6">
+        <div className="px-6 pt-8 pb-6 flex items-center justify-center relative">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="absolute left-6 top-8 w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 text-gray-600" />
+            </button>
+          )}
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               나의 mebody CODE 찾기
@@ -21,16 +32,16 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
           </div>
         </div>
 
-        {/* 4 Axes Explanation */}
+        {/* 4 Axes Explanation - Ver2 축 아이콘 통일 */}
         <div className="flex-1 px-6 overflow-y-auto">
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-gray-700 mb-4">4가지 측정 기준</h3>
             
-            {/* Axis 1 */}
+            {/* Axis 1 - 목 */}
             <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-5 mb-3 border border-blue-200/50">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <MoveHorizontal className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white shadow-sm">
+                  <img src={AXIS_ICON_SRC.neck} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 mb-1">축 1. 목 위치</div>
@@ -43,11 +54,11 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               </div>
             </div>
 
-            {/* Axis 2 */}
+            {/* Axis 2 - 어깨 */}
             <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 rounded-2xl p-5 mb-3 border border-purple-200/50">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <Waves className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white shadow-sm">
+                  <img src={AXIS_ICON_SRC.shoulder} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 mb-1">축 2. 어깨 높이</div>
@@ -60,11 +71,11 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               </div>
             </div>
 
-            {/* Axis 3 */}
+            {/* Axis 3 - 골반 */}
             <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 rounded-2xl p-5 mb-3 border border-orange-200/50">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <RotateCcw className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white shadow-sm">
+                  <img src={AXIS_ICON_SRC.pelvis} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 mb-1">축 3. 골반 회전</div>
@@ -77,18 +88,18 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               </div>
             </div>
 
-            {/* Axis 4 */}
-            <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 rounded-2xl p-5 mb-3 border border-emerald-200/50">
+            {/* Axis 4 - 하체 유연성 */}
+            <div className="bg-gradient-to-r from-green-50 to-green-100/50 rounded-2xl p-5 mb-3 border border-green-200/50">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <Zap className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white shadow-sm">
+                  <img src={AXIS_ICON_SRC.flexibility} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 mb-1">축 4. 다리 유연성</div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="px-3 py-1 bg-white rounded-lg font-medium text-emerald-600 shadow-sm">F (유연)</span>
+                    <span className="px-3 py-1 bg-white rounded-lg font-medium text-green-600 shadow-sm">F (유연)</span>
                     <span className="text-gray-400">vs</span>
-                    <span className="px-3 py-1 bg-white rounded-lg font-medium text-emerald-600 shadow-sm">S (경직)</span>
+                    <span className="px-3 py-1 bg-white rounded-lg font-medium text-green-600 shadow-sm">S (경직)</span>
                   </div>
                 </div>
               </div>

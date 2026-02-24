@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { VER2_QUESTIONS } from '../data/ver2Questions'
+import { calculateBodyCode } from '../utils/bodyCodeCalculator'
 
 export interface Question {
   id: number
@@ -40,18 +42,17 @@ export interface BodyCodeContent {
   }>
 }
 
+/** Ver2 문항 사용 (doc/ver2 문항 엑셀 기준). DB questions 테이블은 사용하지 않음 */
 export async function fetchQuestions(): Promise<Question[]> {
-  const { data, error } = await supabase
-    .from('questions')
-    .select('*')
-    .order('question_number')
-
-  if (error) {
-    console.error('Error fetching questions:', error)
-    throw error
-  }
-
-  return data || []
+  return VER2_QUESTIONS.map((q) => ({
+    id: q.id,
+    question_number: q.question_number,
+    axis: q.axis,
+    question_text: q.question_text,
+    option_1: q.option_1,
+    option_2: q.option_2,
+    option_3: q.option_3,
+  }))
 }
 
 export async function saveDraft(answers: Record<number, string>, questionnaireId?: string) {
@@ -77,7 +78,8 @@ export async function saveDraft(answers: Record<number, string>, questionnaireId
 }
 
 export async function submitQuestionnaire(answers: Record<number, string>) {
-  const code = calculateBodyCode(answers)
+  const result = calculateBodyCode(answers)
+  const code = result.code
 
   const { data, error } = await supabase
     .from('questionnaire_responses')
@@ -95,7 +97,7 @@ export async function submitQuestionnaire(answers: Record<number, string>) {
     throw error
   }
 
-  return data
+  return { ...data, body_code_meta: result }
 }
 
 export async function fetchQuestionnaireResult(questionnaireId: string) {
@@ -131,38 +133,3 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
   }
 }
 
-function calculateBodyCode(answers: Record<number, string>): string {
-  const answersArray = Object.entries(answers)
-    .map(([key, value]) => ({ questionNumber: parseInt(key), value }))
-
-  const neckAnswers = answersArray.filter(a => a.questionNumber >= 1 && a.questionNumber <= 10)
-  const shoulderAnswers = answersArray.filter(a => a.questionNumber >= 11 && a.questionNumber <= 20)
-  const pelvisAnswers = answersArray.filter(a => a.questionNumber >= 21 && a.questionNumber <= 30)
-  const flexibilityAnswers = answersArray.filter(a => a.questionNumber >= 31 && a.questionNumber <= 40)
-
-  function countAxisAnswers(answers: Array<{ questionNumber: number; value: string }>) {
-    let count1 = 0
-    let count3 = 0
-
-    answers.forEach(a => {
-      if (a.value === '①' || a.value === '1') count1++
-      if (a.value === '③' || a.value === '3') count3++
-    })
-
-    return { count1, count3 }
-  }
-
-  const neck = countAxisAnswers(neckAnswers)
-  const neckResult = neck.count1 >= neck.count3 ? 'F' : 'C'
-
-  const shoulder = countAxisAnswers(shoulderAnswers)
-  const shoulderResult = shoulder.count1 >= shoulder.count3 ? 'R' : 'L'
-
-  const pelvis = countAxisAnswers(pelvisAnswers)
-  const pelvisResult = pelvis.count1 >= pelvis.count3 ? 'R' : 'L'
-
-  const flexibility = countAxisAnswers(flexibilityAnswers)
-  const flexibilityResult = flexibility.count1 >= flexibility.count3 ? 'S' : 'F'
-
-  return `${neckResult}${shoulderResult}${pelvisResult}${flexibilityResult}`
-}
