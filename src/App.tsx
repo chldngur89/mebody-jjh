@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { LandingScreen } from './components/LandingScreen';
 import { ConsentScreen } from './components/ConsentScreen';
 import { DiagnosisIntroScreen } from './components/DiagnosisIntroScreen';
@@ -7,8 +6,9 @@ import { QuestionnaireScreen } from './components/QuestionnaireScreen';
 import { AnalyzingScreen } from './components/AnalyzingScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { ResultGuideScreen } from './components/ResultGuideScreen';
+import { NextPageScreen } from './components/NextPageScreen';
 
-type Screen = 'landing' | 'consent' | 'intro' | 'questionnaire' | 'analyzing' | 'result' | 'resultGuide' | 'resultGuide2';
+type Screen = 'landing' | 'consent' | 'intro' | 'questionnaire' | 'analyzing' | 'result' | 'resultGuide' | 'resultGuide2' | 'advanced';
 
 export default function App() {
    const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
@@ -81,27 +81,22 @@ export default function App() {
            />
          )}
          {currentScreen === 'resultGuide2' && (
-           <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden flex flex-col" style={{ height: '844px' }}>
-             <div className="flex-shrink-0 bg-white/80 backdrop-blur-lg border-b border-emerald-100 px-6 py-4 flex items-center gap-3">
-               <button
-                 type="button"
-                 onClick={() => setCurrentScreen('resultGuide')}
-                 className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-               >
-                 <ArrowLeft className="w-4 h-4 text-gray-600" />
-               </button>
-               <h1 className="text-lg font-bold text-gray-900">다음</h1>
-             </div>
-             <div className="flex-1 flex flex-col items-center justify-center text-gray-500 px-6">
-               <p className="text-sm">다음 콘텐츠 준비 중입니다.</p>
-               <button
-                 type="button"
-                 onClick={() => setCurrentScreen('resultGuide')}
-                 className="mt-4 w-full max-w-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all active:scale-[0.98]"
-               >
-                 자세 사용 설명서로
-               </button>
-             </div>
+           <NextPageScreen
+             bodyCode={bodyCode}
+             onBack={() => setCurrentScreen('resultGuide')}
+             onLearnMore={() => setCurrentScreen('advanced')}
+           />
+         )}
+         {currentScreen === 'advanced' && (
+           <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center px-6" style={{ height: '844px' }}>
+             <p className="text-gray-600 mb-6 text-center">심화 버전 (태그 분석·루틴 우선순위)은 MVP·파일럿 테스트 후 제공 예정입니다.</p>
+             <button
+               type="button"
+               onClick={() => setCurrentScreen('resultGuide2')}
+               className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-200"
+             >
+               맞춤 가이드로 돌아가기
+             </button>
            </div>
          )}
        </div>

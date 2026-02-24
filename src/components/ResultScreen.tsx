@@ -141,8 +141,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
       <div className="h-full overflow-y-auto">
-        
-        {/* Header */}
         <div className="sticky top-0 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold text-gray-900">진단 결과</h1>
@@ -161,9 +159,8 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </div>
           </div>
         </div>
-        
+
         <div className="px-6 pb-8">
-          
           <div className="mt-4 mb-6">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
               <span>진단 완료</span>
@@ -173,7 +170,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               <div className="h-full w-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" style={{ width: '100%' }} />
             </div>
           </div>
-          
+
           <div className="mt-8 mb-8 text-center">
             {currentCharacterImage && (
               <div className="mb-6 flex justify-center">
@@ -187,7 +184,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                 </div>
               </div>
             )}
-
             <div className="inline-block bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-1 rounded-3xl shadow-2xl shadow-emerald-500/30">
               <div className="bg-white rounded-[22px] px-12 py-10">
                 <div className="text-7xl font-black tracking-wider bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-3">
@@ -204,8 +200,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               </div>
             </div>
           </div>
-          
-          {/* Character Name */}
+
           {(content?.character_name || characterNames[bodyCode]) && (
             <div className="text-center mb-6">
               <div className="inline-block bg-gradient-to-r from-gray-100 to-gray-50 px-6 py-3 rounded-full border border-gray-200">
@@ -213,7 +208,16 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               </div>
             </div>
           )}
-          
+
+          {content?.description && (
+            <div className="mb-6 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">
+                왜 &apos;{content?.character_name || characterNames[bodyCode]}&apos;인가요?
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{content.description}</p>
+            </div>
+          )}
+
           {axisPercent && (
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">생체 정보 분석</h3>
@@ -227,10 +231,10 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                   const pct = item.percentLeft;
                   const { fill, track } = AXIS_BAR_COLORS[index];
                   const isFourth = index === 3;
-                  const trackStyle = isFourth ? { backgroundColor: '#bbf7d0' } : undefined; // green-200
+                  const trackStyle = isFourth ? { backgroundColor: '#bbf7d0' } : undefined;
                   const fillStyle = {
                     width: `${Math.max(0, Math.min(100, pct))}%`,
-                    ...(isFourth ? { backgroundColor: '#22c55e' } : {}), // green-500
+                    ...(isFourth ? { backgroundColor: '#22c55e' } : {}),
                   };
                   return (
                     <div key={item.key}>
@@ -260,7 +264,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               </div>
             </div>
           )}
-          
+
           {axisLabels && (
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">4가지 축 분석 결과</h3>
@@ -316,7 +320,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               </div>
             </div>
           )}
-          
+
           {keywords.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">체형 특징</h3>
@@ -326,7 +330,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                     ['from-blue-100 to-blue-50', 'text-blue-700', 'border-blue-200'],
                     ['from-purple-100 to-purple-50', 'text-purple-700', 'border-purple-200'],
                     ['from-orange-100 to-orange-50', 'text-orange-700', 'border-orange-200'],
-                    ['from-green-100 to-green-50', 'text-green-700', 'border-green-200']
+                    ['from-green-100 to-green-50', 'text-green-700', 'border-green-200'],
                   ];
                   const [bg, text, border] = colors[index % 4];
                   return (
@@ -338,7 +342,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               </div>
             </div>
           )}
-          
+
           <div className="mb-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">전체 16가지 체형 분류</h3>
             <div className="bg-white rounded-xl overflow-hidden mb-4 shadow-sm">
@@ -349,24 +353,21 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                 onError={() => markImageFailed(bodyTypesImageUrl)}
               />
             </div>
-
             <p className="text-xs text-gray-600 mt-3 text-center">
               당신은 <span className="font-semibold text-emerald-600">{bodyCode}</span> 유형입니다
             </p>
           </div>
-          
+
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">맞춤 운동 프로그램</h3>
-            
-            {/* Video Cards */}
-            {content && content.exercises && content.exercises.length > 0 && (
+            {content?.exercises?.length > 0 && (
               <div className="space-y-3 mb-4">
                 {content.exercises.slice(0, 3).map((exercise, index) => {
                   const gradients = [
                     'from-blue-400 to-blue-500',
                     'from-purple-400 to-purple-500',
                     'from-orange-400 to-orange-500',
-                    'from-green-400 to-green-500'
+                    'from-green-400 to-green-500',
                   ];
                   return (
                     <div key={index} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex gap-3 hover:shadow-md transition-shadow">
@@ -382,37 +383,32 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                 })}
               </div>
             )}
-            
-            {/* Lifestyle Tips */}
-            {content && content.lifestyle_tips && content.lifestyle_tips.length > 0 && (
+            {content?.lifestyle_tips?.length > 0 && (
               <div className="bg-emerald-50 rounded-xl p-4 mb-4 border border-emerald-100">
                 <div className="text-sm font-semibold text-emerald-900 mb-2">생활 습관 팁</div>
                 <ul className="space-y-1.5 text-sm text-emerald-800">
                   {content.lifestyle_tips.map((tip, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <div className="w-1 h-1 bg-emerald-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                      <div className="w-1 h-1 bg-emerald-500 rounded-full mt-1.5 flex-shrink-0" />
                       <span>{tip}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            
-            {/* Health Products */}
-            {content && content.health_products && content.health_products.length > 0 && (
+            {content?.health_products?.length > 0 && (
               <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                 <div className="text-sm font-semibold text-gray-900 mb-2">추천 헬스 케어 용품</div>
                 <div className="space-y-2">
                   {content.health_products.map((product, index) => (
                     <div key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 flex-shrink-0" />
                       <span><strong>{product.name}</strong>: {product.desc}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            
           </div>
 
           {onNextPage && (
