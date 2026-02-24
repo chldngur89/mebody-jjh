@@ -1,7 +1,3 @@
-/**
- * doc/ver2 mebody 자세 사용 설명서(공통).docx 에서 추출한 내용
- */
-
 export const RESULT_GUIDE_TITLE = 'mebody 자세 사용 설명서 (공통)';
 
 export const RESULT_GUIDE_SECTIONS: { title: string; content: string }[] = [

@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Play, Share2, Download, ArrowLeft } from 'lucide-react';
 import { fetchQuestionnaireResult } from '../api/questionnaire';
 import { fetchAppImages } from '../api/content';
+import { SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { getAxisLabels, getBodyCodeKeywords, getAxisScoreBreakdown, characterNames } from '../utils/bodyCodeCalculator';
 import type { QuestionnaireResponse, BodyCodeContent } from '../api/questionnaire';
 
-// Figma Character Images
 import FRRS_img from './figma/FRRS.png';
 import FRRF_img from './figma/FRRF.png';
 import FRLS_img from './figma/FRLS.png';
@@ -25,6 +25,21 @@ import CLLS_img from './figma/CLLS.png';
 import CLLF_img from './figma/CLLF.png';
 import bodyTypesImage from './figma/bodyTypesImage.png';
 
+const BODY_CODES = ['FRRS', 'FRRF', 'FRLS', 'FRLF', 'FLRS', 'FLRF', 'FLLS', 'FLLF', 'CRRS', 'CRRF', 'CRLS', 'CRLF', 'CLRS', 'CLRF', 'CLLS', 'CLLF'] as const;
+const CHAR_FALLBACKS: Record<string, string> = {
+  FRRS: FRRS_img, FRRF: FRRF_img, FRLS: FRLS_img, FRLF: FRLF_img,
+  FLRS: FLRS_img, FLRF: FLRF_img, FLLS: FLLS_img, FLLF: FLLF_img,
+  CRRS: CRRS_img, CRRF: CRRF_img, CRLS: CRLS_img, CRLF: CRLF_img,
+  CLRS: CLRS_img, CLRF: CLRF_img, CLLS: CLLS_img, CLLF: CLLF_img,
+};
+
+const AXIS_BAR_COLORS = [
+  { fill: 'bg-blue-500', track: 'bg-blue-100' },
+  { fill: 'bg-purple-500', track: 'bg-purple-100' },
+  { fill: 'bg-orange-500', track: 'bg-orange-100' },
+  { fill: 'bg-green-500', track: 'bg-green-200' },
+] as const;
+
 interface ResultScreenProps {
   questionnaireId?: string;
   onRestart?: () => void;
@@ -38,31 +53,27 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [appImages, setAppImages] = useState<Record<string, string>>({});
+  const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchAppImages().then(setAppImages);
   }, []);
 
   useEffect(() => {
-    async function loadResult() {
-      if (!questionnaireId) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchQuestionnaireResult(questionnaireId);
+    if (!questionnaireId) {
+      setIsLoading(false);
+      return;
+    }
+    fetchQuestionnaireResult(questionnaireId)
+      .then((data) => {
         setResult(data);
         if (data?.calculated_code) onResultLoad?.(data.calculated_code);
-        setIsLoading(false);
-      } catch (err) {
+      })
+      .catch((err) => {
         console.error('Failed to load result:', err);
         setError('결과를 찾을 수 없습니다');
-        setIsLoading(false);
-      }
-    }
-
-    loadResult();
+      })
+      .finally(() => setIsLoading(false));
   }, [questionnaireId, onResultLoad]);
 
   const bodyCode = result?.calculated_code || '----';
@@ -71,37 +82,26 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
   const keywords = result?.calculated_code ? getBodyCodeKeywords(result.calculated_code) : [];
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers) : null;
 
-  const characterImages: Record<string, string> = {
-    FRRS: appImages.character_FRRS ?? FRRS_img,
-    FRRF: appImages.character_FRRF ?? FRRF_img,
-    FRLS: appImages.character_FRLS ?? FRLS_img,
-    FRLF: appImages.character_FRLF ?? FRLF_img,
-    FLRS: appImages.character_FLRS ?? FLRS_img,
-    FLRF: appImages.character_FLRF ?? FLRF_img,
-    FLLS: appImages.character_FLLS ?? FLLS_img,
-    FLLF: appImages.character_FLLF ?? FLLF_img,
-    CRRS: appImages.character_CRRS ?? CRRS_img,
-    CRRF: appImages.character_CRRF ?? CRRF_img,
-    CRLS: appImages.character_CRLS ?? CRLS_img,
-    CRLF: appImages.character_CRLF ?? CRLF_img,
-    CLRS: appImages.character_CLRS ?? CLRS_img,
-    CLRF: appImages.character_CLRF ?? CLRF_img,
-    CLLS: appImages.character_CLLS ?? CLLS_img,
-    CLLF: appImages.character_CLLF ?? CLLF_img,
-  };
+  const characterImages: Record<string, string> = {};
+  for (const code of BODY_CODES) {
+    const fromDb = appImages[`character_${code}`];
+    const defaultUrl = SUPABASE_STORAGE_PUBLIC ? `${SUPABASE_STORAGE_PUBLIC}/characters/${code}.png` : '';
+    const preferred = fromDb || defaultUrl;
+    characterImages[code] = preferred && !failedImageUrls.has(preferred) ? preferred : CHAR_FALLBACKS[code];
+  }
 
   const currentCharacterImage = bodyCode !== '----' ? characterImages[bodyCode] : null;
-  const bodyTypesImageUrl = appImages.body_types_image || bodyTypesImage;
 
-  /** 축 순서별 고정 색상: 1 파랑, 2 보라, 3 주황, 4 초록 (하체는 트랙을 진하게 해서 가시성 확보) */
-  const axisBarColors = [
-    { fill: 'bg-blue-500', track: 'bg-blue-100' },
-    { fill: 'bg-purple-500', track: 'bg-purple-100' },
-    { fill: 'bg-orange-500', track: 'bg-orange-100' },
-    { fill: 'bg-green-500', track: 'bg-green-200' },
-  ] as const;
+  const bodyTypesPreferred =
+    appImages.body_types_image ||
+    (SUPABASE_STORAGE_PUBLIC ? `${SUPABASE_STORAGE_PUBLIC}/body-types/bodyTypesImage.png` : '');
+  const bodyTypesImageUrl =
+    bodyTypesPreferred && !failedImageUrls.has(bodyTypesPreferred) ? bodyTypesPreferred : bodyTypesImage;
 
-  /** 4축 분석 결과 영문 표시: API 값이 없으면 bodyCode에서 추출 (1축 F/C, 2·3축 R/L, 4축 S/F) */
+  const markImageFailed = useCallback((url: string) => {
+    setFailedImageUrls((s) => new Set(s).add(url));
+  }, []);
+
   const axisResultLetters = {
     neck: content?.neck_result ?? (bodyCode[0] || ''),
     shoulder: content?.shoulder_result ?? (bodyCode[1] || ''),
@@ -164,7 +164,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
         
         <div className="px-6 pb-8">
           
-          {/* 진단 완료 프로그레스바 */}
           <div className="mt-4 mb-6">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
               <span>진단 완료</span>
@@ -175,9 +174,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </div>
           </div>
           
-          {/* Hero Body Code Badge with Character Image */}
           <div className="mt-8 mb-8 text-center">
-            {/* Character Image - Individual high-quality image */}
             {currentCharacterImage && (
               <div className="mb-6 flex justify-center">
                 <div className="w-56 h-64 bg-white rounded-2xl shadow-lg overflow-hidden border-4 border-emerald-500 p-4 flex items-center justify-center">
@@ -185,6 +182,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                     src={currentCharacterImage}
                     alt={`${bodyCode} Character`}
                     className="w-full h-full object-contain"
+                    onError={() => markImageFailed(currentCharacterImage)}
                   />
                 </div>
               </div>
@@ -216,7 +214,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </div>
           )}
           
-          {/* 4축 점수 기반 퍼센트 + 퍼센트에 따른 색상 프로그레스바 */}
           {axisPercent && (
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">생체 정보 분석</h3>
@@ -228,7 +225,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
                   { key: 'flexibility', title: '하체 유연성 (Lower body flexibility)', ...axisPercent.flexibility },
                 ].map((item, index) => {
                   const pct = item.percentLeft;
-                  const { fill, track } = axisBarColors[index];
+                  const { fill, track } = AXIS_BAR_COLORS[index];
                   const isFourth = index === 3;
                   const trackStyle = isFourth ? { backgroundColor: '#bbf7d0' } : undefined; // green-200
                   const fillStyle = {
@@ -264,7 +261,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </div>
           )}
           
-          {/* 4-Axis Breakdown Card (축 라벨 + Ver2 아이콘, 결과 영문은 content 없으면 bodyCode에서 표시) */}
           {axisLabels && (
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">4가지 축 분석 결과</h3>
@@ -321,7 +317,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </div>
           )}
           
-          {/* Keyword Summary Chips */}
           {keywords.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">체형 특징</h3>
@@ -344,16 +339,14 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </div>
           )}
           
-          {/* 16-Type Grid Preview */}
           <div className="mb-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">전체 16가지 체형 분류</h3>
-
-            {/* Full Image Display */}
             <div className="bg-white rounded-xl overflow-hidden mb-4 shadow-sm">
               <img
                 src={bodyTypesImageUrl}
                 alt="16 Body Types"
                 className="w-full h-auto"
+                onError={() => markImageFailed(bodyTypesImageUrl)}
               />
             </div>
 
@@ -362,7 +355,6 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
             </p>
           </div>
           
-          {/* Action Plan Preview */}
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">맞춤 운동 프로그램</h3>
             
@@ -421,10 +413,8 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               </div>
             )}
             
-            {/* Unlock CTA */}
           </div>
 
-          {/* 프로그램 시작 (다음 페이지: 자세 사용 설명서) */}
           {onNextPage && (
             <div className="mt-6 pb-4">
               <button

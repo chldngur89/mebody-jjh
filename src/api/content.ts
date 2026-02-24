@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase';
 
-/** app_images 테이블: key -> url */
 export async function fetchAppImages(): Promise<Record<string, string>> {
   const { data, error } = await supabase
     .from('app_images')
@@ -18,7 +17,6 @@ export async function fetchAppImages(): Promise<Record<string, string>> {
   return map;
 }
 
-/** app_content 테이블: key -> value_text 또는 value_json */
 export async function fetchAppContent(keys?: string[]): Promise<Record<string, string | unknown>> {
   let query = supabase.from('app_content').select('key, value_text, value_json');
   if (keys?.length) {
@@ -48,11 +46,6 @@ export interface ResultGuide {
   sections: ResultGuideSection[];
 }
 
-/**
- * result_guide 테이블에서 가이드 조회.
- * bodyCode 있으면: 해당 체형 가이드 1건 + 공통 가이드 1건 조회 후, 체형 가이드가 있으면 그걸 쓰고 없으면 공통만.
- * bodyCode 없으면: 공통 가이드만.
- */
 export async function fetchResultGuide(bodyCode?: string | null): Promise<ResultGuide | null> {
   const filter = bodyCode
     ? `body_code.eq.${bodyCode},body_code.is.null`
