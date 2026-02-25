@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
-import { fetchResultGuide, fetchAppImages, type ResultGuide } from '../api/content';
+import { fetchResultGuide, fetchBodyCodeNextPage, fetchAppImages, type ResultGuide } from '../api/content';
 import { SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
 import { RESULT_GUIDE_TITLE, RESULT_GUIDE_SECTIONS } from '../data/resultGuideContent';
 import bodyTypesImage from './figma/bodyTypesImage.png';
@@ -20,6 +20,8 @@ interface ResultGuideScreenProps {
 
 export function ResultGuideScreen({ bodyCode, onBack, onNextPage }: ResultGuideScreenProps) {
   const [guide, setGuide] = useState<ResultGuide | null>(null);
+  const [nextPageSections, setNextPageSections] = useState<{ title: string; content: string }[]>([]);
+  const [nextPageTitle, setNextPageTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [appImages, setAppImages] = useState<Record<string, string>>({});
@@ -32,9 +34,20 @@ export function ResultGuideScreen({ bodyCode, onBack, onNextPage }: ResultGuideS
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchResultGuide(bodyCode ?? undefined)
-      .then((data) => {
-        if (!cancelled) setGuide(data);
+    Promise.all([
+      fetchResultGuide(bodyCode ?? undefined),
+      bodyCode && bodyCode.length === 4 ? fetchBodyCodeNextPage(bodyCode) : Promise.resolve(null),
+    ])
+      .then(([guideData, nextPageData]) => {
+        if (cancelled) return;
+        setGuide(guideData ?? null);
+        if (nextPageData?.sections?.length) {
+          setNextPageTitle(nextPageData.title);
+          setNextPageSections(nextPageData.sections);
+        } else {
+          setNextPageTitle('');
+          setNextPageSections([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -53,6 +66,7 @@ export function ResultGuideScreen({ bodyCode, onBack, onNextPage }: ResultGuideS
 
   const title = guide?.title ?? RESULT_GUIDE_TITLE;
   const sections = guide?.sections?.length ? guide.sections : RESULT_GUIDE_SECTIONS;
+  const hasNextPageSections = nextPageSections.length > 0;
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
@@ -102,7 +116,48 @@ export function ResultGuideScreen({ bodyCode, onBack, onNextPage }: ResultGuideS
             })}
           </div>
 
-          {/* 다음 페이지부터: 프로그레스바 + 전체 16가지 체형 이미지 */}
+          {/* 맞춤 가이드(체형별) – body_code_next_page 내용 통합 */}
+          {hasNextPageSections && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              {nextPageTitle && (
+                <h2 className="text-sm font-semibold text-emerald-700 mb-3">{nextPageTitle}</h2>
+              )}
+              <div className="space-y-4">
+                {nextPageSections.map((section, index) => {
+                  const idx = sections.length + index;
+                  const isOpen = openIndex === idx;
+                  return (
+                    <section
+                      key={`next-${index}`}
+                      className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setOpenIndex(isOpen ? null : idx)}
+                        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50/80 transition-colors"
+                      >
+                        <h3 className="text-sm font-semibold text-gray-800">{section.title}</h3>
+                        {isOpen ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        )}
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-gray-100 px-5 pb-5 pt-2">
+                          <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                            {renderBold(section.content)}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 프로그레스바 + 전체 16가지 체형 이미지 */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
               <span>진단 완료</span>

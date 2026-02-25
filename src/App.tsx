@@ -6,9 +6,9 @@ import { QuestionnaireScreen } from './components/QuestionnaireScreen';
 import { AnalyzingScreen } from './components/AnalyzingScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { ResultGuideScreen } from './components/ResultGuideScreen';
-import { NextPageScreen } from './components/NextPageScreen';
+import { BodyCodeAccordionScreen } from './components/BodyCodeAccordionScreen';
 
-type Screen = 'landing' | 'consent' | 'intro' | 'questionnaire' | 'analyzing' | 'result' | 'resultGuide' | 'resultGuide2' | 'advanced';
+type Screen = 'landing' | 'consent' | 'intro' | 'questionnaire' | 'analyzing' | 'result' | 'resultGuide' | 'resultAccordion' | 'advanced';
 
 export default function App() {
    const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
@@ -77,11 +77,11 @@ export default function App() {
            <ResultGuideScreen
              bodyCode={bodyCode}
              onBack={() => setCurrentScreen('result')}
-             onNextPage={() => setCurrentScreen('resultGuide2')}
+             onNextPage={() => setCurrentScreen('resultAccordion')}
            />
          )}
-         {currentScreen === 'resultGuide2' && (
-           <NextPageScreen
+         {currentScreen === 'resultAccordion' && (
+           <BodyCodeAccordionScreen
              bodyCode={bodyCode}
              onBack={() => setCurrentScreen('resultGuide')}
              onLearnMore={() => setCurrentScreen('advanced')}
@@ -92,10 +92,10 @@ export default function App() {
              <p className="text-gray-600 mb-6 text-center">심화 버전 (태그 분석·루틴 우선순위)은 MVP·파일럿 테스트 후 제공 예정입니다.</p>
              <button
                type="button"
-               onClick={() => setCurrentScreen('resultGuide2')}
+               onClick={() => setCurrentScreen('resultGuide')}
                className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-200"
              >
-               맞춤 가이드로 돌아가기
+               자세 사용 설명서로 돌아가기
              </button>
            </div>
          )}
