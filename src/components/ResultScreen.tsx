@@ -23,9 +23,21 @@ interface ResultScreenProps {
   onBack?: () => void;
   onNextPage?: () => void;
   onResultLoad?: (bodyCode: string) => void;
+  isLoggedIn?: boolean;
+  onGoAuth?: () => void;
+  onGoMembership?: () => void;
 }
 
-export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, onResultLoad }: ResultScreenProps) {
+export function ResultScreen({
+  questionnaireId,
+  onRestart,
+  onBack,
+  onNextPage,
+  onResultLoad,
+  isLoggedIn = false,
+  onGoAuth,
+  onGoMembership,
+}: ResultScreenProps) {
   const [result, setResult] = useState<QuestionnaireResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -301,6 +313,38 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{content.description}</p>
             </div>
           )}
+
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="text-[10px] font-semibold tracking-[0.14em] text-emerald-600 mb-1">ACCOUNT & MEMBERSHIP</div>
+            <p className="text-sm text-gray-700 leading-7 [word-break:keep-all]">
+              {isLoggedIn
+                ? '재방문 시 최근 결과를 바로 볼 수 있고, 멤버십으로 심화 리포트를 이용할 수 있습니다.'
+                : '이 결과를 저장하고 재방문 시 바로 보려면 회원가입/로그인을 진행해주세요.'}
+            </p>
+            <div className="mt-3">
+              {isLoggedIn ? (
+                onGoMembership && (
+                  <button
+                    type="button"
+                    onClick={onGoMembership}
+                    className="w-full bg-emerald-50 border border-emerald-200 text-emerald-700 py-3 rounded-xl font-semibold hover:bg-emerald-100 transition-colors"
+                  >
+                    멤버십/결제 보기
+                  </button>
+                )
+              ) : (
+                onGoAuth && (
+                  <button
+                    type="button"
+                    onClick={onGoAuth}
+                    className="w-full bg-gray-100 border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                    회원가입 / 로그인
+                  </button>
+                )
+              )}
+            </div>
+          </div>
 
           {axisPercent && (
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6 shadow-sm">

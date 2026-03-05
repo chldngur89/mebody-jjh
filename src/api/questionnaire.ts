@@ -44,6 +44,16 @@ export interface BodyCodeContent {
   }>
 }
 
+function hasMissingUserIdColumn(error: unknown): boolean {
+  const text = String((error as { message?: string } | null)?.message ?? error ?? '').toLowerCase()
+  return text.includes('user_id') && text.includes('does not exist')
+}
+
+async function getCurrentAuthUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser()
+  return data.user?.id ?? null
+}
+
 /** 문항은 Supabase questions 테이블 우선, 실패 시 Ver2 로컬 데이터 폴백 */
 export async function fetchQuestions(): Promise<Question[]> {
   const fallbackByNumber = new Map(VER2_QUESTIONS.map((q) => [q.question_number, q]))
@@ -89,23 +99,28 @@ export async function fetchQuestions(): Promise<Question[]> {
 
 export async function saveDraft(answers: Record<number, string>, questionnaireId?: string) {
   const now = new Date().toISOString()
+  const userId = await getCurrentAuthUserId()
   const payload = {
     answers,
     status: 'draft' as const,
-    updated_at: now
+    updated_at: now,
+    user_id: userId
   }
-  const query = questionnaireId
-    ? supabase
-        .from('questionnaire_responses')
-        .update(payload)
-        .eq('id', questionnaireId)
-    : supabase
-        .from('questionnaire_responses')
-        .insert(payload)
+  const runMutation = (nextPayload: Record<string, unknown>) =>
+    (questionnaireId
+      ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
+      : supabase.from('questionnaire_responses').insert(nextPayload))
+      .select()
+      .single()
 
-  const { data, error } = await query
-    .select()
-    .single()
+  let { data, error } = await runMutation(payload as Record<string, unknown>)
+  if (error && hasMissingUserIdColumn(error)) {
+    const legacyPayload = { ...payload } as Record<string, unknown>
+    delete legacyPayload.user_id
+    const retried = await runMutation(legacyPayload)
+    data = retried.data
+    error = retried.error
+  }
 
   if (error) {
     console.error('Error saving draft:', error)
@@ -122,6 +137,7 @@ export async function submitQuestionnaire(
 ) {
   const result = calculateBodyCode(answers, scoringQuestions)
   const code = result.code
+  const userId = await getCurrentAuthUserId()
 
   const now = new Date().toISOString()
   const payload = {
@@ -129,28 +145,29 @@ export async function submitQuestionnaire(
     calculated_code: code,
     status: 'completed' as const,
     completed_at: now,
-    updated_at: now
+    updated_at: now,
+    user_id: userId
   }
   let data: QuestionnaireResponse | null = null
   let error: unknown = null
 
-  if (questionnaireId) {
-    const updated = await supabase
-      .from('questionnaire_responses')
-      .update(payload)
-      .eq('id', questionnaireId)
+  const runMutation = (nextPayload: Record<string, unknown>) =>
+    (questionnaireId
+      ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
+      : supabase.from('questionnaire_responses').insert(nextPayload))
       .select()
       .single()
-    data = updated.data
-    error = updated.error
-  } else {
-    const inserted = await supabase
-      .from('questionnaire_responses')
-      .insert(payload)
-      .select()
-      .single()
-    data = inserted.data
-    error = inserted.error
+
+  const firstTry = await runMutation(payload as Record<string, unknown>)
+  data = firstTry.data
+  error = firstTry.error
+
+  if (error && hasMissingUserIdColumn(error)) {
+    const legacyPayload = { ...payload } as Record<string, unknown>
+    delete legacyPayload.user_id
+    const retried = await runMutation(legacyPayload)
+    data = retried.data
+    error = retried.error
   }
 
   if (error) {
