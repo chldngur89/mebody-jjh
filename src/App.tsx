@@ -33,16 +33,16 @@ type Screen =
 type ResultEntrySource = 'questionnaire' | 'quick' | 'shared';
 
 export default function App() {
-   const previewScreen = new URLSearchParams(window.location.search).get('ui');
-   const forceLandingPreview = previewScreen === 'landing';
-   const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
+   const previewScreenParam = new URLSearchParams(window.location.search).get('ui');
+   const previewScreen = (['landing', 'auth'] as const).find((screen) => screen === previewScreenParam);
+   const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
    const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
    const [bodyCode, setBodyCode] = useState<string | undefined>();
    const [currentUser, setCurrentUser] = useState<User | null>(null);
    const [latestResultId, setLatestResultId] = useState<string | undefined>();
    const [selectedPlanCode, setSelectedPlanCode] = useState('pro_monthly');
    const [resultEntrySource, setResultEntrySource] = useState<ResultEntrySource>('quick');
-   const [isBootstrapping, setIsBootstrapping] = useState(!forceLandingPreview);
+   const [isBootstrapping, setIsBootstrapping] = useState(!previewScreen);
    const mountedRef = useRef(true);
 
    const openResultScreen = (id: string, source: ResultEntrySource) => {
@@ -78,8 +78,8 @@ export default function App() {
    };
 
    useEffect(() => {
-     if (forceLandingPreview) {
-       setCurrentScreen('landing');
+     if (previewScreen) {
+       setCurrentScreen(previewScreen);
        setIsBootstrapping(false);
        return;
      }
@@ -163,7 +163,7 @@ export default function App() {
        mountedRef.current = false;
        authUnsubscribe?.();
      };
-   }, [forceLandingPreview]);
+   }, [previewScreen]);
 
    useEffect(() => {
      const params = new URLSearchParams(window.location.search);

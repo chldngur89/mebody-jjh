@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, UserRound } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Sparkles, UserRound } from 'lucide-react';
 import { signInWithEmail, signOutAccount, signUpWithEmail, upsertProfileFromUser } from '../api/account';
 
 interface AuthScreenProps {
@@ -71,49 +71,163 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
-      <div className="h-full flex flex-col">
-        <div className="flex-shrink-0 bg-white/85 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
+    <div
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        height: '844px',
+        borderRadius: '32px',
+        background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #ecfeff 100%)',
+        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+      }}
+    >
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '80px',
+            left: '-80px',
+            width: '384px',
+            height: '384px',
+            borderRadius: '999px',
+            background: 'rgba(52, 211, 153, 0.20)',
+            filter: 'blur(64px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '80px',
+            right: '-80px',
+            width: '384px',
+            height: '384px',
+            borderRadius: '999px',
+            background: 'rgba(45, 212, 191, 0.20)',
+            filter: 'blur(64px)',
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          height: '100%',
+          flexDirection: 'column',
+          padding: '22px 24px 18px',
+          fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
+        }}
+      >
+        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'rgba(255,255,255,0.62)',
+              padding: '8px 16px',
+              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.10)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            <Sparkles size={18} color="#059669" />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#1f2937' }}>MEBODY</span>
+          </div>
+
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderRadius: '999px',
+                border: '1px solid rgba(255,255,255,0.28)',
+                background: 'rgba(255,255,255,0.62)',
+                padding: '8px 14px',
+                color: '#374151',
+                fontSize: '12px',
+                fontWeight: 600,
+                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.10)',
+                backdropFilter: 'blur(12px)',
+                cursor: 'pointer',
+              }}
             >
-              <ArrowLeft className="w-4 h-4 text-gray-600" />
+              <ArrowLeft size={14} />
+              뒤로
             </button>
           )}
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold tracking-[0.18em] text-emerald-600 mb-0.5">ACCOUNT</div>
-            <h1 className="text-[19px] font-bold text-gray-900 tracking-tight truncate">회원가입 / 로그인</h1>
-          </div>
         </div>
 
         <div
-          className="flex-1 overflow-y-auto px-6 py-6"
-          style={{ fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif' }}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            borderRadius: '24px',
+            background: 'rgba(255,255,255,0.74)',
+            boxShadow: '0 20px 46px rgba(15, 23, 42, 0.12)',
+            backdropFilter: 'blur(20px)',
+            padding: '22px',
+          }}
         >
+          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>ACCOUNT</div>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2, color: '#1f2937' }}>회원가입 / 로그인</h1>
+          </div>
+
           {user ? (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                <div className="inline-flex items-center gap-2 text-emerald-700 text-sm font-semibold mb-2">
-                  <CheckCircle2 className="w-4 h-4" />
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <div
+                style={{
+                  borderRadius: '16px',
+                  border: '1px solid rgba(167, 243, 208, 1)',
+                  background: 'rgba(236, 253, 245, 0.95)',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#047857', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                  <CheckCircle2 size={16} />
                   로그인 상태
                 </div>
-                <p className="text-sm text-emerald-900 break-all">{user.email}</p>
+                <p style={{ fontSize: '14px', color: '#064e3b', wordBreak: 'break-all' }}>{user.email}</p>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.13em] text-emerald-600 mb-1">NEXT STEP</div>
-                <h2 className="text-base font-bold text-gray-900 mb-2">재방문 자동 결과 / 멤버십 연결</h2>
-                <p className="text-sm text-gray-700 leading-7 [word-break:keep-all]">
+              <div
+                style={{
+                  borderRadius: '16px',
+                  border: '1px solid rgba(229,231,235,0.9)',
+                  background: 'linear-gradient(135deg, rgba(249,250,251,0.88) 0%, rgba(243,244,246,0.88) 100%)',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>NEXT STEP</div>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>재방문 자동 결과 / 멤버십 연결</h2>
+                <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
                   재방문 시 최근 결과로 바로 진입할 수 있고, 멤버십 결제를 통해 심화 리포트를 사용할 수 있습니다.
                 </p>
                 {onGoMembership && (
                   <button
                     type="button"
                     onClick={onGoMembership}
-                    className="mt-4 w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl font-semibold shadow-md shadow-emerald-500/25"
+                    style={{
+                      marginTop: '14px',
+                      display: 'inline-flex',
+                      width: '100%',
+                      height: '50px',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                      color: '#ffffff',
+                      fontSize: '15px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
                   >
                     멤버십/결제 페이지 이동
                   </button>
@@ -124,77 +238,192 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                 type="button"
                 onClick={handleSignOut}
                 disabled={loading}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                style={{
+                  display: 'inline-flex',
+                  width: '100%',
+                  height: '46px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(209,213,219,1)',
+                  background: 'rgba(255,255,255,0.84)',
+                  color: '#374151',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                }}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut size={16} />
                 로그아웃
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.13em] text-emerald-600 mb-1">WELCOME</div>
-                <p className="text-sm text-gray-700 leading-7 [word-break:keep-all]">
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <div
+                style={{
+                  borderRadius: '16px',
+                  border: '1px solid rgba(229,231,235,0.9)',
+                  background: 'linear-gradient(135deg, rgba(249,250,251,0.88) 0%, rgba(243,244,246,0.88) 100%)',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>WELCOME</div>
+                <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
                   회원가입 후 로그인하면 결과가 계정에 연결되어, 다음 방문에서 바로 결과를 확인할 수 있습니다.
                 </p>
               </div>
 
-              <div className="flex rounded-xl bg-gray-100 p-1">
+              <div
+                style={{
+                  display: 'flex',
+                  borderRadius: '12px',
+                  background: 'rgba(243,244,246,0.92)',
+                  padding: '4px',
+                  border: '1px solid rgba(229,231,235,0.95)',
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setMode('signup')}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${mode === 'signup' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                  style={{
+                    flex: 1,
+                    height: '38px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: mode === 'signup' ? '#ffffff' : 'transparent',
+                    color: mode === 'signup' ? '#111827' : '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    boxShadow: mode === 'signup' ? '0 4px 10px rgba(15,23,42,0.08)' : 'none',
+                    cursor: 'pointer',
+                  }}
                 >
                   회원가입
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('signin')}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${mode === 'signin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                  style={{
+                    flex: 1,
+                    height: '38px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: mode === 'signin' ? '#ffffff' : 'transparent',
+                    color: mode === 'signin' ? '#111827' : '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    boxShadow: mode === 'signin' ? '0 4px 10px rgba(15,23,42,0.08)' : 'none',
+                    cursor: 'pointer',
+                  }}
                 >
                   로그인
                 </button>
               </div>
 
-              <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 mb-1.5 block">이메일</span>
-                  <div className="flex items-center gap-2 px-3 py-3 border border-gray-300 rounded-xl bg-gray-50 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
-                    <Mail className="w-4 h-4 text-gray-500" />
+              <div
+                style={{
+                  display: 'grid',
+                  gap: '10px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(229,231,235,0.9)',
+                  background: 'rgba(255,255,255,0.86)',
+                  padding: '16px',
+                }}
+              >
+                <label style={{ display: 'block' }}>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>이메일</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '0 12px',
+                      height: '46px',
+                      border: '1px solid rgba(209,213,219,1)',
+                      borderRadius: '12px',
+                      background: 'rgba(249,250,251,0.98)',
+                    }}
+                  >
+                    <Mail size={16} color="#6b7280" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full bg-transparent outline-none text-sm text-gray-900"
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '14px',
+                        color: '#111827',
+                      }}
                     />
                   </div>
                 </label>
 
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 mb-1.5 block">비밀번호</span>
-                  <div className="flex items-center gap-2 px-3 py-3 border border-gray-300 rounded-xl bg-gray-50 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
-                    <Lock className="w-4 h-4 text-gray-500" />
+                <label style={{ display: 'block' }}>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>비밀번호</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '0 12px',
+                      height: '46px',
+                      border: '1px solid rgba(209,213,219,1)',
+                      borderRadius: '12px',
+                      background: 'rgba(249,250,251,0.98)',
+                    }}
+                  >
+                    <Lock size={16} color="#6b7280" />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="8자 이상 권장"
-                      className="w-full bg-transparent outline-none text-sm text-gray-900"
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '14px',
+                        color: '#111827',
+                      }}
                     />
                   </div>
                 </label>
 
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 mb-1.5 block">이름(선택)</span>
-                  <div className="flex items-center gap-2 px-3 py-3 border border-gray-300 rounded-xl bg-gray-50 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
-                    <UserRound className="w-4 h-4 text-gray-500" />
+                <label style={{ display: 'block' }}>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>이름(선택)</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '0 12px',
+                      height: '46px',
+                      border: '1px solid rgba(209,213,219,1)',
+                      borderRadius: '12px',
+                      background: 'rgba(249,250,251,0.98)',
+                    }}
+                  >
+                    <UserRound size={16} color="#6b7280" />
                     <input
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="표시 이름"
-                      className="w-full bg-transparent outline-none text-sm text-gray-900"
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '14px',
+                        color: '#111827',
+                      }}
                     />
                   </div>
                 </label>
@@ -203,12 +432,27 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl font-semibold shadow-md shadow-emerald-500/25 disabled:opacity-60"
+                  style={{
+                    display: 'inline-flex',
+                    width: '100%',
+                    height: '52px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                    color: '#ffffff',
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    boxShadow: '0 10px 22px rgba(20,184,166,0.30)',
+                  }}
                 >
                   {loading ? '처리 중...' : mode === 'signup' ? '회원가입하고 시작' : '로그인'}
                 </button>
 
-                <p className="text-[12px] text-gray-500 leading-5 [word-break:keep-all]">
+                <p style={{ fontSize: '12px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all' }}>
                   이메일 인증 설정이 켜져 있으면, 회원가입 후 메일 인증을 완료해야 로그인됩니다.
                 </p>
               </div>
@@ -216,12 +460,33 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
           )}
 
           {message && (
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm px-4 py-3">
+            <div
+              style={{
+                marginTop: '14px',
+                borderRadius: '12px',
+                border: '1px solid rgba(167, 243, 208, 1)',
+                background: 'rgba(236, 253, 245, 0.95)',
+                color: '#047857',
+                fontSize: '13px',
+                padding: '12px 14px',
+              }}
+            >
               {message}
             </div>
           )}
           {error && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-3 break-words">
+            <div
+              style={{
+                marginTop: '14px',
+                borderRadius: '12px',
+                border: '1px solid rgba(254, 205, 211, 1)',
+                background: 'rgba(254, 242, 242, 0.95)',
+                color: '#b91c1c',
+                fontSize: '13px',
+                padding: '12px 14px',
+                wordBreak: 'break-word',
+              }}
+            >
               {error}
             </div>
           )}
