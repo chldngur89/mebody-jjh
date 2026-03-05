@@ -1,37 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Play, Share2, Download, ArrowLeft } from 'lucide-react';
-import { fetchQuestionnaireResult } from '../api/questionnaire';
+import { fetchQuestionnaireResult, fetchQuestions } from '../api/questionnaire';
 import { fetchAppImages } from '../api/content';
 import { SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { getAxisLabels, getBodyCodeKeywords, getAxisScoreBreakdown, characterNames } from '../utils/bodyCodeCalculator';
-import type { QuestionnaireResponse, BodyCodeContent } from '../api/questionnaire';
-
-import FRRS_img from './figma/FRRS.png';
-import FRRF_img from './figma/FRRF.png';
-import FRLS_img from './figma/FRLS.png';
-import FRLF_img from './figma/FRLF.png';
-import FLRS_img from './figma/FLRS.png';
-import FLRF_img from './figma/FLRF.png';
-import FLLS_img from './figma/FLLS.png';
-import FLLF_img from './figma/FLLF.png';
-import CRRS_img from './figma/CRRS.png';
-import CRRF_img from './figma/CRRF.png';
-import CRLS_img from './figma/CRLS.png';
-import CRLF_img from './figma/CRLF.png';
-import CLRS_img from './figma/CLRS.png';
-import CLRF_img from './figma/CLRF.png';
-import CLLS_img from './figma/CLLS.png';
-import CLLF_img from './figma/CLLF.png';
-import bodyTypesImage from './figma/bodyTypesImage.png';
+import type { QuestionnaireResponse, BodyCodeContent, Question } from '../api/questionnaire';
 
 const BODY_CODES = ['FRRS', 'FRRF', 'FRLS', 'FRLF', 'FLRS', 'FLRF', 'FLLS', 'FLLF', 'CRRS', 'CRRF', 'CRLS', 'CRLF', 'CLRS', 'CLRF', 'CLLS', 'CLLF'] as const;
-const CHAR_FALLBACKS: Record<string, string> = {
-  FRRS: FRRS_img, FRRF: FRRF_img, FRLS: FRLS_img, FRLF: FRLF_img,
-  FLRS: FLRS_img, FLRF: FLRF_img, FLLS: FLLS_img, FLLF: FLLF_img,
-  CRRS: CRRS_img, CRRF: CRRF_img, CRLS: CRLS_img, CRLF: CRLF_img,
-  CLRS: CLRS_img, CLRF: CLRF_img, CLLS: CLLS_img, CLLF: CLLF_img,
-};
+const LOCAL_FALLBACK_IMAGE = '/icon.svg';
 
 const AXIS_BAR_COLORS = [
   { fill: 'bg-blue-500', track: 'bg-blue-100' },
@@ -54,9 +31,11 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
   const [error, setError] = useState<string | null>(null);
   const [appImages, setAppImages] = useState<Record<string, string>>({});
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
+  const [scoringQuestions, setScoringQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
     fetchAppImages().then(setAppImages);
+    fetchQuestions().then(setScoringQuestions).catch(() => setScoringQuestions([]));
   }, []);
 
   useEffect(() => {
@@ -80,14 +59,27 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
   const content = result?.body_code_content as BodyCodeContent | null;
   const axisLabels = result?.calculated_code ? getAxisLabels(result.calculated_code) : null;
   const keywords = result?.calculated_code ? getBodyCodeKeywords(result.calculated_code) : [];
-  const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers) : null;
+  const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
+
+  const resolveImage = useCallback(
+    (candidates: Array<string | undefined>) => {
+      for (const raw of candidates) {
+        const url = (raw || '').trim();
+        if (!url) continue;
+        // 샘플 SQL의 placeholder URL은 무시
+        if (url.includes('your-bucket.supabase.co')) continue;
+        if (!failedImageUrls.has(url)) return url;
+      }
+      return LOCAL_FALLBACK_IMAGE;
+    },
+    [failedImageUrls],
+  );
 
   const characterImages: Record<string, string> = {};
   for (const code of BODY_CODES) {
     const fromDb = appImages[`character_${code}`];
     const defaultUrl = SUPABASE_STORAGE_PUBLIC ? `${SUPABASE_STORAGE_PUBLIC}/characters/${code}.png` : '';
-    const preferred = fromDb || defaultUrl;
-    characterImages[code] = preferred && !failedImageUrls.has(preferred) ? preferred : CHAR_FALLBACKS[code];
+    characterImages[code] = resolveImage([fromDb, defaultUrl]);
   }
 
   const currentCharacterImage = bodyCode !== '----' ? characterImages[bodyCode] : null;
@@ -95,12 +87,87 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
   const bodyTypesPreferred =
     appImages.body_types_image ||
     (SUPABASE_STORAGE_PUBLIC ? `${SUPABASE_STORAGE_PUBLIC}/body-types/bodyTypesImage.png` : '');
-  const bodyTypesImageUrl =
-    bodyTypesPreferred && !failedImageUrls.has(bodyTypesPreferred) ? bodyTypesPreferred : bodyTypesImage;
+  const bodyTypesDefault = SUPABASE_STORAGE_PUBLIC ? `${SUPABASE_STORAGE_PUBLIC}/body-types/bodyTypesImage.png` : '';
+  const bodyTypesImageUrl = resolveImage([bodyTypesPreferred, bodyTypesDefault]);
 
   const markImageFailed = useCallback((url: string) => {
     setFailedImageUrls((s) => new Set(s).add(url));
   }, []);
+
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const shareUrl = questionnaireId ? `${baseUrl}?result=${questionnaireId}` : baseUrl;
+    const shareText = `나의 mebody 코드는 ${bodyCode} 입니다.`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'mebody 진단 결과',
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // 사용자가 공유를 취소하면 아래 클립보드 폴백으로 진행
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      window.alert('결과 링크를 복사했습니다.');
+    } catch {
+      window.prompt('아래 링크를 복사해 공유하세요.', shareUrl);
+    }
+  }, [bodyCode, questionnaireId]);
+
+  const handleDownload = useCallback(async () => {
+    const date = new Date().toISOString().slice(0, 10);
+    const filenameBase = `mebody-${bodyCode}-${date}`;
+
+    if (currentCharacterImage) {
+      try {
+        const res = await fetch(currentCharacterImage);
+        if (res.ok) {
+          const blob = await res.blob();
+          const ext = blob.type.includes('png') ? 'png' : blob.type.includes('jpeg') ? 'jpg' : 'img';
+          downloadBlob(blob, `${filenameBase}.${ext}`);
+          return;
+        }
+      } catch {
+        // 이미지 다운로드 실패 시 텍스트 요약으로 폴백
+      }
+    }
+
+    const textLines = [
+      'mebody 진단 결과',
+      `코드: ${bodyCode}`,
+      `캐릭터: ${content?.character_name || characterNames[bodyCode] || '-'}`,
+      '',
+      '축별 결과',
+      `- 목: ${axisLabels?.neck || '-'}`,
+      `- 어깨: ${axisLabels?.shoulder || '-'}`,
+      `- 골반: ${axisLabels?.pelvis || '-'}`,
+      `- 하체: ${axisLabels?.flexibility || '-'}`,
+      '',
+      `생성일: ${new Date().toLocaleString()}`,
+    ].join('\n');
+
+    downloadBlob(
+      new Blob([textLines], { type: 'text/plain;charset=utf-8' }),
+      `${filenameBase}.txt`
+    );
+  }, [axisLabels, bodyCode, content?.character_name, currentCharacterImage, downloadBlob]);
 
   const axisResultLetters = {
     neck: content?.neck_result ?? (bodyCode[0] || ''),
@@ -143,17 +210,34 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onNextPage, o
       <div className="h-full overflow-y-auto">
         <div className="sticky top-0 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-gray-900">진단 결과</h1>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               {(onBack ?? onRestart) && (
-                <button onClick={onBack ?? onRestart} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors" title="뒤로">
+                <button
+                  type="button"
+                  onClick={onBack ?? onRestart}
+                  className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
+                  title="뒤로"
+                >
                   <ArrowLeft className="w-4 h-4 text-gray-600" />
                 </button>
               )}
-              <button className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+              <h1 className="text-lg font-bold text-gray-900 tracking-tight">진단 결과</h1>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleShare}
+                className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                title="공유"
+              >
                 <Share2 className="w-4 h-4 text-gray-600" />
               </button>
-              <button className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                title="다운로드"
+              >
                 <Download className="w-4 h-4 text-gray-600" />
               </button>
             </div>

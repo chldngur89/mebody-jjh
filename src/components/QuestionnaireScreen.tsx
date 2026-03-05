@@ -16,8 +16,9 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSkipping, setIsSkipping] = useState(false);
 
-  const totalQuestions = 40;
+  const totalQuestions = questions.length || 40;
   const progress = ((currentQuestion - 1) / totalQuestions) * 100;
  
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -34,6 +35,12 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
       }
     }
     loadQuestions();
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, []);
 
   const currentQuestionData = questions.find(q => q.question_number === currentQuestion);
@@ -64,13 +71,52 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
       setCurrentQuestion(currentQuestion + 1);
     } else {
       try {
-        const result = await submitQuestionnaire(newAnswers);
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        let persistedId = questionnaireId;
+        if (!persistedId) {
+          const draft = await saveDraft(newAnswers);
+          persistedId = draft.id;
+          setQuestionnaireId(draft.id);
+        }
+        const result = await submitQuestionnaire(newAnswers, persistedId, questions);
         onComplete(result.id, result.calculated_code);
       } catch (error) {
         console.error('Failed to submit questionnaire:', error);
       }
     }
-  }, [currentQuestion, answers, saveDraftDebounced, onComplete]);
+  }, [currentQuestion, answers, questionnaireId, questions, saveDraftDebounced, onComplete]);
+
+  const handleSkipToResult = useCallback(async () => {
+    if (!questions.length || isSkipping) return;
+    setIsSkipping(true);
+
+    try {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      const skipAnswers = questions.reduce<Record<number, string>>((acc, q) => {
+        acc[q.question_number] = answers[q.question_number] ?? '②';
+        return acc;
+      }, {});
+      setAnswers(skipAnswers);
+
+      let persistedId = questionnaireId;
+      if (!persistedId) {
+        const draft = await saveDraft(skipAnswers);
+        persistedId = draft.id;
+        setQuestionnaireId(draft.id);
+      }
+      const result = await submitQuestionnaire(skipAnswers, persistedId, questions);
+      onComplete(result.id, result.calculated_code);
+    } catch (error) {
+      console.error('Failed to skip and submit questionnaire:', error);
+    } finally {
+      setIsSkipping(false);
+    }
+  }, [answers, isSkipping, onComplete, questionnaireId, questions]);
 
   if (isLoading) {
     return (
@@ -120,6 +166,22 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
               {Math.round(progress)}%
             </span>
           </div>
+
+          {/* TEMP: 테스트용 40문항 스킵 버튼 (원하면 이 블록만 삭제하면 됩니다) */}
+          <div className="mb-3 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSkipToResult}
+              disabled={isSkipping}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                isSkipping
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+              }`}
+            >
+              {isSkipping ? '결과 생성 중...' : '40문항 건너뛰고 결과 보기'}
+            </button>
+          </div>
           
           {/* Progress Bar */}
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -162,7 +224,9 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
           {/* Answer Options */}
           <div className="space-y-4">
             <button
+              type="button"
               onClick={() => handleAnswer('①')}
+              disabled={isSkipping}
               className="w-full bg-white border-2 border-gray-200 hover:border-emerald-500 hover:bg-emerald-50 py-6 rounded-2xl font-semibold text-lg text-gray-900 transition-all active:scale-95 flex items-center justify-between px-6 group"
             >
               <span>{currentQuestionData.option_1}</span>
@@ -172,7 +236,9 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
             </button>
         
             <button
+              type="button"
               onClick={() => handleAnswer('②')}
+              disabled={isSkipping}
               className="w-full bg-white border-2 border-gray-200 hover:border-gray-400 hover:bg-gray-50 py-6 rounded-2xl font-semibold text-lg text-gray-600 transition-all active:scale-95 flex items-center justify-between px-6 group"
             >
               <span>{currentQuestionData.option_2}</span>
@@ -182,7 +248,9 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
             </button>
         
             <button
+              type="button"
               onClick={() => handleAnswer('③')}
+              disabled={isSkipping}
               className="w-full bg-white border-2 border-gray-200 hover:border-emerald-500 hover:bg-emerald-50 py-6 rounded-2xl font-semibold text-lg text-gray-900 transition-all active:scale-95 flex items-center justify-between px-6 group"
             >
               <span>{currentQuestionData.option_3}</span>

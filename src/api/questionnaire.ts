@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { VER2_QUESTIONS } from '../data/ver2Questions'
-import { calculateBodyCode } from '../utils/bodyCodeCalculator'
+import { calculateBodyCode, type ScoringQuestion } from '../utils/bodyCodeCalculator'
 
 export interface Question {
   id: number
@@ -10,6 +10,8 @@ export interface Question {
   option_1: string
   option_2: string
   option_3: string
+  weight_a: number
+  weight_b: number
 }
 
 export interface QuestionnaireResponse {
@@ -42,8 +44,36 @@ export interface BodyCodeContent {
   }>
 }
 
-/** Ver2 문항 사용 (doc/ver2 문항 엑셀 기준). DB questions 테이블은 사용하지 않음 */
+/** 문항은 Supabase questions 테이블 우선, 실패 시 Ver2 로컬 데이터 폴백 */
 export async function fetchQuestions(): Promise<Question[]> {
+  const fallbackByNumber = new Map(VER2_QUESTIONS.map((q) => [q.question_number, q]))
+  const { data, error } = await supabase
+    .from('questions')
+    .select('id, question_number, axis, question_text, option_1, option_2, option_3, weight_a, weight_b')
+    .order('question_number', { ascending: true })
+
+  if (!error && data && data.length > 0) {
+    return data.map((q) => ({
+      // questions.id가 숫자가 아니면 question_number를 식별자로 사용
+      id: Number.isFinite(Number(q.id)) && Number(q.id) > 0 ? Number(q.id) : Number(q.question_number),
+      question_number: Number(q.question_number),
+      axis:
+        q.axis === 'neck' || q.axis === 'shoulder' || q.axis === 'pelvis' || q.axis === 'flexibility'
+          ? q.axis
+          : 'neck',
+      question_text: String(q.question_text ?? ''),
+      option_1: String(q.option_1 ?? ''),
+      option_2: String(q.option_2 ?? ''),
+      option_3: String(q.option_3 ?? ''),
+      weight_a: Number(q.weight_a ?? fallbackByNumber.get(Number(q.question_number))?.weight_a ?? 1),
+      weight_b: Number(q.weight_b ?? fallbackByNumber.get(Number(q.question_number))?.weight_b ?? 1),
+    }))
+  }
+
+  if (error) {
+    console.warn('fetchQuestions from Supabase failed. Falling back to local Ver2 questions.', error)
+  }
+
   return VER2_QUESTIONS.map((q) => ({
     id: q.id,
     question_number: q.question_number,
@@ -52,20 +82,28 @@ export async function fetchQuestions(): Promise<Question[]> {
     option_1: q.option_1,
     option_2: q.option_2,
     option_3: q.option_3,
+    weight_a: q.weight_a,
+    weight_b: q.weight_b,
   }))
 }
 
 export async function saveDraft(answers: Record<number, string>, questionnaireId?: string) {
-  const { data, error } = await supabase
-    .from('questionnaire_responses')
-    .upsert({
-      id: questionnaireId,
-      answers,
-      status: 'draft',
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'id'
-    })
+  const now = new Date().toISOString()
+  const payload = {
+    answers,
+    status: 'draft' as const,
+    updated_at: now
+  }
+  const query = questionnaireId
+    ? supabase
+        .from('questionnaire_responses')
+        .update(payload)
+        .eq('id', questionnaireId)
+    : supabase
+        .from('questionnaire_responses')
+        .insert(payload)
+
+  const { data, error } = await query
     .select()
     .single()
 
@@ -77,20 +115,43 @@ export async function saveDraft(answers: Record<number, string>, questionnaireId
   return data
 }
 
-export async function submitQuestionnaire(answers: Record<number, string>) {
-  const result = calculateBodyCode(answers)
+export async function submitQuestionnaire(
+  answers: Record<number, string>,
+  questionnaireId?: string,
+  scoringQuestions?: ScoringQuestion[],
+) {
+  const result = calculateBodyCode(answers, scoringQuestions)
   const code = result.code
 
-  const { data, error } = await supabase
-    .from('questionnaire_responses')
-    .insert({
-      answers,
-      calculated_code: code,
-      status: 'completed',
-      completed_at: new Date().toISOString()
-    })
-    .select()
-    .single()
+  const now = new Date().toISOString()
+  const payload = {
+    answers,
+    calculated_code: code,
+    status: 'completed' as const,
+    completed_at: now,
+    updated_at: now
+  }
+  let data: QuestionnaireResponse | null = null
+  let error: unknown = null
+
+  if (questionnaireId) {
+    const updated = await supabase
+      .from('questionnaire_responses')
+      .update(payload)
+      .eq('id', questionnaireId)
+      .select()
+      .single()
+    data = updated.data
+    error = updated.error
+  } else {
+    const inserted = await supabase
+      .from('questionnaire_responses')
+      .insert(payload)
+      .select()
+      .single()
+    data = inserted.data
+    error = inserted.error
+  }
 
   if (error) {
     console.error('Error submitting questionnaire:', error)
@@ -132,4 +193,3 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
     body_code_content: contentData
   }
 }
-

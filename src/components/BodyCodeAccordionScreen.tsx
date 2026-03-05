@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { Fragment, useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchResultSectionsByBodyCode, type ResultSectionItem } from '../api/content';
 import { getAxisLabels, characterNames } from '../utils/bodyCodeCalculator';
@@ -16,7 +16,55 @@ const SECTION_DEFAULT_TITLES: Record<string, string> = {
 function renderBold(text: string) {
   const parts = text.split(/\*\*(.*?)\*\*/g);
   return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i} className="font-semibold text-gray-900">{part}</strong> : part
+    i % 2 === 1 ? (
+      <strong key={i} className="font-semibold text-gray-900">
+        {part}
+      </strong>
+    ) : (
+      <Fragment key={i}>{part}</Fragment>
+    )
+  );
+}
+
+function renderReadableText(text: string) {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  const blocks = paragraphs.length ? paragraphs : [text];
+
+  return (
+    <div className="space-y-3 text-[15px] text-gray-700 leading-8 tracking-[-0.01em] [word-break:keep-all]">
+      {blocks.map((block, blockIdx) => {
+        const lines = block
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean);
+        const isBulletList = lines.length > 1 && lines.every((line) => /^[-•]\s?/.test(line));
+
+        if (isBulletList) {
+          return (
+            <ul key={blockIdx} className="list-disc pl-5 space-y-1 marker:text-emerald-500">
+              {lines.map((line, lineIdx) => (
+                <li key={lineIdx}>{renderBold(line.replace(/^[-•]\s?/, ''))}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        return (
+          <p key={blockIdx}>
+            {lines.map((line, lineIdx) => (
+              <Fragment key={lineIdx}>
+                {lineIdx > 0 && <br />}
+                {renderBold(line)}
+              </Fragment>
+            ))}
+          </p>
+        );
+      })}
+    </div>
   );
 }
 
@@ -77,7 +125,7 @@ export function BodyCodeAccordionScreen({ bodyCode, onBack, onLearnMore }: BodyC
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
       <div className="h-full flex flex-col">
-        <div className="flex-shrink-0 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
+        <div className="flex-shrink-0 bg-white/85 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
           {onBack && (
             <button
               type="button"
@@ -87,25 +135,33 @@ export function BodyCodeAccordionScreen({ bodyCode, onBack, onLearnMore }: BodyC
               <ArrowLeft className="w-4 h-4 text-gray-600" />
             </button>
           )}
-          <h1 className="text-lg font-bold text-gray-900">
-            {loading ? '로딩 중...' : `나의 mebody 코드${bodyCode ? ` (${bodyCode})` : ''}`}
-          </h1>
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold tracking-[0.18em] text-emerald-600 mb-0.5">BODY DETAILS</div>
+            <h1 className="text-[17px] font-bold tracking-tight text-gray-900 truncate">
+              {loading ? '로딩 중...' : `나의 mebody 코드${bodyCode ? ` (${bodyCode})` : ''}`}
+            </h1>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div
+          className="flex-1 overflow-y-auto px-6 py-6"
+          style={{ fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif' }}
+        >
           <div className="space-y-3">
             {mergedSections.map((section, index) => {
               const isOpen = openIndex === index;
               return (
                 <section
                   key={section.section_key}
-                  className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden"
+                  className={`bg-white border rounded-3xl shadow-sm overflow-hidden transition-all ${
+                    isOpen ? 'border-emerald-200 shadow-md' : 'border-gray-200'
+                  }`}
                 >
                   <button
                     type="button"
                     onClick={() => setOpenIndex(isOpen ? null : index)}
                     className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50/80 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-gray-800">
+                    <span className="text-[15px] font-semibold text-gray-900 leading-6 pr-4">
                       {section.section_key}) {section.title}
                     </span>
                     {isOpen ? (
@@ -115,9 +171,9 @@ export function BodyCodeAccordionScreen({ bodyCode, onBack, onLearnMore }: BodyC
                     )}
                   </button>
                   {isOpen && section.content && (
-                    <div className="border-t border-gray-100 px-5 pb-5 pt-2">
-                      <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                        {renderBold(section.content)}
+                    <div className="border-t border-gray-100 px-5 pb-5 pt-4 bg-gradient-to-b from-white to-gray-50/70">
+                      <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4 shadow-sm">
+                        {renderReadableText(section.content)}
                       </div>
                     </div>
                   )}
@@ -131,7 +187,7 @@ export function BodyCodeAccordionScreen({ bodyCode, onBack, onLearnMore }: BodyC
             <button
               type="button"
               onClick={onLearnMore}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all active:scale-[0.98]"
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-2xl font-semibold tracking-wide shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all active:scale-[0.98]"
             >
               내 mebody 코드 더 알아보기
             </button>

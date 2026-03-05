@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LandingScreen } from './components/LandingScreen';
 import { ConsentScreen } from './components/ConsentScreen';
 import { DiagnosisIntroScreen } from './components/DiagnosisIntroScreen';
@@ -17,6 +17,7 @@ export default function App() {
 
    const handleQuestionnaireComplete = (id: string, code: string) => {
      setQuestionnaireId(id);
+     setBodyCode(code);
      setCurrentScreen('analyzing');
    };
 
@@ -33,6 +34,27 @@ export default function App() {
    const handleResultLoad = (code: string) => {
      setBodyCode(code);
    };
+
+   useEffect(() => {
+     const params = new URLSearchParams(window.location.search);
+     const sharedResultId = params.get('result');
+     if (sharedResultId) {
+       setQuestionnaireId(sharedResultId);
+       setCurrentScreen('result');
+     }
+   }, []);
+
+   useEffect(() => {
+     const params = new URLSearchParams(window.location.search);
+     if (questionnaireId) {
+       params.set('result', questionnaireId);
+     } else {
+       params.delete('result');
+     }
+     const query = params.toString();
+     const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+     window.history.replaceState(null, '', nextUrl);
+   }, [questionnaireId]);
 
   return (
      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

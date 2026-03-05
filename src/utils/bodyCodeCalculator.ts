@@ -10,6 +10,13 @@ import {
   type AxisKey,
 } from '../data/ver2Questions';
 
+export interface ScoringQuestion {
+  question_number: number
+  axis: AxisKey
+  weight_a: number
+  weight_b: number
+}
+
 export interface BodyCodeResult {
   code: string
   /** 축별 저신뢰도 여부 (해당 축 획득 점수가 최대의 40% 미만) */
@@ -19,14 +26,15 @@ export interface BodyCodeResult {
 }
 
 /** Ver2: 가중치 합산 후 더 높은 쪽으로 코드 결정 */
-export function calculateBodyCode(answers: Record<number, string>): BodyCodeResult {
+export function calculateBodyCode(answers: Record<number, string>, scoringQuestions?: ScoringQuestion[]): BodyCodeResult {
   const axisKeys: AxisKey[] = ['neck', 'shoulder', 'pelvis', 'flexibility'];
+  const questionSet = scoringQuestions?.length ? scoringQuestions : VER2_QUESTIONS;
   const lowConfidence: Partial<Record<AxisKey, boolean>> = {};
   const borderline: Partial<Record<AxisKey, boolean>> = {};
   let code = '';
 
   for (const axis of axisKeys) {
-    const axisQuestions = VER2_QUESTIONS.filter((q) => q.axis === axis);
+    const axisQuestions = questionSet.filter((q) => q.axis === axis);
     let scoreA = 0;
     let scoreB = 0;
 
@@ -39,7 +47,7 @@ export function calculateBodyCode(answers: Record<number, string>): BodyCodeResu
 
     const total = scoreA + scoreB;
     const maxScore = axisQuestions.reduce((s, q) => s + q.weight_a + q.weight_b, 0) / 2; // 한쪽 최대
-    const threshold = VER2_LOW_CONFIDENCE_THRESHOLD[axis];
+    const threshold = scoringQuestions?.length ? maxScore * 0.4 : VER2_LOW_CONFIDENCE_THRESHOLD[axis];
     if (total < threshold) lowConfidence[axis] = true;
 
     const ratioA = total > 0 ? scoreA / total : 0.5;
@@ -117,12 +125,13 @@ export interface AxisPercent {
   percentRight: number
 }
 
-export function getAxisScoreBreakdown(answers: Record<number, string>): Record<AxisKey, AxisPercent> {
+export function getAxisScoreBreakdown(answers: Record<number, string>, scoringQuestions?: ScoringQuestion[]): Record<AxisKey, AxisPercent> {
   const axisKeys: AxisKey[] = ['neck', 'shoulder', 'pelvis', 'flexibility'];
+  const questionSet = scoringQuestions?.length ? scoringQuestions : VER2_QUESTIONS;
   const result = {} as Record<AxisKey, AxisPercent>;
 
   for (const axis of axisKeys) {
-    const axisQuestions = VER2_QUESTIONS.filter((q) => q.axis === axis);
+    const axisQuestions = questionSet.filter((q) => q.axis === axis);
     let scoreA = 0;
     let scoreB = 0;
 

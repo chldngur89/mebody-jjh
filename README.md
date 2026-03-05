@@ -48,7 +48,8 @@ mebody/
 │   ├── utils/
 │   │   └── bodyCodeCalculator.ts  # 체형 코드 계산
 │   └── App.tsx                 # 메인 앱 (화면 전환)
-├── figma/                      # Figma 이미지 에셋
+├── public/                     # 앱 정적 에셋 (아이콘/축 아이콘)
+├── supabase/                   # Supabase SQL/운영 문서
 ├── .env                        # 환경변수 (로컬)
 ├── .env.production             # 프로덕션 환경변수
 ├── vite.config.ts              # Vite 설정
@@ -194,9 +195,10 @@ npm run build
 
 ### 이미지 에셋 추가
 
-Figma 이미지는 `src/components/figma/` 폴더에 추가:
-- 개별 캐릭터: `{CODE}.png` (예: FLRF.png)
-- 16개 전체: `bodyTypesImage.png`
+이미지는 Supabase Storage + `app_images` 테이블 키로 관리합니다.
+- 개별 캐릭터: `character_FRRS` ... `character_CLLF`
+- 16개 전체: `body_types_image`
+- 축 아이콘: `axis_neck`, `axis_shoulder`, `axis_pelvis`, `axis_flexibility`
 
 ## 📈 향후 개발 로드맵
 

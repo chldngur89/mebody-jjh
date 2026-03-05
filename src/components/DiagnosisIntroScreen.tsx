@@ -8,34 +8,34 @@ interface DiagnosisIntroScreenProps {
 
 export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenProps) {
   return (
-    <div className="bg-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
+    <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
       <div className="h-full flex flex-col">
         
         {/* Header */}
-        <div className="px-6 pt-8 pb-6 flex items-center justify-center relative">
+        <div className="flex-shrink-0 bg-white/85 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="absolute left-6 top-8 w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 text-gray-600" />
             </button>
           )}
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              나의 mebody CODE 찾기
-            </h1>
-            <p className="text-gray-600">
-              40개의 질문으로 체형을 분석합니다
-            </p>
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold tracking-[0.18em] text-emerald-600 mb-0.5">DIAGNOSIS INTRO</div>
+            <h1 className="text-[19px] font-bold text-gray-900 tracking-tight truncate">나의 mebody CODE 찾기</h1>
+            <p className="text-[13px] text-gray-600 leading-5 mt-1">40개의 질문으로 체형을 분석합니다</p>
           </div>
         </div>
 
         {/* 4 Axes Explanation - Ver2 축 아이콘 통일 */}
-        <div className="flex-1 px-6 overflow-y-auto">
+        <div
+          className="flex-1 px-6 py-6 overflow-y-auto"
+          style={{ fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif' }}
+        >
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">4가지 측정 기준</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-4 tracking-wide">4가지 측정 기준</h3>
             
             {/* Axis 1 - 목 */}
             <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-5 mb-3 border border-blue-200/50">
@@ -107,8 +107,8 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
           </div>
 
           {/* Info Card */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <p className="text-sm text-gray-600 text-center">
+          <div className="bg-white rounded-2xl p-5 mb-6 border border-gray-200 shadow-sm">
+            <p className="text-[14px] leading-7 text-gray-700 text-center [word-break:keep-all]">
               각 질문에 편안하게 답변해주세요.<br />
               정답은 없으며, 솔직한 답변이 가장 정확한 결과를 만듭니다.
             </p>
