@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Play, Share2, Download, ArrowLeft } from 'lucide-react';
+import { Play, Share2, Download, ArrowLeft, LockKeyhole, Sparkles, ChevronRight } from 'lucide-react';
 import { fetchQuestionnaireResult, fetchQuestions } from '../api/questionnaire';
 import { fetchAppImages } from '../api/content';
 import { SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { getAxisLabels, getBodyCodeKeywords, getAxisScoreBreakdown, characterNames } from '../utils/bodyCodeCalculator';
+import { buildAdvancedTagAnalysisFromStored } from '../utils/advancedTagEngine';
 import type { QuestionnaireResponse, BodyCodeContent, Question } from '../api/questionnaire';
 
 const BODY_CODES = ['FRRS', 'FRRF', 'FRLS', 'FRLF', 'FLRS', 'FLRF', 'FLLS', 'FLLF', 'CRRS', 'CRRF', 'CRLS', 'CRLF', 'CLRS', 'CLRF', 'CLLS', 'CLLF'] as const;
@@ -26,6 +27,7 @@ interface ResultScreenProps {
   isLoggedIn?: boolean;
   onGoAuth?: () => void;
   onGoMembership?: () => void;
+  onGoDeepDive?: () => void;
 }
 
 export function ResultScreen({
@@ -37,6 +39,7 @@ export function ResultScreen({
   isLoggedIn = false,
   onGoAuth,
   onGoMembership,
+  onGoDeepDive,
 }: ResultScreenProps) {
   const [result, setResult] = useState<QuestionnaireResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +75,20 @@ export function ResultScreen({
   const axisLabels = result?.calculated_code ? getAxisLabels(result.calculated_code) : null;
   const keywords = result?.calculated_code ? getBodyCodeKeywords(result.calculated_code) : [];
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
+  const advancedTags = result
+    ? buildAdvancedTagAnalysisFromStored(
+        result.advanced_preview_tags,
+        result.advanced_confirmed_tags,
+        result.answers,
+        scoringQuestions,
+      )
+    : null;
+  const advancedPreviewItems = advancedTags
+    ? [...advancedTags.previewTags, ...advancedTags.confirmedTags].slice(0, 4)
+    : [];
+  const advancedHiddenCount = advancedTags
+    ? advancedTags.previewTags.length + advancedTags.confirmedTags.length - advancedPreviewItems.length
+    : 0;
 
   const resolveImage = useCallback(
     (candidates: Array<string | undefined>) => {
@@ -186,6 +203,15 @@ export function ResultScreen({
     shoulder: content?.shoulder_result ?? (bodyCode[1] || ''),
     pelvis: content?.pelvis_result ?? (bodyCode[2] || ''),
     flexibility: content?.flexibility_result ?? (bodyCode[3] || ''),
+  };
+
+  const handleDeepDive = () => {
+    if (!isLoggedIn) {
+      onGoAuth?.();
+      return;
+    }
+
+    onGoDeepDive?.();
   };
 
   if (isLoading) {
@@ -311,6 +337,86 @@ export function ResultScreen({
                 왜 &apos;{content?.character_name || characterNames[bodyCode]}&apos;인가요?
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{content.description}</p>
+            </div>
+          )}
+
+          {advancedTags && advancedPreviewItems.length > 0 && (
+            <div className="mb-6 rounded-[28px] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-5 shadow-[0_20px_40px_rgba(16,185,129,0.10)]">
+              <div className="mb-4 flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-semibold tracking-[0.14em] text-emerald-600">ADVANCED PREVIEW</div>
+                  <h3 className="mt-1 text-[19px] font-bold tracking-tight text-gray-900">심화 버전 태그 미리보기</h3>
+                  <p className="mt-1 text-sm leading-6 text-gray-600 [word-break:keep-all]">
+                    당신의 답변에서 추가로 확인할 만한 패턴이 감지되었습니다. 원인을 확정하면 루틴의 순서와 비중이 더 정교하게 바뀝니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {advancedPreviewItems.map((tag) => {
+                  const isPreview = tag.status === 'preview';
+                  return (
+                    <div
+                      key={tag.key}
+                      className={`rounded-2xl border p-4 ${
+                        isPreview
+                          ? 'border-gray-200 bg-white/90'
+                          : 'border-emerald-200 bg-emerald-50/90'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${
+                            isPreview ? 'bg-gray-100 text-gray-500' : 'bg-emerald-500 text-white'
+                          }`}
+                        >
+                          {isPreview ? <LockKeyhole className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-bold text-gray-900">{tag.name}</span>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                isPreview
+                                  ? 'border border-gray-200 bg-gray-100 text-gray-600'
+                                  : 'border border-emerald-200 bg-white text-emerald-700'
+                              }`}
+                            >
+                              {isPreview ? `추가 ${tag.followUpQuestions}문항` : '지금 감지됨'}
+                            </span>
+                          </div>
+                          <div className="text-sm font-semibold text-gray-800">{tag.title}</div>
+                          <p className="mt-1 text-sm leading-6 text-gray-600 [word-break:keep-all]">{tag.reason}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {advancedHiddenCount > 0 && (
+                <div className="mt-3 text-xs font-medium text-gray-500">
+                  이외에도 {advancedHiddenCount}개의 패턴이 더 감지되었습니다.
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleDeepDive}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-4 text-[15px] font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl"
+              >
+                <span>{isLoggedIn ? '심화 태그 분석 시작하기' : '회원가입 후 내 mebody 코드 더 알아보기'}</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+
+              <p className="mt-3 text-xs leading-5 text-gray-500 [word-break:keep-all]">
+                {isLoggedIn
+                  ? '로그인 상태에서는 심화 안내 화면으로 바로 넘어가고, 다음 단계에서 추가 문항과 맞춤 관리 플로우를 이어서 진행할 수 있습니다.'
+                  : '비회원 상태에서는 먼저 회원가입/로그인을 진행한 뒤, 심화 태그 확인 플로우로 이어집니다.'}
+              </p>
             </div>
           )}
 

@@ -11,6 +11,7 @@ import { BodyCodeAccordionScreen } from './components/BodyCodeAccordionScreen';
 import { AuthScreen } from './components/AuthScreen';
 import { MembershipScreen } from './components/MembershipScreen';
 import { CheckoutScreen } from './components/CheckoutScreen';
+import { AdvancedPreviewScreen } from './components/AdvancedPreviewScreen';
 import { fetchLatestCompletedResultIdForUser, upsertProfileFromUser } from './api/account';
 import { supabase } from './lib/supabase';
 
@@ -34,7 +35,7 @@ type ResultEntrySource = 'questionnaire' | 'quick' | 'shared';
 
 export default function App() {
    const previewScreenParam = new URLSearchParams(window.location.search).get('ui');
-   const previewScreen = (['landing', 'auth'] as const).find((screen) => screen === previewScreenParam);
+   const previewScreen = (['landing', 'auth', 'advanced'] as const).find((screen) => screen === previewScreenParam);
    const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
    const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
    const [bodyCode, setBodyCode] = useState<string | undefined>();
@@ -43,7 +44,13 @@ export default function App() {
    const [selectedPlanCode, setSelectedPlanCode] = useState('pro_monthly');
    const [resultEntrySource, setResultEntrySource] = useState<ResultEntrySource>('quick');
    const [isBootstrapping, setIsBootstrapping] = useState(!previewScreen);
+   const [authReturnScreen, setAuthReturnScreen] = useState<Screen>('landing');
    const mountedRef = useRef(true);
+
+   const openAuth = (returnScreen: Screen) => {
+     setAuthReturnScreen(returnScreen);
+     setCurrentScreen('auth');
+   };
 
    const openResultScreen = (id: string, source: ResultEntrySource) => {
      setQuestionnaireId(id);
@@ -209,7 +216,7 @@ export default function App() {
              hasQuickResult={Boolean(latestResultId)}
              isLoggedIn={Boolean(currentUser)}
              userEmail={currentUser?.email}
-             onAccount={() => setCurrentScreen('auth')}
+             onAccount={() => openAuth('landing')}
              onMembership={() => setCurrentScreen(currentUser ? 'membership' : 'auth')}
            />
          )}
@@ -245,8 +252,9 @@ export default function App() {
              onNextPage={() => setCurrentScreen('resultGuide')}
              onResultLoad={handleResultLoad}
              isLoggedIn={Boolean(currentUser)}
-             onGoAuth={() => setCurrentScreen('auth')}
+             onGoAuth={() => openAuth('result')}
              onGoMembership={() => setCurrentScreen(currentUser ? 'membership' : 'auth')}
+             onGoDeepDive={() => (currentUser ? setCurrentScreen('advanced') : openAuth('advanced'))}
            />
          )}
          {currentScreen === 'resultGuide' && (
@@ -264,22 +272,19 @@ export default function App() {
            />
          )}
          {currentScreen === 'advanced' && (
-           <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center px-6" style={{ height: '844px' }}>
-             <p className="text-gray-600 mb-6 text-center">심화 버전 (태그 분석·루틴 우선순위)은 MVP·파일럿 테스트 후 제공 예정입니다.</p>
-             <button
-               type="button"
-               onClick={() => setCurrentScreen('resultGuide')}
-               className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-200"
-             >
-               자세 사용 설명서로 돌아가기
-             </button>
-           </div>
+           <AdvancedPreviewScreen
+             questionnaireId={questionnaireId}
+             isLoggedIn={Boolean(currentUser)}
+             onBack={() => setCurrentScreen('result')}
+             onGoMembership={() => setCurrentScreen(currentUser ? 'membership' : 'auth')}
+             onGoAuth={() => openAuth('advanced')}
+           />
          )}
          {currentScreen === 'auth' && (
            <AuthScreen
              user={currentUser}
-             onBack={() => setCurrentScreen('landing')}
-             onSignedIn={() => setCurrentScreen('landing')}
+             onBack={() => setCurrentScreen(authReturnScreen)}
+             onSignedIn={() => setCurrentScreen(authReturnScreen)}
              onGoMembership={() => setCurrentScreen('membership')}
            />
          )}
@@ -287,7 +292,7 @@ export default function App() {
            <MembershipScreen
              user={currentUser}
              onBack={() => setCurrentScreen('landing')}
-             onRequireAuth={() => setCurrentScreen('auth')}
+             onRequireAuth={() => openAuth('membership')}
              onSelectPlan={(planCode) => {
                setSelectedPlanCode(planCode);
                setCurrentScreen('checkout');
@@ -299,7 +304,7 @@ export default function App() {
              user={currentUser}
              planCode={selectedPlanCode}
              onBack={() => setCurrentScreen('membership')}
-             onRequireAuth={() => setCurrentScreen('auth')}
+             onRequireAuth={() => openAuth('checkout')}
              onComplete={() => setCurrentScreen('membership')}
            />
          )}

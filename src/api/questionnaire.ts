@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { VER2_QUESTIONS } from '../data/ver2Questions'
 import { calculateBodyCode, type ScoringQuestion } from '../utils/bodyCodeCalculator'
+import { analyzeAdvancedTags, type AdvancedTag } from '../utils/advancedTagEngine'
 
 export interface Question {
   id: number
@@ -22,7 +23,13 @@ export interface QuestionnaireResponse {
   created_at: string
   updated_at: string
   completed_at?: string
+  deep_status?: DeepStatus
+  advanced_preview_tags?: AdvancedTag[]
+  advanced_confirmed_tags?: AdvancedTag[]
+  advanced_followup_answers?: Record<string, unknown>
 }
+
+export type DeepStatus = 'not_started' | 'previewed' | 'in_progress' | 'completed' | 'retest_required'
 
 export interface BodyCodeContent {
   body_code: string
@@ -44,9 +51,58 @@ export interface BodyCodeContent {
   }>
 }
 
-function hasMissingUserIdColumn(error: unknown): boolean {
-  const text = String((error as { message?: string } | null)?.message ?? error ?? '').toLowerCase()
-  return text.includes('user_id') && text.includes('does not exist')
+const OPTIONAL_RESPONSE_COLUMNS = [
+  'user_id',
+  'deep_status',
+  'advanced_preview_tags',
+  'advanced_confirmed_tags',
+  'advanced_followup_answers',
+] as const
+
+function getErrorText(error: unknown): string {
+  return String((error as { message?: string } | null)?.message ?? error ?? '').toLowerCase()
+}
+
+function stripUnsupportedColumns(payload: Record<string, unknown>, error: unknown): Record<string, unknown> | null {
+  const text = getErrorText(error)
+  if (!text.includes('does not exist')) return null
+
+  let removed = false
+  const nextPayload = { ...payload }
+
+  for (const column of OPTIONAL_RESPONSE_COLUMNS) {
+    if (column in nextPayload && text.includes(column)) {
+      delete nextPayload[column]
+      removed = true
+    }
+  }
+
+  return removed ? nextPayload : null
+}
+
+async function mutateQuestionnaireResponse(questionnaireId: string | undefined, payload: Record<string, unknown>) {
+  let nextPayload = { ...payload }
+
+  while (true) {
+    const { data, error } = await (
+      questionnaireId
+        ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
+        : supabase.from('questionnaire_responses').insert(nextPayload)
+    )
+      .select()
+      .single()
+
+    if (!error) return data
+
+    const strippedPayload = stripUnsupportedColumns(nextPayload, error)
+    if (strippedPayload) {
+      nextPayload = strippedPayload
+      continue
+    }
+
+    console.error('Error mutating questionnaire response:', error)
+    throw error
+  }
 }
 
 async function getCurrentAuthUserId(): Promise<string | null> {
@@ -106,28 +162,7 @@ export async function saveDraft(answers: Record<number, string>, questionnaireId
     updated_at: now,
     user_id: userId
   }
-  const runMutation = (nextPayload: Record<string, unknown>) =>
-    (questionnaireId
-      ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
-      : supabase.from('questionnaire_responses').insert(nextPayload))
-      .select()
-      .single()
-
-  let { data, error } = await runMutation(payload as Record<string, unknown>)
-  if (error && hasMissingUserIdColumn(error)) {
-    const legacyPayload = { ...payload } as Record<string, unknown>
-    delete legacyPayload.user_id
-    const retried = await runMutation(legacyPayload)
-    data = retried.data
-    error = retried.error
-  }
-
-  if (error) {
-    console.error('Error saving draft:', error)
-    throw error
-  }
-
-  return data
+  return mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
 }
 
 export async function submitQuestionnaire(
@@ -138,6 +173,9 @@ export async function submitQuestionnaire(
   const result = calculateBodyCode(answers, scoringQuestions)
   const code = result.code
   const userId = await getCurrentAuthUserId()
+  const advancedTags = analyzeAdvancedTags(answers, scoringQuestions)
+  const nextDeepStatus: DeepStatus =
+    advancedTags.previewTags.length > 0 || advancedTags.confirmedTags.length > 0 ? 'previewed' : 'not_started'
 
   const now = new Date().toISOString()
   const payload = {
@@ -146,36 +184,34 @@ export async function submitQuestionnaire(
     status: 'completed' as const,
     completed_at: now,
     updated_at: now,
-    user_id: userId
+    user_id: userId,
+    deep_status: nextDeepStatus,
+    advanced_preview_tags: advancedTags.previewTags,
+    advanced_confirmed_tags: advancedTags.confirmedTags,
   }
-  let data: QuestionnaireResponse | null = null
-  let error: unknown = null
-
-  const runMutation = (nextPayload: Record<string, unknown>) =>
-    (questionnaireId
-      ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
-      : supabase.from('questionnaire_responses').insert(nextPayload))
-      .select()
-      .single()
-
-  const firstTry = await runMutation(payload as Record<string, unknown>)
-  data = firstTry.data
-  error = firstTry.error
-
-  if (error && hasMissingUserIdColumn(error)) {
-    const legacyPayload = { ...payload } as Record<string, unknown>
-    delete legacyPayload.user_id
-    const retried = await runMutation(legacyPayload)
-    data = retried.data
-    error = retried.error
-  }
-
-  if (error) {
-    console.error('Error submitting questionnaire:', error)
-    throw error
-  }
+  const data = await mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
 
   return { ...data, body_code_meta: result }
+}
+
+interface SaveAdvancedAnalysisInput {
+  deepStatus?: DeepStatus
+  previewTags?: AdvancedTag[]
+  confirmedTags?: AdvancedTag[]
+  followupAnswers?: Record<string, unknown>
+}
+
+export async function saveAdvancedAnalysisSnapshot(questionnaireId: string, input: SaveAdvancedAnalysisInput) {
+  const payload: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  }
+
+  if (input.deepStatus) payload.deep_status = input.deepStatus
+  if (input.previewTags) payload.advanced_preview_tags = input.previewTags
+  if (input.confirmedTags) payload.advanced_confirmed_tags = input.confirmedTags
+  if (input.followupAnswers) payload.advanced_followup_answers = input.followupAnswers
+
+  return mutateQuestionnaireResponse(questionnaireId, payload)
 }
 
 export async function fetchQuestionnaireResult(questionnaireId: string) {

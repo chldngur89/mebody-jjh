@@ -1,5 +1,54 @@
 # mebody - 개발 로드맵
 
+## 🔄 2026-03-09 최신 TODO (실행 우선순위 재정렬)
+
+### P0. 결제/회원/재방문 안정화 (즉시)
+- [ ] 실제 결제 연동(Stripe/Toss) + 서버(Webhook) 검증으로 `activateSubscription` 테스트 로직 교체
+- [ ] 인증 UX 보완(비밀번호 재설정, 이메일 인증 재전송, 인증 실패 메시지 표준화)
+- [ ] 마이페이지(내 결과 히스토리) 추가: 최근 결과/이전 결과/재방문 빠른 진입
+- [ ] RLS/권한 점검: `questionnaire_responses`, `user_profiles`, `user_subscriptions`
+
+### P0. Ver3 문서 반영 1차 (무료 결과 + 잠금 태그 + 회원 전환)
+- [x] 결과 페이지 4번 섹션에 `심화 태그 미리보기` 블록 추가 (잠금 아이콘 + 설명 + CTA)
+- [x] 비회원: `회원가입 후 내 mebody 코드 더 알아보기` 유도
+- [x] 회원: 심화 태그 안내 화면 진입
+- [ ] 회원: 태그별 실제 추가 3문항 진입
+- [x] 40문항만으로 즉시 확정 가능한 태그 엔진 1차 구현
+  - [x] Borderline
+  - [x] Low confidence
+  - [x] 3-axis borderline
+  - [x] Mixed
+  - [x] Zig-zag Compensation
+
+### P1. Ver3 문서 반영 2차 (심화 3문항 확정 플로우)
+- [x] 심화 태그 후보 감지 로직 구현 (문서 기준 기본 감지 조건)
+  - [x] Sitting-driven
+  - [x] Work-dominant
+  - [x] Compensatory neck
+  - [x] Ankle-limited
+  - [x] Hip-rotation asymmetry
+  - [x] Anterior-leaning strategy
+  - [x] Posterior-leaning strategy
+  - [x] Global-stiff strategy (충돌 해결 포함)
+- [ ] Low confidence 케이스 A 적용: 1~2축 저신뢰 시 부분 재평가 유도
+- [ ] Low confidence 케이스 B 적용: 3~4축 저신뢰 시 16코드 발급 중단 + Full Retest 화면
+- [ ] 태그별 추가 3문항 UI/저장/확정 플로우 구현
+- [ ] 심화 결과 페이지(확정 태그 + 루틴 우선순위 + 설명 강화) 구현
+
+### P1. Ver3 데이터 모델/SQL (Supabase, 최소 구조)
+- [ ] `questionnaire_responses`에 심화 상태 컬럼 추가 (`deep_status`)
+- [ ] `questionnaire_responses`에 심화 태그 JSON 컬럼 추가 (`advanced_preview_tags`, `advanced_confirmed_tags`)
+- [ ] `questionnaire_responses`에 심화 답변 JSON 컬럼 추가 (`advanced_followup_answers`)
+- [ ] 심화 3문항 정의는 기존 `app_content`의 JSON 키로 관리 (`advanced_tag_followups`)
+- [ ] 현재 프론트 저장 로직을 실제 Supabase 컬럼 적용 후 검증
+
+### P1. 문서/운영 정비
+- [ ] `TODO.md` 기존 항목과 현재 구현 상태 동기화 (이미 완료된 로그인/멤버십/결제 UI 반영)
+- [ ] Ver3 기준 용어 통일: 문서는 현재 `13개 태그` 기준이며, 일부 파일명/슬라이드의 `11개` 표현 정리 필요
+- [ ] QA 체크리스트 작성: 비회원/회원/결제상태/재방문/심화문항 분기 테스트
+
+---
+
 ## ✅ 완료된 작업 (v1.0)
 
 ### Foundation (기반 구축)
