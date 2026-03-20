@@ -56,6 +56,18 @@ export default function App() {
   const [codePlanPreviewMode, setCodePlanPreviewMode] = useState(false);
   const mountedRef = useRef(true);
 
+  const resetAnonymousState = () => {
+    setLatestResultId(undefined);
+    setQuestionnaireId(undefined);
+    setBodyCode(undefined);
+    setResultEntrySource('questionnaire');
+    setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
+    setMyPagePreviewMode(false);
+    localStorage.removeItem(LOCAL_LAST_RESULT_KEY);
+    setCurrentScreen('landing');
+  };
+
   const openAuth = (returnScreen: Screen) => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
@@ -142,22 +154,23 @@ export default function App() {
         const user = data.session?.user ?? null;
         setCurrentUser(user);
 
-        if (user) {
-          try {
-            await upsertProfileFromUser(user);
-          } catch (error) {
-            console.warn('upsertProfileFromUser failed:', error);
-          }
+        if (!user) {
+          resetAnonymousState();
+          return;
         }
 
-        let resolvedLatestResultId = user ? localResultId : undefined;
-        if (user) {
-          const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
-          if (!mountedRef.current) return;
-          if (latestFromDb) {
-            resolvedLatestResultId = latestFromDb;
-            localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
-          }
+        try {
+          await upsertProfileFromUser(user);
+        } catch (error) {
+          console.warn('upsertProfileFromUser failed:', error);
+        }
+
+        let resolvedLatestResultId = localResultId;
+        const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
+        if (!mountedRef.current) return;
+        if (latestFromDb) {
+          resolvedLatestResultId = latestFromDb;
+          localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
         }
 
         setLatestResultId(resolvedLatestResultId);
@@ -184,7 +197,7 @@ export default function App() {
       setCurrentUser(user);
 
       if (!user) {
-        setLatestResultId(undefined);
+        resetAnonymousState();
         return;
       }
 
