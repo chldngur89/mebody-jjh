@@ -53,11 +53,13 @@ export default function App() {
   const [membershipReturnScreen, setMembershipReturnScreen] = useState<Screen>('landing');
   const [myPagePreviewMode, setMyPagePreviewMode] = useState(false);
   const [landingCodePlanModalOpen, setLandingCodePlanModalOpen] = useState(false);
+  const [codePlanPreviewMode, setCodePlanPreviewMode] = useState(false);
   const mountedRef = useRef(true);
 
   const openAuth = (returnScreen: Screen) => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setAuthReturnScreen(returnScreen);
     setCurrentScreen('auth');
   };
@@ -65,6 +67,7 @@ export default function App() {
   const openMembership = (returnScreen: Screen) => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setMembershipReturnScreen(returnScreen);
     if (currentUser) {
       setCurrentScreen('membership');
@@ -76,6 +79,7 @@ export default function App() {
   const openResultScreen = (id: string, source: ResultEntrySource) => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setQuestionnaireId(id);
     setCurrentScreen('result');
     setResultEntrySource(source);
@@ -86,6 +90,7 @@ export default function App() {
   const handleQuestionnaireComplete = (id: string, code: string) => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setQuestionnaireId(id);
     setBodyCode(code);
     setLatestResultId(id);
@@ -97,12 +102,14 @@ export default function App() {
   const handleAnalyzingComplete = () => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setCurrentScreen('result');
   };
 
   const handleRestart = () => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setQuestionnaireId(undefined);
     setBodyCode(undefined);
     setResultEntrySource('questionnaire');
@@ -218,6 +225,7 @@ export default function App() {
   const startNewDiagnosis = () => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     setQuestionnaireId(undefined);
     setBodyCode(undefined);
     setResultEntrySource('questionnaire');
@@ -232,6 +240,7 @@ export default function App() {
   const openMyPage = () => {
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
     if (currentUser) {
       setCurrentScreen('myPage');
       return;
@@ -283,7 +292,14 @@ export default function App() {
             onResultLoad={handleResultLoad}
             isLoggedIn={Boolean(currentUser)}
             onGoAuth={() => openAuth('codePlan')}
-            onContinue={() => setCurrentScreen('codePlan')}
+            onContinue={() => {
+              setCodePlanPreviewMode(false);
+              setCurrentScreen('codePlan');
+            }}
+            onPreviewContinue={() => {
+              setCodePlanPreviewMode(true);
+              setCurrentScreen('codePlan');
+            }}
           />
         )}
 
@@ -291,6 +307,7 @@ export default function App() {
           <CodePlanScreen
             questionnaireId={questionnaireId}
             isLoggedIn={Boolean(currentUser)}
+            previewMode={codePlanPreviewMode}
             onBack={() => setCurrentScreen('result')}
             onRequireAuth={() => openAuth('codePlan')}
             onNextGuide={() => setCurrentScreen('guideCommon')}

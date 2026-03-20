@@ -50,6 +50,7 @@ interface ResultScreenProps {
   isLoggedIn?: boolean;
   onGoAuth?: () => void;
   onContinue?: () => void;
+  onPreviewContinue?: () => void;
 }
 
 const AXIS_META: Record<
@@ -270,7 +271,7 @@ function buildStoreItems(products: BodyCodeContent['health_products'] | undefine
   }));
 }
 
-export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad, isLoggedIn = false, onGoAuth, onContinue }: ResultScreenProps) {
+export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad, isLoggedIn = false, onGoAuth, onContinue, onPreviewContinue }: ResultScreenProps) {
   const [result, setResult] = useState<ResultWithContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -680,6 +681,26 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
                 회원가입 후 내 코드 플랜 받기
                 <ChevronRight size={18} />
               </button>
+              {!isLoggedIn && onPreviewContinue && (
+                <button
+                  type="button"
+                  onClick={onPreviewContinue}
+                  style={{
+                    marginTop: '10px',
+                    width: '100%',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#0f766e',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  임시: 회원가입된 것처럼 다음 페이지 미리보기
+                </button>
+              )}
             </section>
 
             <section

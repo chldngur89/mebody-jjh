@@ -4,15 +4,16 @@ import { CodePlanDetailContent, useCodePlanData } from './codePlanShared';
 interface CodePlanScreenProps {
   questionnaireId?: string;
   isLoggedIn?: boolean;
+  previewMode?: boolean;
   onBack?: () => void;
   onRequireAuth?: () => void;
   onNextGuide?: () => void;
 }
 
-export function CodePlanScreen({ questionnaireId, isLoggedIn = false, onBack, onRequireAuth, onNextGuide }: CodePlanScreenProps) {
+export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMode = false, onBack, onRequireAuth, onNextGuide }: CodePlanScreenProps) {
   const data = useCodePlanData(questionnaireId);
 
-  if (!isLoggedIn) {
+  if (!isLoggedIn && !previewMode) {
     return (
       <div
         style={{
@@ -241,6 +242,22 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, onBack, on
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px', display: 'grid', gap: '14px' }}>
+          {previewMode && !isLoggedIn && (
+            <div
+              style={{
+                borderRadius: '18px',
+                border: '1px solid rgba(167,243,208,0.95)',
+                background: 'rgba(236,253,245,0.92)',
+                padding: '14px 16px',
+                fontSize: '13px',
+                lineHeight: 1.65,
+                color: '#065f46',
+                wordBreak: 'keep-all',
+              }}
+            >
+              임시 미리보기 화면입니다. 실제로는 회원가입 후 이 코드 플랜과 다음 페이지를 이어서 보게 됩니다.
+            </div>
+          )}
           <CodePlanDetailContent data={data} hideGuideSection />
           {onNextGuide && (
             <button
