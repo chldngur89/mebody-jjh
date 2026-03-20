@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { ArrowLeft, CheckCircle2, Crown, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Crown, ShieldCheck, Sparkles } from 'lucide-react';
 import { fetchMembershipPlans, fetchMySubscription, type MembershipPlan, type UserSubscription } from '../api/account';
 
 interface MembershipScreenProps {
@@ -28,6 +28,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+
     Promise.all([
       fetchMembershipPlans(),
       user ? fetchMySubscription(user.id) : Promise.resolve(null),
@@ -40,131 +41,316 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
   }, [user]);
 
   const planMap = useMemo(() => {
-    const map: Record<string, MembershipPlan> = {};
+    const nextMap: Record<string, MembershipPlan> = {};
     for (const plan of plans) {
-      map[plan.code] = plan;
+      nextMap[plan.code] = plan;
     }
-    return map;
+    return nextMap;
   }, [plans]);
 
   const currentPlan = mySubscription ? planMap[mySubscription.plan_code] : null;
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
-      <div className="h-full flex flex-col">
-        <div className="flex-shrink-0 bg-white/85 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
+    <div
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        height: '844px',
+        borderRadius: '32px',
+        background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
+        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+      }}
+    >
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '56px',
+            left: '-84px',
+            width: '300px',
+            height: '300px',
+            borderRadius: '999px',
+            background: 'rgba(52, 211, 153, 0.16)',
+            filter: 'blur(58px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '60px',
+            right: '-96px',
+            width: '320px',
+            height: '320px',
+            borderRadius: '999px',
+            background: 'rgba(45, 212, 191, 0.15)',
+            filter: 'blur(72px)',
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          height: '100%',
+          flexDirection: 'column',
+          padding: '22px 24px 20px',
+          fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
+        }}
+      >
+        <div style={{ marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.4)',
+              background: 'rgba(255,255,255,0.72)',
+              padding: '9px 16px',
+              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            <Sparkles size={18} color="#059669" />
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
+          </div>
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderRadius: '999px',
+                border: '1px solid rgba(255,255,255,0.4)',
+                background: 'rgba(255,255,255,0.72)',
+                padding: '9px 14px',
+                color: '#374151',
+                fontSize: '12px',
+                fontWeight: 700,
+                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+                backdropFilter: 'blur(12px)',
+                cursor: 'pointer',
+              }}
             >
-              <ArrowLeft className="w-4 h-4 text-gray-600" />
+              <ArrowLeft size={14} />
+              뒤로
             </button>
           )}
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold tracking-[0.18em] text-emerald-600 mb-0.5">MEMBERSHIP</div>
-            <h1 className="text-[19px] font-bold text-gray-900 tracking-tight truncate">멤버십 / 결제</h1>
-          </div>
         </div>
 
         <div
-          className="flex-1 overflow-y-auto px-6 py-6"
-          style={{ fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif' }}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            borderRadius: '28px',
+            background: 'rgba(255,255,255,0.78)',
+            boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
+            backdropFilter: 'blur(20px)',
+            padding: '24px',
+          }}
         >
+          <div style={{ marginBottom: '18px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '8px' }}>CODE PLAN</div>
+            <h1 style={{ fontSize: '28px', lineHeight: 1.3, fontWeight: 800, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>
+              mebody 코드 플랜과
+              <br />
+              결제 관리를 여기서 진행합니다
+            </h1>
+            <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
+              결과 저장, 재방문 연결, 심화 리포트와 루틴 확장에 필요한 구독 상태를 한 곳에서 확인할 수 있습니다.
+            </p>
+          </div>
+
           {!user ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-5">
-              <h2 className="text-base font-semibold text-gray-900 mb-2">로그인이 필요합니다</h2>
-              <p className="text-sm text-gray-700 leading-7 [word-break:keep-all]">
-                결과 자동 저장, 재방문 바로 보기, 멤버십 구독을 사용하려면 먼저 회원가입/로그인을 진행해주세요.
+            <div
+              style={{
+                borderRadius: '22px',
+                border: '1px solid rgba(229,231,235,0.95)',
+                background: '#ffffff',
+                padding: '18px',
+              }}
+            >
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>로그인이 필요합니다</h2>
+              <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
+                결과 저장, 재방문 바로 보기, 코드 플랜 구독을 사용하려면 먼저 회원가입/로그인을 진행해주세요.
               </p>
               {onRequireAuth && (
                 <button
                   type="button"
                   onClick={onRequireAuth}
-                  className="mt-4 w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl font-semibold"
+                  style={{
+                    marginTop: '14px',
+                    display: 'inline-flex',
+                    width: '100%',
+                    height: '54px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '16px',
+                    border: 'none',
+                    background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                    color: '#ffffff',
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    boxShadow: '0 14px 28px rgba(20,184,166,0.20)',
+                    cursor: 'pointer',
+                  }}
                 >
                   회원가입 / 로그인
                 </button>
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-emerald-700 mb-1">ACCOUNT</div>
-                <p className="text-sm text-emerald-900 break-all">{user.email}</p>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div
+                style={{
+                  borderRadius: '22px',
+                  border: '1px solid rgba(167,243,208,0.95)',
+                  background: 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.95) 100%)',
+                  padding: '18px',
+                }}
+              >
+                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '6px' }}>ACCOUNT</div>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '8px', wordBreak: 'break-all' }}>{user.email}</p>
                 {mySubscription ? (
-                  <div className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 bg-white/80 border border-emerald-200 px-3 py-1.5 rounded-full">
-                    <CheckCircle2 className="w-4 h-4" />
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      borderRadius: '999px',
+                      background: '#ffffff',
+                      border: '1px solid rgba(167,243,208,0.95)',
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: '#047857',
+                    }}
+                  >
+                    <CheckCircle2 size={15} />
                     활성 구독: {currentPlan?.name ?? mySubscription.plan_code}
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-emerald-800">현재 활성 구독이 없습니다.</p>
+                  <p style={{ fontSize: '14px', color: '#065f46' }}>현재 연결된 활성 구독이 없습니다.</p>
                 )}
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  멤버십 혜택
+              <div
+                style={{
+                  borderRadius: '22px',
+                  border: '1px solid rgba(229,231,235,0.95)',
+                  background: '#ffffff',
+                  padding: '18px',
+                }}
+              >
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px', color: '#111827', fontSize: '15px', fontWeight: 800 }}>
+                  <ShieldCheck size={18} color="#059669" />
+                  코드 플랜 혜택
                 </div>
-                <ul className="text-sm text-gray-700 leading-7 space-y-1 [word-break:keep-all]">
-                  <li>• 결과 히스토리와 재방문 자동 결과 진입</li>
-                  <li>• 체형별 심화 리포트와 맞춤 루틴 우선 제공</li>
-                  <li>• 이후 리포트 비교 기능 확장 시 우선 적용</li>
-                </ul>
+                <div style={{ display: 'grid', gap: '8px', fontSize: '14px', lineHeight: 1.65, color: '#4b5563' }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span>결과 히스토리와 재방문 자동 연결</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span>체형별 심화 리포트와 코드 가이드 확장</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span>맞춤 10~15분 루틴과 추후 비교 기능 우선 적용</span>
+                  </div>
+                </div>
               </div>
 
               {loading ? (
-                <div className="text-sm text-gray-500">요금제를 불러오는 중...</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>요금제를 불러오는 중...</div>
               ) : (
-                <div className="space-y-3">
+                <div style={{ display: 'grid', gap: '12px' }}>
                   {plans.map((plan) => {
                     const isCurrent = mySubscription?.plan_code === plan.code && (mySubscription.status === 'active' || mySubscription.status === 'trialing');
                     const isRecommended = plan.code === 'pro_monthly' && !isCurrent;
+
                     return (
                       <section
                         key={plan.code}
-                        className={`rounded-2xl border p-5 transition-all ${
-                          isCurrent
-                            ? 'bg-emerald-50 border-emerald-200 shadow-sm'
+                        style={{
+                          borderRadius: '22px',
+                          border: isCurrent
+                            ? '1px solid rgba(167,243,208,0.95)'
                             : isRecommended
-                              ? 'bg-gradient-to-br from-white to-emerald-50/55 border-emerald-300 shadow-md shadow-emerald-200/40'
-                              : 'bg-white border-gray-200'
-                        }`}
+                              ? '1px solid rgba(110,231,183,0.95)'
+                              : '1px solid rgba(229,231,235,0.95)',
+                          background: isCurrent
+                            ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(255,255,255,0.95) 100%)'
+                            : '#ffffff',
+                          padding: '18px',
+                          boxShadow: isRecommended ? '0 16px 28px rgba(16,185,129,0.10)' : 'none',
+                        }}
                       >
-                        <div className="flex items-start justify-between gap-3 mb-2">
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
                           <div>
                             {isRecommended && (
-                              <span className="inline-flex text-[11px] font-semibold tracking-[0.1em] text-emerald-700 bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-full mb-2">
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  borderRadius: '999px',
+                                  background: 'rgba(236,253,245,0.95)',
+                                  border: '1px solid rgba(167,243,208,0.95)',
+                                  padding: '6px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  letterSpacing: '0.12em',
+                                  color: '#047857',
+                                  marginBottom: '8px',
+                                }}
+                              >
                                 RECOMMENDED
                               </span>
                             )}
-                            <h3 className="text-base font-bold text-gray-900">{plan.name}</h3>
-                            <p className="text-sm text-gray-600 mt-1 [word-break:keep-all]">{plan.description}</p>
+                            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>{plan.name}</h3>
+                            <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#4b5563', wordBreak: 'keep-all' }}>{plan.description}</p>
                           </div>
-                          <Crown className={`w-5 h-5 ${isCurrent ? 'text-emerald-600' : 'text-gray-400'}`} />
+                          <Crown size={20} color={isCurrent ? '#059669' : '#9ca3af'} />
                         </div>
-                        <div className="text-lg font-black text-gray-900 mb-3">
+
+                        <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '12px' }}>
                           ₩{formatKrw(plan.price_krw)}
-                          <span className="text-sm font-medium text-gray-500"> / {billingLabel(plan.billing_cycle)}</span>
+                          <span style={{ fontSize: '14px', fontWeight: 600, color: '#6b7280' }}> / {billingLabel(plan.billing_cycle)}</span>
                         </div>
+
                         <button
                           type="button"
                           onClick={() => onSelectPlan?.(plan.code)}
-                          className={`w-full py-3 rounded-xl font-semibold transition-colors ${
-                            isCurrent
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                          style={{
+                            display: 'inline-flex',
+                            width: '100%',
+                            height: '52px',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '16px',
+                            border: isCurrent ? '1px solid rgba(167,243,208,0.95)' : 'none',
+                            background: isCurrent
+                              ? '#ffffff'
                               : isRecommended
-                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/25'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
+                                ? 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)'
+                                : 'rgba(243,244,246,0.95)',
+                            color: isCurrent ? '#047857' : isRecommended ? '#ffffff' : '#374151',
+                            fontSize: '15px',
+                            fontWeight: 800,
+                            boxShadow: isRecommended ? '0 14px 28px rgba(20,184,166,0.18)' : 'none',
+                            cursor: 'pointer',
+                          }}
                         >
                           {isCurrent ? '현재 이용 중' : '이 요금제로 진행'}
                         </button>

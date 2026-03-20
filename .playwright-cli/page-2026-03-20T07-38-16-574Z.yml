@@ -1,0 +1,46 @@
+- generic [ref=e42]:
+  - generic [ref=e43]:
+    - generic [ref=e44]:
+      - img [ref=e45]
+      - generic [ref=e47]: MEBODY
+    - button "뒤로" [ref=e48] [cursor=pointer]:
+      - img [ref=e49]
+      - text: 뒤로
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]: MY PAGE
+          - heading "Preview님 계정과 최근 결과를 확인합니다" [level=1] [ref=e56]:
+            - text: Preview님 계정과
+            - text: 최근 결과를 확인합니다
+          - paragraph [ref=e57]: preview@mebody.app
+        - img [ref=e59]
+      - generic [ref=e62]:
+        - generic [ref=e63]: 체험 사용 중
+        - generic [ref=e64]: 최근 결과 FRRS
+    - generic [ref=e65]:
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e68]: LATEST RESULT
+          - heading "최근 mebody 코드" [level=2] [ref=e69]
+        - generic [ref=e70]: FRRS
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - img "FRRS" [ref=e74]
+          - generic [ref=e75]:
+            - generic [ref=e76]: 암사가는 잠금 로봇
+            - paragraph [ref=e77]: 가입 후에는 최근 결과와 코드 플랜, 멤버십 상태를 이 화면에서 이어서 확인합니다.
+        - button "가입 후 최근 결과 보기" [ref=e78]:
+          - text: 가입 후 최근 결과 보기
+          - img [ref=e79]
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - img [ref=e83]
+        - generic [ref=e85]:
+          - generic [ref=e86]: MEMBERSHIP
+          - heading "멤버십 / 결제" [level=3] [ref=e87]
+      - paragraph [ref=e88]: 결과 저장과 이후 확장 기능 연결을 위해 멤버십을 설정할 수 있습니다.
+      - button "코드 플랜 / 결제 보기" [ref=e89] [cursor=pointer]:
+        - text: 코드 플랜 / 결제 보기
+        - img [ref=e90]

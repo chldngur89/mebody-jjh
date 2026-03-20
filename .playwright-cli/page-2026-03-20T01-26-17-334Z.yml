@@ -1,0 +1,36 @@
+- generic [ref=e6]:
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - img [ref=e9]
+      - generic [ref=e11]: MEBODY
+    - button "로그인" [ref=e12] [cursor=pointer]
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - img [ref=e18]
+      - heading "mebody" [level=1] [ref=e21]
+      - heading "나의 바디 코드를 발견하세요" [level=2] [ref=e22]:
+        - text: 나의 바디 코드를
+        - text: 발견하세요
+      - paragraph [ref=e23]: 자세와 균형을 위한 셀프 체크
+    - button "내 체형 코드 분석 시작하기" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: 내 체형 코드 분석 시작하기
+      - img [ref=e26]
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - img [ref=e30]
+        - heading "ACCOUNT" [level=3] [ref=e33]
+      - paragraph [ref=e34]: 결과 저장, 지난 결과 다시 보기, 결제/메일 알림 연결을 쓰려면 회원가입/로그인이 필요합니다.
+      - button "회원가입/로그인" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+        - text: 회원가입/로그인
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e40]: 40문항
+        - generic [ref=e41]: 지금의 정렬 패턴을 빠르게 체크합니다.
+      - generic [ref=e42]:
+        - generic [ref=e43]: 16체질
+        - generic [ref=e44]: 네 축의 조합으로 나의 mebody 코드를 확인합니다.
+      - generic [ref=e45]:
+        - generic [ref=e46]: 맞춤 가이드
+        - generic [ref=e47]: 결과 다음 장에서 코드 플랜과 루틴을 이어서 봅니다.
+  - paragraph [ref=e48]: Powered by Mebody • Designed for Mebody

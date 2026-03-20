@@ -6,12 +6,15 @@ import { DiagnosisIntroScreen } from './components/DiagnosisIntroScreen';
 import { QuestionnaireScreen } from './components/QuestionnaireScreen';
 import { AnalyzingScreen } from './components/AnalyzingScreen';
 import { ResultScreen } from './components/ResultScreen';
-import { ResultGuideScreen } from './components/ResultGuideScreen';
-import { BodyCodeAccordionScreen } from './components/BodyCodeAccordionScreen';
+import { CodePlanScreen } from './components/CodePlanScreen';
+import { CommonGuideScreen } from './components/CommonGuideScreen';
+import { CodeDetailsScreen } from './components/CodeDetailsScreen';
 import { AuthScreen } from './components/AuthScreen';
 import { MembershipScreen } from './components/MembershipScreen';
 import { CheckoutScreen } from './components/CheckoutScreen';
 import { AdvancedPreviewScreen } from './components/AdvancedPreviewScreen';
+import { MyPageScreen } from './components/MyPageScreen';
+import { CodePlanFullscreenModal } from './components/CodePlanFullscreenModal';
 import { fetchLatestCompletedResultIdForUser, upsertProfileFromUser } from './api/account';
 import { supabase } from './lib/supabase';
 
@@ -24,167 +27,197 @@ type Screen =
   | 'questionnaire'
   | 'analyzing'
   | 'result'
-  | 'resultGuide'
-  | 'resultAccordion'
+  | 'codePlan'
+  | 'guideCommon'
+  | 'guideDetails'
   | 'advanced'
   | 'auth'
   | 'membership'
-  | 'checkout';
+  | 'checkout'
+  | 'myPage';
 
 type ResultEntrySource = 'questionnaire' | 'quick' | 'shared';
 
 export default function App() {
-   const previewScreenParam = new URLSearchParams(window.location.search).get('ui');
-   const previewScreen = (['landing', 'auth', 'advanced'] as const).find((screen) => screen === previewScreenParam);
-   const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
-   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
-   const [bodyCode, setBodyCode] = useState<string | undefined>();
-   const [currentUser, setCurrentUser] = useState<User | null>(null);
-   const [latestResultId, setLatestResultId] = useState<string | undefined>();
-   const [selectedPlanCode, setSelectedPlanCode] = useState('pro_monthly');
-   const [resultEntrySource, setResultEntrySource] = useState<ResultEntrySource>('quick');
-   const [isBootstrapping, setIsBootstrapping] = useState(!previewScreen);
-   const [authReturnScreen, setAuthReturnScreen] = useState<Screen>('landing');
-   const mountedRef = useRef(true);
+  const previewScreenParam = new URLSearchParams(window.location.search).get('ui');
+  const previewScreen = (['landing', 'auth', 'advanced', 'myPage', 'codePlan'] as const).find((screen) => screen === previewScreenParam);
+  const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
+  const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
+  const [bodyCode, setBodyCode] = useState<string | undefined>();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [latestResultId, setLatestResultId] = useState<string | undefined>();
+  const [selectedPlanCode, setSelectedPlanCode] = useState('pro_monthly');
+  const [resultEntrySource, setResultEntrySource] = useState<ResultEntrySource>('questionnaire');
+  const [isBootstrapping, setIsBootstrapping] = useState(!previewScreen);
+  const [authReturnScreen, setAuthReturnScreen] = useState<Screen>('landing');
+  const [membershipReturnScreen, setMembershipReturnScreen] = useState<Screen>('landing');
+  const [myPagePreviewMode, setMyPagePreviewMode] = useState(false);
+  const [landingCodePlanModalOpen, setLandingCodePlanModalOpen] = useState(false);
+  const mountedRef = useRef(true);
 
-   const openAuth = (returnScreen: Screen) => {
-     setAuthReturnScreen(returnScreen);
-     setCurrentScreen('auth');
-   };
+  const openAuth = (returnScreen: Screen) => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setAuthReturnScreen(returnScreen);
+    setCurrentScreen('auth');
+  };
 
-   const openResultScreen = (id: string, source: ResultEntrySource) => {
-     setQuestionnaireId(id);
-     setCurrentScreen('result');
-     setResultEntrySource(source);
-     setLatestResultId(id);
-     localStorage.setItem(LOCAL_LAST_RESULT_KEY, id);
-   };
+  const openMembership = (returnScreen: Screen) => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setMembershipReturnScreen(returnScreen);
+    if (currentUser) {
+      setCurrentScreen('membership');
+      return;
+    }
+    openAuth(returnScreen);
+  };
 
-   const handleQuestionnaireComplete = (id: string, code: string) => {
-     setQuestionnaireId(id);
-     setBodyCode(code);
-     setLatestResultId(id);
-     setResultEntrySource('questionnaire');
-     localStorage.setItem(LOCAL_LAST_RESULT_KEY, id);
-     setCurrentScreen('analyzing');
-   };
+  const openResultScreen = (id: string, source: ResultEntrySource) => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setQuestionnaireId(id);
+    setCurrentScreen('result');
+    setResultEntrySource(source);
+    setLatestResultId(id);
+    localStorage.setItem(LOCAL_LAST_RESULT_KEY, id);
+  };
 
-   const handleAnalyzingComplete = () => {
-     setCurrentScreen('result');
-   };
+  const handleQuestionnaireComplete = (id: string, code: string) => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setQuestionnaireId(id);
+    setBodyCode(code);
+    setLatestResultId(id);
+    setResultEntrySource('questionnaire');
+    localStorage.setItem(LOCAL_LAST_RESULT_KEY, id);
+    setCurrentScreen('analyzing');
+  };
 
-   const handleRestart = () => {
-     setQuestionnaireId(undefined);
-     setBodyCode(undefined);
-     setResultEntrySource('questionnaire');
-     setCurrentScreen('questionnaire');
-   };
+  const handleAnalyzingComplete = () => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setCurrentScreen('result');
+  };
 
-   const handleResultLoad = (code: string) => {
-     setBodyCode(code);
-   };
+  const handleRestart = () => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setQuestionnaireId(undefined);
+    setBodyCode(undefined);
+    setResultEntrySource('questionnaire');
+    setCurrentScreen('questionnaire');
+  };
 
-   useEffect(() => {
-     if (previewScreen) {
-       setCurrentScreen(previewScreen);
-       setIsBootstrapping(false);
-       return;
-     }
+  const handleResultLoad = (code: string) => {
+    setBodyCode(code);
+  };
 
-     mountedRef.current = true;
-     let authUnsubscribe: (() => void) | undefined;
+  useEffect(() => {
+    if (previewScreen) {
+      setCurrentScreen(previewScreen);
+      setIsBootstrapping(false);
+      return;
+    }
 
-     async function bootstrap() {
-       try {
-         const params = new URLSearchParams(window.location.search);
-         const sharedResultId = params.get('result');
-         const localResultId = localStorage.getItem(LOCAL_LAST_RESULT_KEY) ?? undefined;
+    mountedRef.current = true;
+    let authUnsubscribe: (() => void) | undefined;
 
-         const { data } = await supabase.auth.getSession();
-         if (!mountedRef.current) return;
+    async function bootstrap() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sharedResultId = params.get('result');
+        const localResultId = localStorage.getItem(LOCAL_LAST_RESULT_KEY) ?? undefined;
 
-         const user = data.session?.user ?? null;
-         setCurrentUser(user);
+        const { data } = await supabase.auth.getSession();
+        if (!mountedRef.current) return;
 
-         if (user) {
-           try {
-             await upsertProfileFromUser(user);
-           } catch (error) {
-             console.warn('upsertProfileFromUser failed:', error);
-           }
-         }
+        const user = data.session?.user ?? null;
+        setCurrentUser(user);
 
-         let resolvedLatestResultId = localResultId;
-         if (user) {
-           const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
-           if (!mountedRef.current) return;
-           if (latestFromDb) {
-             resolvedLatestResultId = latestFromDb;
-             localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
-           }
-         }
+        if (user) {
+          try {
+            await upsertProfileFromUser(user);
+          } catch (error) {
+            console.warn('upsertProfileFromUser failed:', error);
+          }
+        }
 
-         setLatestResultId(resolvedLatestResultId);
+        let resolvedLatestResultId = user ? localResultId : undefined;
+        if (user) {
+          const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
+          if (!mountedRef.current) return;
+          if (latestFromDb) {
+            resolvedLatestResultId = latestFromDb;
+            localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
+          }
+        }
 
-         if (sharedResultId) {
-           openResultScreen(sharedResultId, 'shared');
-         } else if (resolvedLatestResultId) {
-           openResultScreen(resolvedLatestResultId, 'quick');
-         } else {
-           setCurrentScreen('landing');
-         }
-       } catch (error) {
-         console.warn('bootstrap failed:', error);
-         setCurrentScreen('landing');
-       } finally {
-         if (mountedRef.current) {
-           setIsBootstrapping(false);
-         }
-       }
-     }
+        setLatestResultId(resolvedLatestResultId);
 
-     bootstrap();
+        if (sharedResultId) {
+          openResultScreen(sharedResultId, 'shared');
+        } else {
+          setCurrentScreen('landing');
+        }
+      } catch (error) {
+        console.warn('bootstrap failed:', error);
+        setCurrentScreen('landing');
+      } finally {
+        if (mountedRef.current) {
+          setIsBootstrapping(false);
+        }
+      }
+    }
 
-     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-       const user = session?.user ?? null;
-       setCurrentUser(user);
+    bootstrap();
 
-       if (!user) return;
-       try {
-         await upsertProfileFromUser(user);
-       } catch (error) {
-         console.warn('upsertProfileFromUser(auth) failed:', error);
-       }
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null;
+      setCurrentUser(user);
 
-       const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
-       if (!mountedRef.current) return;
-       if (latestFromDb) {
-         setLatestResultId(latestFromDb);
-         localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
-       }
-     });
+      if (!user) {
+        setLatestResultId(undefined);
+        return;
+      }
 
-     authUnsubscribe = () => authListener.subscription.unsubscribe();
+      try {
+        await upsertProfileFromUser(user);
+      } catch (error) {
+        console.warn('upsertProfileFromUser(auth) failed:', error);
+      }
 
-     return () => {
-       mountedRef.current = false;
-       authUnsubscribe?.();
-     };
-   }, [previewScreen]);
+      const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
+      if (!mountedRef.current) return;
+      if (latestFromDb) {
+        setLatestResultId(latestFromDb);
+        localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
+      }
+    });
 
-   useEffect(() => {
-     const params = new URLSearchParams(window.location.search);
-     if (questionnaireId) {
-       params.set('result', questionnaireId);
-     } else {
-       params.delete('result');
-     }
-     const query = params.toString();
-     const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
-     window.history.replaceState(null, '', nextUrl);
-   }, [questionnaireId]);
+    authUnsubscribe = () => authListener.subscription.unsubscribe();
+
+    return () => {
+      mountedRef.current = false;
+      authUnsubscribe?.();
+    };
+  }, [previewScreen]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (questionnaireId) {
+      params.set('result', questionnaireId);
+    } else {
+      params.delete('result');
+    }
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+    window.history.replaceState(null, '', nextUrl);
+  }, [questionnaireId]);
 
   const startNewDiagnosis = () => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
     setQuestionnaireId(undefined);
     setBodyCode(undefined);
     setResultEntrySource('questionnaire');
@@ -194,6 +227,16 @@ export default function App() {
   const openQuickResult = () => {
     if (!latestResultId) return;
     openResultScreen(latestResultId, 'quick');
+  };
+
+  const openMyPage = () => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    if (currentUser) {
+      setCurrentScreen('myPage');
+      return;
+    }
+    openAuth('myPage');
   };
 
   if (isBootstrapping) {
@@ -207,108 +250,127 @@ export default function App() {
   }
 
   return (
-     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-       <div className="w-full max-w-md">
-         {currentScreen === 'landing' && (
-           <LandingScreen
-             onStart={startNewDiagnosis}
-             onQuickResult={latestResultId ? openQuickResult : undefined}
-             hasQuickResult={Boolean(latestResultId)}
-             isLoggedIn={Boolean(currentUser)}
-             userEmail={currentUser?.email}
-             onAccount={() => openAuth('landing')}
-             onMembership={() => setCurrentScreen(currentUser ? 'membership' : 'auth')}
-           />
-         )}
-         {currentScreen === 'consent' && (
-           <ConsentScreen
-             onBack={() => setCurrentScreen('landing')}
-             onAgree={() => setCurrentScreen('intro')}
-           />
-         )}
-         {currentScreen === 'intro' && (
-           <DiagnosisIntroScreen
-             onBack={() => setCurrentScreen('consent')}
-             onBegin={() => setCurrentScreen('questionnaire')}
-           />
-         )}
-         {currentScreen === 'questionnaire' && (
-           <QuestionnaireScreen
-             onBack={() => setCurrentScreen('intro')}
-             onComplete={handleQuestionnaireComplete}
-           />
-         )}
-         {currentScreen === 'analyzing' && (
-           <AnalyzingScreen
-             onBack={() => setCurrentScreen('questionnaire')}
-             onComplete={handleAnalyzingComplete}
-           />
-         )}
-         {currentScreen === 'result' && (
-           <ResultScreen
-             questionnaireId={questionnaireId}
-             onRestart={handleRestart}
-             onBack={() => setCurrentScreen(resultEntrySource === 'questionnaire' ? 'questionnaire' : 'landing')}
-             onNextPage={() => setCurrentScreen('resultGuide')}
-             onResultLoad={handleResultLoad}
-             isLoggedIn={Boolean(currentUser)}
-             onGoAuth={() => openAuth('result')}
-             onGoMembership={() => setCurrentScreen(currentUser ? 'membership' : 'auth')}
-             onGoDeepDive={() => (currentUser ? setCurrentScreen('advanced') : openAuth('advanced'))}
-           />
-         )}
-         {currentScreen === 'resultGuide' && (
-           <ResultGuideScreen
-             bodyCode={bodyCode}
-             onBack={() => setCurrentScreen('result')}
-             onNextPage={() => setCurrentScreen('resultAccordion')}
-           />
-         )}
-         {currentScreen === 'resultAccordion' && (
-           <BodyCodeAccordionScreen
-             bodyCode={bodyCode}
-             onBack={() => setCurrentScreen('resultGuide')}
-             onLearnMore={() => setCurrentScreen('advanced')}
-           />
-         )}
-         {currentScreen === 'advanced' && (
-           <AdvancedPreviewScreen
-             questionnaireId={questionnaireId}
-             isLoggedIn={Boolean(currentUser)}
-             onBack={() => setCurrentScreen('result')}
-             onGoMembership={() => setCurrentScreen(currentUser ? 'membership' : 'auth')}
-             onGoAuth={() => openAuth('advanced')}
-           />
-         )}
-         {currentScreen === 'auth' && (
-           <AuthScreen
-             user={currentUser}
-             onBack={() => setCurrentScreen(authReturnScreen)}
-             onSignedIn={() => setCurrentScreen(authReturnScreen)}
-             onGoMembership={() => setCurrentScreen('membership')}
-           />
-         )}
-         {currentScreen === 'membership' && (
-           <MembershipScreen
-             user={currentUser}
-             onBack={() => setCurrentScreen('landing')}
-             onRequireAuth={() => openAuth('membership')}
-             onSelectPlan={(planCode) => {
-               setSelectedPlanCode(planCode);
-               setCurrentScreen('checkout');
-             }}
-           />
-         )}
-         {currentScreen === 'checkout' && (
-           <CheckoutScreen
-             user={currentUser}
-             planCode={selectedPlanCode}
-             onBack={() => setCurrentScreen('membership')}
-             onRequireAuth={() => openAuth('checkout')}
-             onComplete={() => setCurrentScreen('membership')}
-           />
-         )}
-       </div>
-     </div>
-   );
-  }
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md relative">
+        {currentScreen === 'landing' && (
+          <LandingScreen
+            onStart={startNewDiagnosis}
+            onQuickResult={currentUser && latestResultId ? () => setLandingCodePlanModalOpen(true) : undefined}
+            hasQuickResult={Boolean(currentUser && latestResultId)}
+            isLoggedIn={Boolean(currentUser)}
+            userEmail={currentUser?.email}
+            onAccount={currentUser ? openMyPage : () => openAuth('landing')}
+            onPreviewSignedIn={() => {
+              setMyPagePreviewMode(true);
+              setCurrentScreen('myPage');
+            }}
+          />
+        )}
+
+        {currentScreen === 'consent' && <ConsentScreen onBack={() => setCurrentScreen('landing')} onAgree={() => setCurrentScreen('intro')} />}
+
+        {currentScreen === 'intro' && <DiagnosisIntroScreen onBack={() => setCurrentScreen('consent')} onBegin={() => setCurrentScreen('questionnaire')} />}
+
+        {currentScreen === 'questionnaire' && <QuestionnaireScreen onBack={() => setCurrentScreen('intro')} onComplete={handleQuestionnaireComplete} />}
+
+        {currentScreen === 'analyzing' && <AnalyzingScreen onBack={() => setCurrentScreen('questionnaire')} onComplete={handleAnalyzingComplete} />}
+
+        {currentScreen === 'result' && (
+          <ResultScreen
+            questionnaireId={questionnaireId}
+            onRestart={handleRestart}
+            onBack={() => setCurrentScreen(resultEntrySource === 'questionnaire' ? 'questionnaire' : 'landing')}
+            onResultLoad={handleResultLoad}
+            isLoggedIn={Boolean(currentUser)}
+            onGoAuth={() => openAuth('codePlan')}
+            onContinue={() => setCurrentScreen('codePlan')}
+          />
+        )}
+
+        {currentScreen === 'codePlan' && (
+          <CodePlanScreen
+            questionnaireId={questionnaireId}
+            isLoggedIn={Boolean(currentUser)}
+            onBack={() => setCurrentScreen('result')}
+            onRequireAuth={() => openAuth('codePlan')}
+            onNextGuide={() => setCurrentScreen('guideCommon')}
+          />
+        )}
+
+        {currentScreen === 'guideCommon' && (
+          <CommonGuideScreen onBack={() => setCurrentScreen('codePlan')} onNext={() => setCurrentScreen('guideDetails')} />
+        )}
+
+        {currentScreen === 'guideDetails' && (
+          <CodeDetailsScreen
+            questionnaireId={questionnaireId}
+            bodyCode={bodyCode}
+            onBack={() => setCurrentScreen('guideCommon')}
+            onDone={() => setCurrentScreen('codePlan')}
+          />
+        )}
+
+        {currentScreen === 'advanced' && (
+          <AdvancedPreviewScreen
+            questionnaireId={questionnaireId}
+            isLoggedIn={Boolean(currentUser)}
+            onBack={() => setCurrentScreen('result')}
+            onGoMembership={() => openMembership('advanced')}
+            onGoAuth={() => openAuth('advanced')}
+          />
+        )}
+
+        {currentScreen === 'myPage' && (
+          <MyPageScreen
+            user={currentUser}
+            latestResultId={latestResultId}
+            previewMode={myPagePreviewMode}
+            onBack={() => {
+              setMyPagePreviewMode(false);
+              setCurrentScreen('landing');
+            }}
+            onOpenLatestResult={latestResultId ? openQuickResult : undefined}
+            onOpenMembership={() => openMembership('myPage')}
+            onStartDiagnosis={startNewDiagnosis}
+            onRequireAuth={() => openAuth('myPage')}
+          />
+        )}
+
+        {currentScreen === 'auth' && (
+          <AuthScreen
+            user={currentUser}
+            onBack={() => setCurrentScreen(authReturnScreen)}
+            onSignedIn={() => setCurrentScreen(authReturnScreen)}
+            onGoMembership={() => openMembership(authReturnScreen)}
+          />
+        )}
+
+        {currentScreen === 'membership' && (
+          <MembershipScreen
+            user={currentUser}
+            onBack={() => setCurrentScreen(membershipReturnScreen)}
+            onRequireAuth={() => openAuth('membership')}
+            onSelectPlan={(planCode) => {
+              setSelectedPlanCode(planCode);
+              setCurrentScreen('checkout');
+            }}
+          />
+        )}
+
+        {currentScreen === 'checkout' && (
+          <CheckoutScreen
+            user={currentUser}
+            planCode={selectedPlanCode}
+            onBack={() => setCurrentScreen('membership')}
+            onRequireAuth={() => openAuth('checkout')}
+            onComplete={() => setCurrentScreen('membership')}
+          />
+        )}
+
+        {currentScreen === 'landing' && landingCodePlanModalOpen && currentUser && latestResultId && (
+          <CodePlanFullscreenModal questionnaireId={latestResultId} onClose={() => setLandingCodePlanModalOpen(false)} />
+        )}
+      </div>
+    </div>
+  );
+}
