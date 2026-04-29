@@ -1,3 +1,4 @@
+import { useState, type UIEvent } from 'react';
 import { ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
@@ -47,6 +48,16 @@ const AXIS_ITEMS = [
 ] as const;
 
 export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenProps) {
+  const [canBegin, setCanBegin] = useState(false);
+
+  const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
+    if (canBegin) return;
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    if (scrollTop + clientHeight >= scrollHeight - 16) {
+      setCanBegin(true);
+    }
+  };
+
   return (
     <div
       style={{
@@ -149,22 +160,24 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             background: 'rgba(255,255,255,0.78)',
             boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
             backdropFilter: 'blur(20px)',
-            padding: '24px',
           }}
         >
-          <div style={{ marginBottom: '18px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '8px' }}>MEASUREMENT AXES</div>
-            <h1 style={{ fontSize: '28px', lineHeight: 1.3, fontWeight: 800, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>
-              40문항은 아래 4개 축을 기준으로
-              <br />
-              나의 mebody 코드를 계산합니다
-            </h1>
-            <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-              정답을 맞히는 방식이 아니라, 지금 몸이 더 가깝게 느끼는 방향을 선택해주면 됩니다.
-            </p>
-          </div>
+          <div
+            onScroll={handleContentScroll}
+            style={{ flex: 1, overflowY: 'auto', padding: '24px 24px 22px' }}
+          >
+            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '10px' }}>MEASUREMENT AXES</div>
+              <h1 style={{ fontSize: '27px', lineHeight: 1.34, fontWeight: 850, color: '#111827', marginBottom: '12px', wordBreak: 'keep-all', letterSpacing: '-0.045em' }}>
+                49문항은 아래 4개 축을 기준으로
+                <br />
+                나의 mebody 코드를 계산합니다
+              </h1>
+              <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
+                정답을 맞히는 방식이 아니라, 지금 몸이 더 가깝게 느끼는 방향을 선택해주면 됩니다.
+              </p>
+            </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '2px' }}>
             <div style={{ display: 'grid', gap: '12px' }}>
               {AXIS_ITEMS.map((item) => (
                 <div
@@ -240,32 +253,60 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                 지금 몸이 자주 쓰는 방향을 떠올리며 답해주세요.
               </p>
             </div>
+
+            <div style={{ height: '14px' }} />
           </div>
 
-          <button
-            type="button"
-            onClick={onBegin}
+          <div
             style={{
-              marginTop: '18px',
-              display: 'inline-flex',
-              width: '100%',
-              height: '58px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              borderRadius: '18px',
-              border: 'none',
-              background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
-              color: '#ffffff',
-              fontSize: '16px',
-              fontWeight: 800,
-              boxShadow: '0 14px 28px rgba(20,184,166,0.25)',
-              cursor: 'pointer',
+              padding: '14px 24px 22px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.94) 42%, rgba(255,255,255,0.98) 100%)',
+              boxShadow: '0 -18px 28px rgba(255,255,255,0.88)',
+              backdropFilter: 'blur(14px)',
             }}
           >
-            내 체형 코드 분석 시작하기
-            <ArrowRight size={18} />
-          </button>
+            <button
+              type="button"
+              onClick={canBegin ? onBegin : undefined}
+              disabled={!canBegin}
+              aria-disabled={!canBegin}
+              style={{
+                display: 'inline-flex',
+                width: '100%',
+                height: '58px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                borderRadius: '18px',
+                border: 'none',
+                background: canBegin
+                  ? 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)'
+                  : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)',
+                color: canBegin ? '#ffffff' : '#94a3b8',
+                fontSize: '16px',
+                fontWeight: 800,
+                boxShadow: canBegin ? '0 14px 28px rgba(20,184,166,0.25)' : 'none',
+                cursor: canBegin ? 'pointer' : 'not-allowed',
+                transition: 'background 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease',
+              }}
+            >
+              내 체형 코드 분석 시작하기
+              <ArrowRight size={18} />
+            </button>
+            {!canBegin && (
+              <p
+                style={{
+                  marginTop: '8px',
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#94a3b8',
+                }}
+              >
+                아래 4축 안내를 끝까지 보면 시작할 수 있어요
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -118,10 +118,10 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
             padding: '24px',
           }}
         >
-          <div style={{ marginBottom: '18px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '8px' }}>CONSENT</div>
-            <h1 style={{ fontSize: '28px', lineHeight: 1.3, fontWeight: 800, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>
-              mebody 체형 분석 전
+          <div style={{ marginBottom: '18px', textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '10px' }}>CONSENT</div>
+            <h1 style={{ fontSize: '27px', lineHeight: 1.34, fontWeight: 850, color: '#111827', marginBottom: '12px', wordBreak: 'keep-all', letterSpacing: '-0.045em' }}>
+              Mebody 체형 분석 전
               <br />
               안내 및 동의
             </h1>
@@ -147,7 +147,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
                   <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
-                  <span>40문항 응답을 바탕으로 현재의 mebody 코드를 추정합니다.</span>
+                  <span>사전체크 4개와 49문항 응답을 바탕으로 현재의 mebody 코드를 추정합니다.</span>
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
                   <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
@@ -197,7 +197,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공 범위</div>
                     <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-                      40문항 설문을 바탕으로 현재의 정렬 패턴과 mebody 코드를 추정하고, 결과 이해를 위한 가이드를 제공합니다.
+                      사전체크 4개와 49문항 설문을 바탕으로 현재의 정렬 패턴과 mebody 코드를 추정하고, 결과 이해를 위한 가이드를 제공합니다.
                     </p>
                   </div>
                   <div>
@@ -220,11 +220,12 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               <label
                 style={{
                   display: 'flex',
-                  alignItems: 'flex-start',
+                  alignItems: 'center',
                   gap: '12px',
                   borderRadius: '16px',
                   background: 'rgba(255,255,255,0.88)',
-                  padding: '14px 16px',
+                  minHeight: '104px',
+                  padding: '16px 18px',
                   border: '1px solid rgba(229,231,235,0.95)',
                   cursor: 'pointer',
                 }}
@@ -233,9 +234,26 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                   type="checkbox"
                   checked={agreeContent}
                   onChange={(event) => setAgreeContent(event.target.checked)}
-                  style={{ marginTop: '2px', width: '22px', height: '22px', accentColor: '#10b981', cursor: 'pointer' }}
+                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
                 />
-                <span style={{ fontSize: '15px', lineHeight: 1.6, color: '#374151', wordBreak: 'keep-all' }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '7px',
+                    border: agreeContent ? '2px solid #10b981' : '2px solid #9ca3af',
+                    background: agreeContent ? '#10b981' : '#ffffff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {agreeContent && <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                </span>
+                <span style={{ fontSize: '15px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
                   위 내용을 이해했고, mebody가 웰니스 목적의 체형 분석 서비스임을 확인했습니다.
                 </span>
               </label>
@@ -243,11 +261,12 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               <label
                 style={{
                   display: 'flex',
-                  alignItems: 'flex-start',
+                  alignItems: 'center',
                   gap: '12px',
                   borderRadius: '16px',
                   background: 'rgba(255,255,255,0.88)',
-                  padding: '14px 16px',
+                  minHeight: '104px',
+                  padding: '16px 18px',
                   border: '1px solid rgba(229,231,235,0.95)',
                   cursor: 'pointer',
                 }}
@@ -256,9 +275,26 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                   type="checkbox"
                   checked={agreePrivacy}
                   onChange={(event) => setAgreePrivacy(event.target.checked)}
-                  style={{ marginTop: '2px', width: '22px', height: '22px', accentColor: '#10b981', cursor: 'pointer' }}
+                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
                 />
-                <span style={{ fontSize: '15px', lineHeight: 1.6, color: '#374151', wordBreak: 'keep-all' }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '7px',
+                    border: agreePrivacy ? '2px solid #10b981' : '2px solid #9ca3af',
+                    background: agreePrivacy ? '#10b981' : '#ffffff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {agreePrivacy && <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                </span>
+                <span style={{ fontSize: '15px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
                   개인정보 처리방침과 이용약관에 동의합니다.
                 </span>
               </label>

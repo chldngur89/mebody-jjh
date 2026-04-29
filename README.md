@@ -1,231 +1,168 @@
-# mebody - 체형 코드 기반 맞춤 운동 플랫폼
+# MEBODY
 
-> 나만의 체형 코드를 발견하고, 과학적으로 검증된 맞춤 운동 프로그램을 받아보세요.
+MEBODY는 40문항 설문으로 4축 체형 패턴을 분석하고, 16가지 body code와 후속 가이드 화면을 제공하는 모바일 중심 웹앱입니다.
 
-## 🎯 개요
+## 현재 상태
+- React + TypeScript + Vite 기반 단일 프론트엔드 앱
+- Supabase로 질문/결과/콘텐츠/이미지/인증 데이터를 읽고 저장
+- Vercel 배포 기준으로 동작
+- 모바일 1페이지 플로우 중심으로 UI를 재정리한 상태
 
-**mebody**는 40문항의 간단한 자가진단을 통해 개인의 체형을 분석하고, 16가지 체형 분류 중 자신만의 코드를 부여하는 서비스입니다. 각 체형에 맞는 맞춤형 운동 루틴과 생활 습관 팁을 제공합니다.
+현재 구현된 핵심 흐름:
+- 랜딩
+- 안내 및 동의
+- 40문항 설문
+- 분석 중 화면
+- 결과 페이지
+- 코드 플랜
+- 자세 사용 설명서
+- 내 코드 더 알아보기
+- 회원가입 / 로그인
+- 멤버십 / 체크아웃(가상 결제 단계)
+- 마이페이지
 
-### 핵심 기능
+## 기술 스택
+- React 18
+- TypeScript
+- Vite 6
+- Supabase JS Client
+- lucide-react
+- vite-plugin-pwa
 
-- **40문항 자가진단**: 목, 어깨, 골반, 하체 유연성 4가지 축을 측정
-- **16가지 체형 분류**: 개인 맞춤 체형 코드 (예: FLRF, CRRS 등)
-- **맞춤형 운동 프로그램**: 각 체형에 최적화된 운동 루틴
-- **생활 습관 팁**: 일상에서 실천할 수 있는 자세 교정 팁
-- **헬스 케어 용품 추천**: 체형에 맞는 보조 용품 제안
-
-## 🏗️ 기술 스택
-
-### 프론트엔드
-- **React 18** - UI 라이브러리
-- **TypeScript** - 타입 안전성
-- **Tailwind CSS** - Utility-first 스타일링
-- **Vite** - 빠른 빌드 도구
-- **Radix UI** - 접근성优良的 UI 컴포넌트
-
-### 백엔드
-- **Supabase** - 데이터베이스 + 인증 (PostgreSQL)
-- **Supabase Client** - 프론트엔드 연동
-
-### 배포
-- **Vercel** - 프론트엔드 호스팅
-
-## 📁 프로젝트 구조
-
-```
-mebody/
-├── src/
-│   ├── api/
-│   │   └── questionnaire.ts      # 설문 API 함수들
-│   ├── components/
-│   │   ├── LandingScreen.tsx    # 랜딩 페이지
-│   │   ├── DiagnosisIntroScreen.tsx  # 진단 소개
-│   │   ├── QuestionnaireScreen.tsx  # 40문항 설문
-│   │   ├── AnalyzingScreen.tsx  # 분석 중 화면
-│   │   └── ResultScreen.tsx      # 결과 페이지
-│   ├── lib/
-│   │   └── supabase.ts         # Supabase 클라이언트
-│   ├── utils/
-│   │   └── bodyCodeCalculator.ts  # 체형 코드 계산
-│   └── App.tsx                 # 메인 앱 (화면 전환)
-├── public/                     # 앱 정적 에셋 (아이콘/축 아이콘)
-├── supabase/                   # Supabase SQL/운영 문서
-├── .env                        # 환경변수 (로컬)
-├── .env.production             # 프로덕션 환경변수
-├── vite.config.ts              # Vite 설정
-├── vercel.json                 # Vercel 설정
-└── package.json                # 의존성
-```
-
-## 🔧 설치 및 실행
-
+## 실행 방법
 ### 1. 의존성 설치
-
 ```bash
-cd mebody
 npm install
 ```
 
 ### 2. 환경변수 설정
-
-로컬 개발을 위해 `.env` 파일을 생성:
+`.env` 또는 `.env.production`에 아래 값을 넣습니다.
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
 ```
 
 ### 3. 개발 서버 실행
-
 ```bash
 npm run dev
 ```
 
-브라우저에서 `http://localhost:3000` 접속
+기본 개발 주소:
+- [http://localhost:3000](http://localhost:3000)
 
 ### 4. 프로덕션 빌드
-
 ```bash
 npm run build
 ```
 
-`dist/` 폴더 생성 → Vercel에 배포
+### 5. 빌드 미리보기
+```bash
+npm run preview
+```
 
-## 🎨 16가지 체형 코드
+## 배포
+현재 배포 전제:
+- Vercel
+- Output Directory: `dist`
+- Build Command: `npm run build`
 
-### 코드 구조 (4글자)
+필수 환경변수:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-| 위치 | 의미 | 옵션 |
-|------|------|------|
-| **1번째 글자** | 목 위치 | F (전방/거북목), C (중앙) |
-| **2번째 글자** | 어깨 높이 | L (왼쪽 높음), R (오른쪽 높음) |
-| **3번째 글자** | 골반 회전 | L (왼쪽 회전), R (오른쪽 회전) |
-| **4번째 글자** | 하체 유연성 | S (경직/뻣뻣함), F (유연) |
+참고:
+- PWA 캐시가 켜져 있어서 배포 직후 예전 화면이 남아 보일 수 있습니다.
+- 이 경우 강력 새로고침 또는 서비스워커 갱신이 필요합니다.
 
-### 예시: FLRF
+## 현재 앱 구조
+주요 화면 컴포넌트:
+- `src/components/LandingScreen.tsx`
+- `src/components/ConsentScreen.tsx`
+- `src/components/DiagnosisIntroScreen.tsx`
+- `src/components/QuestionnaireScreen.tsx`
+- `src/components/AnalyzingScreen.tsx`
+- `src/components/ResultScreen.tsx`
+- `src/components/CodePlanScreen.tsx`
+- `src/components/CommonGuideScreen.tsx`
+- `src/components/CodeDetailsScreen.tsx`
+- `src/components/AuthScreen.tsx`
+- `src/components/MembershipScreen.tsx`
+- `src/components/CheckoutScreen.tsx`
+- `src/components/MyPageScreen.tsx`
 
-- **F** = 목이 앞으로 쏠림 (거북목)
-- **L** = 왼쪽 어깨가 높음
-- **R** = 오른쪽 골반이 앞으로 회전
-- **F** = 하체가 유연함
+주요 로직:
+- `src/App.tsx`: 화면 전환 및 bootstrap
+- `src/api/questionnaire.ts`: 설문/결과 저장 및 조회
+- `src/api/account.ts`: 인증/프로필/구독 조회
+- `src/api/content.ts`: Supabase 콘텐츠/이미지 조회
+- `src/utils/bodyCodeCalculator.ts`: 16가지 코드 계산
+- `src/utils/characterImages.ts`: Supabase Storage 이미지 우선 로딩
 
-### 캐릭터 예시
+## 현재 Supabase 사용 범위
+현재 사용 중인 핵심 데이터:
+- `questions`
+- `questionnaire_responses`
+- `body_code_content`
+- `app_content`
+- `app_images`
+- `user_profiles`
+- `membership_plans`
+- `user_subscriptions`
 
-| 코드 | 캐릭터 이름 |
-|------|-------------|
-| FRRS | 암사가는 잠금 로봇 |
-| FRRF | 기대면 흐르는 젤리인간 |
-| FRLS | 되배기 금속 스프링 |
-| FRLF | 회전 많은 풍선인형 |
-| FLRS | 으쓱 고정 목각병정 |
-| FLRF | 리듬은 좋은데 금방 시치는 갈대 |
-| FLLS | 한쪽에 박힌 발톱 |
-| FLLF | 녹아내리는 소프트콘 |
-| CRRS | 닻 |
-| CRRF | 오뚝이 |
-| CRLS | 큐브 탑 |
-| CRLF | 중심 귀찮은 문어 |
-| CLRS | 엇갈려 잠긴 나무인형 |
-| CLRF | 아슬아슬 젠가 탑 |
-| CLLS | 한쪽 뿌리 소나무 |
-| CLLF | 출렁이는 물침대 |
+이미지 규칙:
+- 캐릭터 정본은 Supabase Storage 기준
+- 캐릭터 경로: `images/characters/{BODY_CODE}.png`
+- 16체형 이미지: `body-types/bodyTypesImage.png`
 
-## 📊 데이터베이스 구조
+## 이미 구현된 핵심 사항
+- 40문항 설문 DB 로드 및 저장
+- 16가지 body code 계산
+- 결과 페이지 UI 개편
+- 결과 다음 장 `Code Plan` 분리
+- `자세 사용 설명서`, `내 코드 더 알아보기` 별도 페이지 구성
+- 결과 페이지 하단에 16체형 이미지 / 유튜브 / mock store 추가
+- Supabase Storage 이미지 로딩 규칙 통일
+- 로그인 사용자의 코드 플랜 풀스크린 모달 추가
+- 마이페이지 기본 셸 추가
+- 회원가입 / 로그인 연결
+- 멤버십 / 체크아웃 UI 추가
+- 비회원이면 항상 랜딩으로 시작하도록 bootstrap 수정
 
-### questions 테이블
-40개 질문 데이터를 저장
+## 아직 남아 있는 큰 작업
+1. 회원 데이터 보호용 RLS 재설계
+2. 결과를 비회원 -> 회원 계정으로 귀속시키는 서버 API
+3. 가상 결제를 서버 기반으로 변경
+4. 실제 결제 연동 준비 구조(`payment_transactions` 등)
+5. 심화 3문항 및 Ver3 확정 플로우
+6. 마이페이지 결과 히스토리 확장
+7. 인증 UX 보완(비밀번호 재설정, 이메일 인증 등)
 
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| id | SERIAL | 기본키 |
-| question_number | INT | Q1 ~ Q40 |
-| axis | VARCHAR | neck, shoulder, pelvis, flexibility |
-| question_text | TEXT | 질문 내용 |
-| option_1, 2, 3 | TEXT | 답변 옵션 |
+## 문서 위치
+핵심 문서:
+- [TODO.md](./TODO.md)
+- [docs/member-auth-billing-plan.md](./docs/member-auth-billing-plan.md)
 
-### questionnaire_responses 테이블
-사용자 응답 및 결과 저장
+Supabase 관련 문서:
+- [supabase/auth_membership_and_revisit.sql](./supabase/auth_membership_and_revisit.sql)
+- [supabase/ver3_advanced_tags.sql](./supabase/ver3_advanced_tags.sql)
+- [supabase/app_content_and_images.sql](./supabase/app_content_and_images.sql)
+- [supabase/questionnaire_responses_rls.sql](./supabase/questionnaire_responses_rls.sql)
+- [supabase/연동_검증_체크리스트.md](./supabase/연동_검증_체크리스트.md)
 
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | 기본키 |
-| user_id | UUID | 사용자 ID |
-| answers | JSONB | 응답 데이터 |
-| calculated_code | VARCHAR | 계산된 체형 코드 |
-| status | TEXT | draft, completed |
+새 컴퓨터에서 바로 이어받으려면 아래 문서를 먼저 보면 됩니다.
+- [docs/project-handoff-2026-04-15.md](./docs/project-handoff-2026-04-15.md)
 
-### body_code_content 테이블
-16개 체형별 콘텐츠
+## 새 컴퓨터에서 최소 체크
+1. repo clone
+2. `npm install`
+3. `.env` 복원
+4. `npm run dev`
+5. Supabase 연결 확인
+6. `npm run build`
+7. Vercel 환경변수 확인
 
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| body_code | VARCHAR | FLRF, CRRS 등 |
-| character_name | TEXT | 캐릭터 이름 |
-| exercises | JSONB | 운동 프로그램 |
-| lifestyle_tips | JSONB | 생활 습관 팁 |
-| health_products | JSONB | 헬스 용품 추천 |
-
-## 🚀 배포
-
-### Vercel 배포
-
-1. Vercel Dashboard에서 프로젝트 연결
-2. **Settings → Environment Variables**에 다음 추가:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-3. **Output Directory**: `dist`로 설정
-4. Deploy 클릭
-
-### Supabase 설정
-
-1. 프로젝트 생성: https://supabase.com
-2. SQL Editor에서 다음 실행:
-   - `supabase-schema.sql` - 테이블 생성
-   - `insert-questions.sql` - 40문항 데이터
-   - `insert-body-codes.sql` - 16개 체형 콘텐츠
-   - `update-character-names.sql` - 캐릭터 이름 업데이트
-
-## 🛠️ 개발 가이드
-
-### 새로운 기능 추가
-
-1. **API 함수 추가**: `src/api/questionnaire.ts`에 함수 추가
-2. **화면 컴포넌트**: `src/components/`에 새 파일 생성
-3. **유틸리티**: `src/utils/`에 함수 추가
-
-### 이미지 에셋 추가
-
-이미지는 Supabase Storage + `app_images` 테이블 키로 관리합니다.
-- 개별 캐릭터: `character_FRRS` ... `character_CLLF`
-- 16개 전체: `body_types_image`
-- 축 아이콘: `axis_neck`, `axis_shoulder`, `axis_pelvis`, `axis_flexibility`
-
-## 📈 향후 개발 로드맵
-
-### 단기 (높은 우선순위)
-- 결과 공유 기능 (URL 공유)
-- 결과 다운로드 (PNG/PDF)
-- 구독 전환 UI
-
-### 중기 (중간 우선순위)
-- 운동 영상 연동 (유튜브 임베드)
-- 헬스 용품 구매 페이지
-- 사용자 인증 시스템 (Supabase Auth)
-- 내 설문 내역
-
-### 장기 (낮은 우선순위)
-- 푸시 알림
-- 커뮤니티 기능
-- 오프라인 모드
-
-## 📄 라이선스
-
-MIT License
-
----
-
-## 🙏 감사의 글
-
-- **Figma**: 디자인 템플릿 제공
-- **Supabase**: 데이터베이스 및 인증 인프라
-- **Vercel**: 빠르고 무료로운 배포 환경
+## 참고
+- 현재 체크아웃은 실제 결제가 아니라 테스트/가상 결제 단계입니다.
+- 현재 공유 결과 URL 정책은 회원 데이터 보안 구조를 다시 잡으면서 재설계할 가능성이 큽니다.
+- 현재 목표는 “디자인 정리 완료 후, 회원/결제/보안 구조를 안정화하는 것”입니다.

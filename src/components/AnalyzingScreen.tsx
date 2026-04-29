@@ -43,8 +43,18 @@ export function AnalyzingScreen({ onBack, onComplete }: AnalyzingScreenProps) {
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            체형 패턴을 분석하고 있습니다
+          <h2
+            className="font-bold text-gray-900 mb-3"
+            style={{
+              fontSize: '27px',
+              lineHeight: 1.34,
+              letterSpacing: '-0.045em',
+              wordBreak: 'keep-all',
+            }}
+          >
+            체형 패턴을
+            <br />
+            분석하고 있습니다
           </h2>
 
           {/* Subtitle */}

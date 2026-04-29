@@ -10,11 +10,18 @@ import {
   type AxisKey,
 } from '../data/ver2Questions';
 
+export type AnswerValue = string | string[]
+export type AnswerMap = Record<string, AnswerValue>
+
 export interface ScoringQuestion {
-  question_number: number
-  axis: AxisKey
+  question_code?: string
+  question_number?: number | null
+  sort_order?: number
+  axis: string
   weight_a: number
   weight_b: number
+  is_precheck?: boolean
+  is_scored?: boolean
 }
 
 export interface BodyCodeResult {
@@ -25,23 +32,57 @@ export interface BodyCodeResult {
   borderline?: Partial<Record<AxisKey, boolean>>
 }
 
-/** Ver2: 가중치 합산 후 더 높은 쪽으로 코드 결정 */
-export function calculateBodyCode(answers: Record<number, string>, scoringQuestions?: ScoringQuestion[]): BodyCodeResult {
+function normalizeCoreAxis(axis: string): AxisKey | null {
+  if (axis === 'lower_body') return 'flexibility';
+  if (axis === 'neck' || axis === 'shoulder' || axis === 'pelvis' || axis === 'flexibility') return axis;
+  return null;
+}
+
+function getQuestionAnswer(answers: AnswerMap, question: ScoringQuestion): AnswerValue | undefined {
+  const codeKey = question.question_code ? String(question.question_code) : null;
+  const numberKey = question.question_number !== null && question.question_number !== undefined ? String(question.question_number) : null;
+  return (codeKey ? answers[codeKey] : undefined) ?? (numberKey ? answers[numberKey] : undefined);
+}
+
+function isSingleAnswer(value: AnswerValue | undefined, expected: '①' | '③' | '1' | '3'): boolean {
+  return typeof value === 'string' && value === expected;
+}
+
+function isScoredQuestion(question: ScoringQuestion): boolean {
+  return question.is_precheck !== true && question.is_scored !== false && Boolean(normalizeCoreAxis(question.axis));
+}
+
+function getQuestionSet(scoringQuestions?: ScoringQuestion[]): ScoringQuestion[] {
+  if (scoringQuestions?.length) return scoringQuestions;
+  return VER2_QUESTIONS.map((question) => ({
+    question_code: String(question.question_number),
+    question_number: question.question_number,
+    sort_order: question.question_number,
+    axis: question.axis,
+    weight_a: question.weight_a,
+    weight_b: question.weight_b,
+    is_precheck: false,
+    is_scored: true,
+  }));
+}
+
+/** Ver2/V3: 가중치 합산 후 더 높은 쪽으로 코드 결정 */
+export function calculateBodyCode(answers: AnswerMap, scoringQuestions?: ScoringQuestion[]): BodyCodeResult {
   const axisKeys: AxisKey[] = ['neck', 'shoulder', 'pelvis', 'flexibility'];
-  const questionSet = scoringQuestions?.length ? scoringQuestions : VER2_QUESTIONS;
+  const questionSet = getQuestionSet(scoringQuestions);
   const lowConfidence: Partial<Record<AxisKey, boolean>> = {};
   const borderline: Partial<Record<AxisKey, boolean>> = {};
   let code = '';
 
   for (const axis of axisKeys) {
-    const axisQuestions = questionSet.filter((q) => q.axis === axis);
+    const axisQuestions = questionSet.filter((q) => isScoredQuestion(q) && normalizeCoreAxis(q.axis) === axis);
     let scoreA = 0;
     let scoreB = 0;
 
     for (const q of axisQuestions) {
-      const value = answers[q.question_number];
-      if (value === '①' || value === '1') scoreA += q.weight_a;
-      else if (value === '③' || value === '3') scoreB += q.weight_b;
+      const value = getQuestionAnswer(answers, q);
+      if (isSingleAnswer(value, '①') || isSingleAnswer(value, '1')) scoreA += q.weight_a;
+      else if (isSingleAnswer(value, '③') || isSingleAnswer(value, '3')) scoreB += q.weight_b;
       // ② 또는 미응답 = 0
     }
 
@@ -125,20 +166,20 @@ export interface AxisPercent {
   percentRight: number
 }
 
-export function getAxisScoreBreakdown(answers: Record<number, string>, scoringQuestions?: ScoringQuestion[]): Record<AxisKey, AxisPercent> {
+export function getAxisScoreBreakdown(answers: AnswerMap, scoringQuestions?: ScoringQuestion[]): Record<AxisKey, AxisPercent> {
   const axisKeys: AxisKey[] = ['neck', 'shoulder', 'pelvis', 'flexibility'];
-  const questionSet = scoringQuestions?.length ? scoringQuestions : VER2_QUESTIONS;
+  const questionSet = getQuestionSet(scoringQuestions);
   const result = {} as Record<AxisKey, AxisPercent>;
 
   for (const axis of axisKeys) {
-    const axisQuestions = questionSet.filter((q) => q.axis === axis);
+    const axisQuestions = questionSet.filter((q) => isScoredQuestion(q) && normalizeCoreAxis(q.axis) === axis);
     let scoreA = 0;
     let scoreB = 0;
 
     for (const q of axisQuestions) {
-      const value = answers[q.question_number];
-      if (value === '①' || value === '1') scoreA += q.weight_a;
-      else if (value === '③' || value === '3') scoreB += q.weight_b;
+      const value = getQuestionAnswer(answers, q);
+      if (isSingleAnswer(value, '①') || isSingleAnswer(value, '1')) scoreA += q.weight_a;
+      else if (isSingleAnswer(value, '③') || isSingleAnswer(value, '3')) scoreB += q.weight_b;
     }
 
     const total = scoreA + scoreB;

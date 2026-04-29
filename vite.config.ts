@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'mebody - 체형 코드 진단',
         short_name: 'mebody',
-        description: '40문항으로 나만의 체형 코드를 발견하세요',
+        description: '49문항으로 나만의 체형 코드를 발견하세요',
         theme_color: '#10b981',
         background_color: '#ffffff',
         display: 'standalone',

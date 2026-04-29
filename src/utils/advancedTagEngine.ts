@@ -1,8 +1,13 @@
 import { VER2_QUESTIONS, type AxisKey } from '../data/ver2Questions';
+import type { AnswerMap } from './bodyCodeCalculator';
 
 interface QuestionMeta {
-  question_number: number;
-  axis: AxisKey;
+  question_code?: string;
+  question_number?: number | null;
+  sort_order?: number;
+  axis: string;
+  is_precheck?: boolean;
+  is_scored?: boolean;
 }
 
 export interface AxisSignal {
@@ -46,41 +51,65 @@ const LOW_CONFIDENCE_CUTOFF: Record<AxisKey, number> = {
   flexibility: 11,
 };
 
+function normalizeAxisForSignals(axis: string): AxisKey | null {
+  if (axis === 'lower_body') return 'flexibility';
+  if (axis === 'neck' || axis === 'shoulder' || axis === 'pelvis' || axis === 'flexibility') return axis;
+  return null;
+}
+
 function getQuestionSet(questions?: QuestionMeta[]): QuestionMeta[] {
   if (questions?.length) {
     return questions
-      .map((question) => ({
-        question_number: Number(question.question_number),
-        axis: question.axis,
-      }))
-      .sort((a, b) => a.question_number - b.question_number);
+      .map((question) => {
+        const axis = normalizeAxisForSignals(question.axis);
+        if (!axis || question.is_precheck === true || question.is_scored === false) return null;
+        return {
+          question_code: question.question_code ?? (question.question_number === null || question.question_number === undefined ? undefined : String(question.question_number)),
+          question_number: question.question_number === null || question.question_number === undefined ? null : Number(question.question_number),
+          sort_order: Number(question.sort_order ?? question.question_number ?? 0),
+          axis,
+          is_precheck: false,
+          is_scored: true,
+        };
+      })
+      .filter((question): question is QuestionMeta => Boolean(question))
+      .sort((a, b) => Number(a.sort_order ?? a.question_number ?? 0) - Number(b.sort_order ?? b.question_number ?? 0));
   }
 
   return VER2_QUESTIONS.map((question) => ({
+    question_code: String(question.question_number),
     question_number: question.question_number,
+    sort_order: question.question_number,
     axis: question.axis,
   }));
 }
 
-function getAxisLocalQuestionNumber(questions: QuestionMeta[], axis: AxisKey, localIndex: number): number | null {
+function getAxisLocalQuestion(questions: QuestionMeta[], axis: AxisKey, localIndex: number): QuestionMeta | null {
   const axisQuestions = questions
     .filter((question) => question.axis === axis)
-    .sort((a, b) => a.question_number - b.question_number);
+    .sort((a, b) => Number(a.sort_order ?? a.question_number ?? 0) - Number(b.sort_order ?? b.question_number ?? 0));
 
-  return axisQuestions[localIndex - 1]?.question_number ?? null;
+  return axisQuestions[localIndex - 1] ?? null;
 }
 
-function isOption(answers: Record<number, string>, questionNumber: number | null, option: '①' | '③'): boolean {
-  if (!questionNumber) return false;
-  return answers[questionNumber] === option;
+function getAnswer(answers: AnswerMap, question: QuestionMeta | null): string | undefined {
+  if (!question) return undefined;
+  const codeKey = question.question_code ? String(question.question_code) : null;
+  const numberKey = question.question_number !== null && question.question_number !== undefined ? String(question.question_number) : null;
+  const value = (codeKey ? answers[codeKey] : undefined) ?? (numberKey ? answers[numberKey] : undefined);
+  return typeof value === 'string' ? value : undefined;
+}
+
+function isOption(answers: AnswerMap, question: QuestionMeta | null, option: '①' | '③'): boolean {
+  return getAnswer(answers, question) === option;
 }
 
 function countMatches(
-  answers: Record<number, string>,
-  questionNumbers: Array<number | null>,
+  answers: AnswerMap,
+  questions: Array<QuestionMeta | null>,
   option: '①' | '③',
 ): number {
-  return questionNumbers.reduce((count, questionNumber) => count + (isOption(answers, questionNumber, option) ? 1 : 0), 0);
+  return questions.reduce((count, question) => count + (isOption(answers, question, option) ? 1 : 0), 0);
 }
 
 function createTag(tag: Omit<AdvancedTag, 'status' | 'followUpQuestions'> & { status?: AdvancedTag['status']; followUpQuestions?: number }): AdvancedTag {
@@ -116,7 +145,7 @@ export function normalizeStoredAdvancedTags(raw: unknown): AdvancedTag[] {
 export function buildAdvancedTagAnalysisFromStored(
   rawPreviewTags: unknown,
   rawConfirmedTags: unknown,
-  answers?: Record<number, string>,
+  answers?: AnswerMap,
   questions?: QuestionMeta[],
 ): AdvancedTagAnalysis | null {
   const previewTags = normalizeStoredAdvancedTags(rawPreviewTags);
@@ -135,7 +164,7 @@ export function buildAdvancedTagAnalysisFromStored(
 }
 
 export function analyzeAdvancedTags(
-  answers: Record<number, string>,
+  answers: AnswerMap,
   questions?: QuestionMeta[],
 ): AdvancedTagAnalysis {
   const questionSet = getQuestionSet(questions);
@@ -144,7 +173,7 @@ export function analyzeAdvancedTags(
   for (const axis of Object.keys(axisSignals) as AxisKey[]) {
     const axisQuestionNumbers = questionSet
       .filter((question) => question.axis === axis)
-      .map((question) => question.question_number);
+      .map((question) => question);
 
     const count1 = countMatches(answers, axisQuestionNumbers, '①');
     const count3 = countMatches(answers, axisQuestionNumbers, '③');
@@ -270,21 +299,21 @@ export function analyzeAdvancedTags(
     }));
   }
 
-  const qNeck4 = getAxisLocalQuestionNumber(questionSet, 'neck', 4);
-  const qShoulder3 = getAxisLocalQuestionNumber(questionSet, 'shoulder', 3);
-  const qShoulder8 = getAxisLocalQuestionNumber(questionSet, 'shoulder', 8);
-  const qPelvis5 = getAxisLocalQuestionNumber(questionSet, 'pelvis', 5);
-  const qPelvis6 = getAxisLocalQuestionNumber(questionSet, 'pelvis', 6);
-  const qFlex1 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 1);
-  const qFlex2 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 2);
-  const qFlex3 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 3);
-  const qFlex4 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 4);
-  const qFlex5 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 5);
-  const qFlex6 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 6);
-  const qFlex7 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 7);
-  const qFlex9 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 9);
-  const qFlex10 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 10);
-  const qFlex12 = getAxisLocalQuestionNumber(questionSet, 'flexibility', 12);
+  const qNeck4 = getAxisLocalQuestion(questionSet, 'neck', 4);
+  const qShoulder3 = getAxisLocalQuestion(questionSet, 'shoulder', 3);
+  const qShoulder8 = getAxisLocalQuestion(questionSet, 'shoulder', 8);
+  const qPelvis5 = getAxisLocalQuestion(questionSet, 'pelvis', 5);
+  const qPelvis6 = getAxisLocalQuestion(questionSet, 'pelvis', 6);
+  const qFlex1 = getAxisLocalQuestion(questionSet, 'flexibility', 1);
+  const qFlex2 = getAxisLocalQuestion(questionSet, 'flexibility', 2);
+  const qFlex3 = getAxisLocalQuestion(questionSet, 'flexibility', 3);
+  const qFlex4 = getAxisLocalQuestion(questionSet, 'flexibility', 4);
+  const qFlex5 = getAxisLocalQuestion(questionSet, 'flexibility', 5);
+  const qFlex6 = getAxisLocalQuestion(questionSet, 'flexibility', 6);
+  const qFlex7 = getAxisLocalQuestion(questionSet, 'flexibility', 7);
+  const qFlex9 = getAxisLocalQuestion(questionSet, 'flexibility', 9);
+  const qFlex10 = getAxisLocalQuestion(questionSet, 'flexibility', 10);
+  const qFlex12 = getAxisLocalQuestion(questionSet, 'flexibility', 12);
 
   const sittingDrivenSignals = [qNeck4, qFlex4, qFlex6, qFlex9];
   if (countMatches(answers, sittingDrivenSignals, '①') >= 2) {

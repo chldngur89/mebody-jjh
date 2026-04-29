@@ -14,6 +14,28 @@ function isUsableImageUrl(url?: string, failedImageUrls?: Set<string>): url is s
   return true;
 }
 
+function normalizeCharacterUrl(url: string | undefined, bodyCode: string): string {
+  const trimmed = String(url ?? '').trim();
+  if (!trimmed || trimmed.includes('your-bucket.supabase.co')) return '';
+
+  const expectedStorageUrl = getCharacterStorageUrl(bodyCode);
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    if (trimmed.includes('/storage/v1/object/public/images/')) {
+      const path = trimmed.split('/storage/v1/object/public/images/')[1] ?? '';
+      if (path === `${bodyCode}.png` && expectedStorageUrl) return expectedStorageUrl;
+    }
+    return trimmed;
+  }
+
+  if (!SUPABASE_STORAGE_PUBLIC) return trimmed;
+
+  let path = trimmed.replace(/^\/+/, '');
+  if (path.startsWith('images/')) path = path.replace(/^images\/+/, '');
+  if (path === `${bodyCode}.png`) path = `characters/${bodyCode}.png`;
+  return `${SUPABASE_STORAGE_PUBLIC}/${path}`;
+}
+
 export function getCharacterStorageUrl(bodyCode?: string | null): string {
   const normalized = normalizeBodyCode(bodyCode);
   if (!normalized || normalized.length !== 4 || !SUPABASE_STORAGE_PUBLIC) return '';
@@ -31,8 +53,8 @@ export function resolveCharacterImageUrl(
   const storageUrl = getCharacterStorageUrl(normalized);
   if (isUsableImageUrl(storageUrl, failedImageUrls)) return storageUrl;
 
-  const appImageUrl = appImages[`character_${normalized}`];
-  if (isUsableImageUrl(appImageUrl, failedImageUrls)) return appImageUrl.trim();
+  const appImageUrl = normalizeCharacterUrl(appImages[`character_${normalized}`], normalized);
+  if (isUsableImageUrl(appImageUrl, failedImageUrls)) return appImageUrl;
 
   return LOCAL_FALLBACK_CHARACTER_IMAGE;
 }

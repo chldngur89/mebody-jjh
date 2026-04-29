@@ -217,7 +217,7 @@ export function AdvancedPreviewScreen({
                 }}
               >
                 {[
-                  { step: '1', title: '기본 결과', body: '40문항 코드와 즉시 태그 확인' },
+                  { step: '1', title: '기본 결과', body: '49문항 코드와 즉시 태그 확인' },
                   { step: '2', title: '추가 질문', body: '태그별 3문항으로 원인 확정' },
                   { step: '3', title: '심화 결과', body: '루틴 순서와 우선순위 강화' },
                 ].map((item) => (

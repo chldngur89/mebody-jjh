@@ -203,10 +203,22 @@ function renderPercentBar(percentLeft: number, percentRight: number, leftColor: 
 function normalizeStorageImageUrl(raw?: string | null): string {
   const trimmed = String(raw ?? '').trim();
   if (!trimmed || trimmed.includes('your-bucket.supabase.co')) return '';
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    if (trimmed.includes('/storage/v1/object/public/images/')) {
+      const path = trimmed.split('/storage/v1/object/public/images/')[1] ?? '';
+      if (path === 'bodyTypesImage.png' && SUPABASE_STORAGE_PUBLIC) {
+        return `${SUPABASE_STORAGE_PUBLIC}/body-types/bodyTypesImage.png`;
+      }
+    }
+    return trimmed;
+  }
+
   if (!SUPABASE_STORAGE_PUBLIC) return '';
-  if (trimmed.startsWith('/')) return `${SUPABASE_STORAGE_PUBLIC}${trimmed}`;
-  return `${SUPABASE_STORAGE_PUBLIC}/${trimmed.replace(/^\/+/, '')}`;
+  let path = trimmed.replace(/^\/+/, '');
+  if (path.startsWith('images/')) path = path.replace(/^images\/+/, '');
+  if (path === 'bodyTypesImage.png') path = 'body-types/bodyTypesImage.png';
+  return `${SUPABASE_STORAGE_PUBLIC}/${path}`;
 }
 
 function pickUsableImageUrl(candidates: Array<string | undefined>, failedImageUrls: Set<string>): string {
