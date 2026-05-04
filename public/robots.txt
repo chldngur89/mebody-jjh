@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /*?result=
+Disallow: /*?ui=
+
+Sitemap: https://mebody-jjh.vercel.app/sitemap.xml

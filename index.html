@@ -4,16 +4,129 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>mebody | 49문항 체형 코드 셀프 체크</title>
+
+    <meta name="description" content="mebody는 사전체크 4개와 49문항으로 목·어깨·골반·하체 패턴을 확인하고, 나에게 맞는 mebody 코드와 15분 케어 루틴을 안내하는 웰니스 셀프 체크 서비스입니다." />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="mebody" />
+    <meta name="application-name" content="mebody" />
+    <meta name="keywords" content="mebody, 미바디, 체형 코드, 체형 분석, 자세 셀프 체크, 바디 코드, 49문항 체형 체크, 자세와 균형, 15분 케어 루틴, 웰니스" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#10b981" />
-    <meta name="description" content="49문항으로 나만의 체형 코드를 발견하세요 - mebody" />
+
+    <link rel="canonical" href="https://mebody-jjh.vercel.app/" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="mebody" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:url" content="https://mebody-jjh.vercel.app/" />
+    <meta property="og:title" content="mebody | 나의 체형 코드를 발견하세요" />
+    <meta property="og:description" content="사전체크 4개와 49문항으로 목·어깨·골반·하체 패턴을 확인하고, 나에게 맞는 mebody 코드와 15분 케어 루틴을 안내합니다." />
+    <meta property="og:image" content="https://mebody-jjh.vercel.app/og-image.png" />
+    <meta property="og:image:secure_url" content="https://mebody-jjh.vercel.app/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="mebody 49문항 체형 코드 셀프 체크" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="mebody | 나의 체형 코드를 발견하세요" />
+    <meta name="twitter:description" content="사전체크 4개와 49문항으로 목·어깨·골반·하체 패턴을 확인하고, 나에게 맞는 mebody 코드와 15분 케어 루틴을 안내합니다." />
+    <meta name="twitter:image" content="https://mebody-jjh.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="mebody 49문항 체형 코드 셀프 체크" />
+
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="mebody" />
-    <link rel="apple-touch-icon" href="/icon.svg" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="manifest" href="/manifest.json" />
-    <title>mebody - 체형 코드 진단</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://mebody-jjh.vercel.app/#organization",
+            "name": "mebody",
+            "url": "https://mebody-jjh.vercel.app/",
+            "logo": "https://mebody-jjh.vercel.app/icon.svg",
+            "sameAs": ["https://youtube.com/@mebody_routine"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://mebody-jjh.vercel.app/#webapp",
+            "name": "mebody",
+            "alternateName": "MEBODY 체형 코드 셀프 체크",
+            "url": "https://mebody-jjh.vercel.app/",
+            "applicationCategory": "HealthApplication",
+            "operatingSystem": "Web",
+            "inLanguage": "ko-KR",
+            "isAccessibleForFree": true,
+            "description": "mebody는 사전체크 4개와 49문항으로 목·어깨·골반·하체 패턴을 확인하고, 나에게 맞는 mebody 코드와 15분 케어 루틴을 안내하는 웰니스 셀프 체크 서비스입니다.",
+            "image": "https://mebody-jjh.vercel.app/og-image.png",
+            "publisher": {
+              "@id": "https://mebody-jjh.vercel.app/#organization"
+            },
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "KRW"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://mebody-jjh.vercel.app/#faq",
+            "inLanguage": "ko-KR",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "mebody는 어떤 서비스인가요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "mebody는 사전체크 4개와 49문항으로 현재 몸이 자주 쓰는 방향을 확인하고, 나만의 mebody 코드와 웰니스 가이드를 안내하는 셀프 체크 서비스입니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "49문항 결과는 어떻게 계산되나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "응답은 목 위치, 어깨 높이, 골반 회전, 하체 유연성의 4개 축으로 정리됩니다. 각 축의 방향성이 조합되어 4글자 mebody 코드가 만들어집니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "결과가 의학적 판단인가요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "아닙니다. mebody 결과는 자세와 균형을 이해하기 위한 웰니스 목적의 안내이며, 의학적 판단을 대신하지 않습니다. 통증이나 이상 증상이 있다면 전문가 상담을 우선해주세요."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "회원가입하면 무엇을 볼 수 있나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "회원가입 후에는 지난 결과 저장, 내 mebody 코드 플랜, 자세 사용 설명서, 코드별 상세 가이드, 맞춤 15분 케어 루틴을 이어서 확인할 수 있습니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "결과 페이지에서 어떤 정보를 확인할 수 있나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "결과 페이지에서는 나의 mebody 코드, 캐릭터, 4축 퍼센티지 그래프, 한 줄 이해, 전체 16가지 체형 분류, 추천 루틴과 건강 용품 안내를 확인할 수 있습니다."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
 
   <body>
