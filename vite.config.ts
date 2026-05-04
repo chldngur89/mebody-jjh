@@ -73,6 +73,9 @@ export default defineConfig({
   build: {
     target: 'esnext',
     outDir: 'dist',
+    // Current single-page bundle is ~518 kB minified / ~139 kB gzip.
+    // Keep Vercel logs clean while we defer route-level code splitting.
+    chunkSizeWarningLimit: 900,
   },
   server: {
     port: 3000,
