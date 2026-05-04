@@ -82,6 +82,8 @@ export async function fetchResultGuideByCode(bodyCode: string): Promise<ResultGu
     .from('result_guide')
     .select('title, sections')
     .eq('body_code', bodyCode)
+    .order('sort_order', { ascending: true })
+    .limit(1)
     .maybeSingle();
 
   if (error) {
@@ -158,4 +160,143 @@ export async function fetchResultSectionsByBodyCode(bodyCode: string | null | un
     title: String(row.title ?? ''),
     content: String(row.content ?? ''),
   }));
+}
+
+export interface ImmediateActionDiscomfortMapping {
+  mapping_id: string;
+  discomfort_part_key: string;
+  discomfort_part_label: string;
+  side_input: 'right' | 'left' | 'both' | 'unknown' | string;
+  side_label: string;
+  release_content_key: string;
+  stretch_content_key: string;
+  display_name: string;
+  priority_source: string;
+  dev_note: string;
+  is_active: boolean;
+}
+
+export interface ImmediateActionAxisMapping {
+  axis_mapping_id: string;
+  axis_no: number;
+  axis_key: 'neck' | 'shoulder' | 'pelvis' | 'lower' | string;
+  direction_key: string;
+  direction_label: string;
+  percentage_source: string;
+  release_content_key: string;
+  stretch_content_key: string;
+  display_name: string;
+  priority_source: string;
+  dev_note: string;
+  is_active: boolean;
+}
+
+export interface ImmediateActionContent {
+  id: string;
+  content_key: string;
+  category_type: string;
+  display_name: string;
+  target_muscle: string;
+  direction: string;
+  release_title: string;
+  release_content: string;
+  release_tool: string;
+  release_duration_sec: number | null;
+  stretch_title: string;
+  stretch_content: string;
+  stretch_duration_sec: number | null;
+  sets: number | null;
+  caution: string;
+  sort_order: number;
+}
+
+export interface ImmediateActionData {
+  discomfortMappings: ImmediateActionDiscomfortMapping[];
+  axisMappings: ImmediateActionAxisMapping[];
+  contents: ImmediateActionContent[];
+}
+
+function toBool(value: unknown): boolean {
+  return value === true || String(value).toLowerCase() === 'true';
+}
+
+function toNullableNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export async function fetchImmediateActionData(): Promise<ImmediateActionData> {
+  const [discomfortResult, axisResult, contentResult] = await Promise.all([
+    supabase
+      .from('immediate_action_discomfort_mapping')
+      .select('*')
+      .eq('is_active', true)
+      .order('mapping_id', { ascending: true }),
+    supabase
+      .from('immediate_action_axis_mapping')
+      .select('*')
+      .eq('is_active', true)
+      .order('axis_no', { ascending: true }),
+    supabase
+      .from('immediate_action_content')
+      .select('*')
+      .order('sort_order', { ascending: true }),
+  ]);
+
+  if (discomfortResult.error || axisResult.error || contentResult.error) {
+    console.warn('fetchImmediateActionData failed:', {
+      discomfort: discomfortResult.error,
+      axis: axisResult.error,
+      content: contentResult.error,
+    });
+    return { discomfortMappings: [], axisMappings: [], contents: [] };
+  }
+
+  return {
+    discomfortMappings: (discomfortResult.data || []).map((row) => ({
+      mapping_id: String(row.mapping_id ?? ''),
+      discomfort_part_key: String(row.discomfort_part_key ?? ''),
+      discomfort_part_label: String(row.discomfort_part_label ?? ''),
+      side_input: String(row.side_input ?? ''),
+      side_label: String(row.side_label ?? ''),
+      release_content_key: String(row.release_content_key ?? ''),
+      stretch_content_key: String(row.stretch_content_key ?? ''),
+      display_name: String(row.display_name ?? ''),
+      priority_source: String(row.priority_source ?? ''),
+      dev_note: String(row.dev_note ?? ''),
+      is_active: toBool(row.is_active),
+    })),
+    axisMappings: (axisResult.data || []).map((row) => ({
+      axis_mapping_id: String(row.axis_mapping_id ?? ''),
+      axis_no: Number(row.axis_no ?? 0),
+      axis_key: String(row.axis_key ?? ''),
+      direction_key: String(row.direction_key ?? ''),
+      direction_label: String(row.direction_label ?? ''),
+      percentage_source: String(row.percentage_source ?? ''),
+      release_content_key: String(row.release_content_key ?? ''),
+      stretch_content_key: String(row.stretch_content_key ?? ''),
+      display_name: String(row.display_name ?? ''),
+      priority_source: String(row.priority_source ?? ''),
+      dev_note: String(row.dev_note ?? ''),
+      is_active: toBool(row.is_active),
+    })),
+    contents: (contentResult.data || []).map((row) => ({
+      id: String(row.id ?? ''),
+      content_key: String(row.content_key ?? ''),
+      category_type: String(row.category_type ?? ''),
+      display_name: String(row.display_name ?? ''),
+      target_muscle: String(row.target_muscle ?? ''),
+      direction: String(row.direction ?? ''),
+      release_title: String(row.release_title ?? ''),
+      release_content: String(row.release_content ?? ''),
+      release_tool: String(row.release_tool ?? ''),
+      release_duration_sec: toNullableNumber(row.release_duration_sec),
+      stretch_title: String(row.stretch_title ?? ''),
+      stretch_content: String(row.stretch_content ?? ''),
+      stretch_duration_sec: toNullableNumber(row.stretch_duration_sec),
+      sets: toNullableNumber(row.sets),
+      caution: String(row.caution ?? ''),
+      sort_order: Number(row.sort_order ?? 999),
+    })),
+  };
 }
