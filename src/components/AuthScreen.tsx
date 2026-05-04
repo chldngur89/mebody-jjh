@@ -14,6 +14,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
   const [mode, setMode] = useState<'signin' | 'signup'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -25,6 +26,18 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
       return;
     }
 
+    if (mode === 'signup') {
+      if (!passwordConfirm.trim()) {
+        setError('비밀번호 확인을 입력해주세요.');
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        setError('비밀번호가 서로 일치하지 않습니다.');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -32,7 +45,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
     try {
       if (mode === 'signup') {
         const data = await signUpWithEmail(email.trim(), password, displayName.trim() || undefined);
-        if (data.user) {
+        if (data.session && data.user) {
           await upsertProfileFromUser(data.user, displayName.trim() || undefined);
         }
         if (data.session) {
@@ -286,7 +299,11 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
               >
                 <button
                   type="button"
-                  onClick={() => setMode('signup')}
+                  onClick={() => {
+                    setMode('signup');
+                    setError(null);
+                    setMessage(null);
+                  }}
                   style={{
                     flex: 1,
                     height: '38px',
@@ -304,7 +321,12 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode('signin')}
+                  onClick={() => {
+                    setMode('signin');
+                    setPasswordConfirm('');
+                    setError(null);
+                    setMessage(null);
+                  }}
                   style={{
                     flex: 1,
                     height: '38px',
@@ -352,6 +374,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
+                      autoComplete="email"
                       style={{
                         width: '100%',
                         border: 'none',
@@ -384,6 +407,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="8자 이상 권장"
+                      autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                       style={{
                         width: '100%',
                         border: 'none',
@@ -395,6 +419,46 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                     />
                   </div>
                 </label>
+
+                {mode === 'signup' && (
+                  <label style={{ display: 'block' }}>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>비밀번호 확인</span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '0 12px',
+                        height: '46px',
+                        border: passwordConfirm && password !== passwordConfirm ? '1px solid rgba(248,113,113,0.9)' : '1px solid rgba(209,213,219,1)',
+                        borderRadius: '12px',
+                        background: passwordConfirm && password !== passwordConfirm ? 'rgba(254,242,242,0.95)' : 'rgba(249,250,251,0.98)',
+                      }}
+                    >
+                      <Lock size={16} color={passwordConfirm && password !== passwordConfirm ? '#ef4444' : '#6b7280'} />
+                      <input
+                        type="password"
+                        value={passwordConfirm}
+                        onChange={(e) => setPasswordConfirm(e.target.value)}
+                        placeholder="비밀번호를 다시 입력"
+                        autoComplete="new-password"
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          outline: 'none',
+                          background: 'transparent',
+                          fontSize: '14px',
+                          color: '#111827',
+                        }}
+                      />
+                    </div>
+                    {passwordConfirm && password !== passwordConfirm && (
+                      <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.45, color: '#dc2626' }}>
+                        입력한 비밀번호가 서로 다릅니다.
+                      </span>
+                    )}
+                  </label>
+                )}
 
                 <label style={{ display: 'block' }}>
                   <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>이름(선택)</span>
