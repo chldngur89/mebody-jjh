@@ -12,6 +12,8 @@ build/
 output/
 .playwright-cli/
 .playwright-mcp/
+docs/
+supabase/
 
 # Editor
 .vscode/
