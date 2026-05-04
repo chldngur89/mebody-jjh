@@ -110,7 +110,7 @@ export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFu
             </button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px' }}>
             {data.isLoading ? (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}>로딩 중...</div>
             ) : data.error ? (

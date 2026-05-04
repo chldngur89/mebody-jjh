@@ -55,12 +55,6 @@ type AxisRow = {
   imbalance: number;
 };
 
-type CodePlanPriority = {
-  userLabel: string;
-  recommendedLabel: string;
-  actionText: string;
-};
-
 type ImmediateActionCase = 'A' | 'B' | 'empty';
 type ImmediateActionSource = 'discomfort' | 'axis';
 
@@ -101,7 +95,6 @@ export interface CodePlanDataState {
   characterImage: string;
   axisRows: AxisRow[];
   guideBlocks: GuideBlock[];
-  priority: CodePlanPriority;
   actionPlan: ImmediateActionPlan;
   handleImageError: (url: string) => void;
 }
@@ -198,7 +191,7 @@ function renderReadableText(text: string) {
   const blocks = paragraphs.length ? paragraphs : [text];
 
   return (
-    <div style={{ display: 'grid', gap: '12px', fontSize: '14px', lineHeight: 1.8, color: '#4b5563', wordBreak: 'keep-all' }}>
+    <div style={{ display: 'grid', gap: '13px', fontSize: '14px', lineHeight: 1.82, color: '#4b5563', wordBreak: 'keep-all' }}>
       {blocks.map((block, blockIndex) => {
         const lines = block
           .split('\n')
@@ -380,7 +373,7 @@ function buildAxisPriorityItem(
     id: `axis-${rank}-${row.key}-${row.dominantCode}`,
     rank,
     sourceType: 'axis',
-    title: `당신의 ${rank}순위`,
+    title: `${rank}순위 액션`,
     displayName: mapping.display_name,
     percent: row.dominantPercent,
     contentKeys,
@@ -412,7 +405,7 @@ function buildDiscomfortPriorityItem(
     id: `discomfort-1-${sideInput}`,
     rank: 1,
     sourceType: 'discomfort',
-    title: '당신의 1순위',
+    title: '1순위 액션',
     displayName,
     contentKeys,
     contents,
@@ -679,29 +672,6 @@ export function useCodePlanData(questionnaireId?: string): CodePlanDataState {
     [detailSections, guideSections, nextPageSections],
   );
 
-  const priority = useMemo<CodePlanPriority>(() => {
-    if (axisRows.length === 0) {
-      return {
-        userLabel: '결과를 불러오면 우선 축이 계산됩니다.',
-        recommendedLabel: '결과를 불러오면 추천 축이 계산됩니다.',
-        actionText: '결과를 다시 불러온 뒤 코드 플랜을 확인해주세요.',
-      };
-    }
-
-    const strongestAxis = [...axisRows].sort((a, b) => b.imbalance - a.imbalance)[0];
-    const stiffAxis = axisRows.find((row) => row.key === 'flexibility');
-    const recommendedAxis =
-      bodyCode[3] === 'S' || (stiffAxis && stiffAxis.percentRight >= 62) ? stiffAxis ?? strongestAxis : strongestAxis;
-    const userLabel = `${strongestAxis.shortTitle} ${strongestAxis.dominantLabel}`;
-    const recommendedLabel = `${recommendedAxis.shortTitle} ${recommendedAxis.dominantLabel}`;
-
-    return {
-      userLabel,
-      recommendedLabel,
-      actionText: `지금은 ${userLabel} 패턴이 가장 선명합니다. mebody는 ${recommendedLabel} 축부터 가이드와 15분 루틴을 시작하는 것을 추천합니다.`,
-    };
-  }, [axisRows, bodyCode]);
-
   const actionPlan = useMemo(
     () => buildImmediateActionPlan(result?.answers, axisRows, immediateActionData),
     [axisRows, immediateActionData, result?.answers],
@@ -718,14 +688,13 @@ export function useCodePlanData(questionnaireId?: string): CodePlanDataState {
     characterImage: characterImage || LOCAL_FALLBACK_CHARACTER_IMAGE,
     axisRows,
     guideBlocks,
-    priority,
     actionPlan,
     handleImageError,
   };
 }
 
 interface CodePlanDetailContentProps {
-  data: Pick<CodePlanDataState, 'bodyCode' | 'content' | 'summaryLine' | 'characterName' | 'characterImage' | 'axisRows' | 'guideBlocks' | 'priority' | 'actionPlan' | 'handleImageError'>;
+  data: Pick<CodePlanDataState, 'bodyCode' | 'content' | 'summaryLine' | 'characterName' | 'characterImage' | 'axisRows' | 'guideBlocks' | 'actionPlan' | 'handleImageError'>;
   hideGuideSection?: boolean;
 }
 
@@ -1013,7 +982,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
   }, [data.actionPlan.detailContents.length, missionProgress, updateMissionProgress]);
 
   return (
-    <div style={{ display: 'grid', gap: '14px' }}>
+    <div style={{ display: 'grid', gap: '16px' }}>
       <section
         style={{
           borderRadius: '30px',
@@ -1137,7 +1106,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
           padding: '19px 18px',
         }}
       >
-        <div style={{ display: 'grid', gap: '14px' }}>
+        <div style={{ display: 'grid', gap: '16px' }}>
           <div>
             <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#059669', marginBottom: '6px' }}>ACTION</div>
             <h2 style={{ fontSize: '20px', lineHeight: 1.2, fontWeight: 900, color: '#111827' }}>지금 해야 할 액션</h2>
@@ -1242,9 +1211,6 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
             )}
           </div>
 
-          {data.actionPlan.items.length > 0 && (
-            <p style={{ fontSize: '14px', lineHeight: 1.72, color: '#4b5563', wordBreak: 'keep-all' }}>{data.actionPlan.summary}</p>
-          )}
         </div>
       </section>
 
@@ -1278,7 +1244,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
             {guideOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
           </button>
           {guideOpen && (
-            <div style={{ borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '0 18px 18px', display: 'grid', gap: '12px' }}>
+            <div style={{ borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '16px 18px 20px', display: 'grid', gap: '12px' }}>
               {data.guideBlocks.length > 0 ? (
                 data.guideBlocks.map((block) => (
                   <div
@@ -1287,7 +1253,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
                       borderRadius: '18px',
                       background: 'rgba(244,251,249,0.95)',
                       border: `1px solid ${AXIS_GREEN_THEME.border}`,
-                      padding: '16px',
+                      padding: '18px',
                     }}
                   >
                     <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>{block.caption}</div>

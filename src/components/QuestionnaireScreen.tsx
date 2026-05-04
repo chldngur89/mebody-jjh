@@ -32,6 +32,18 @@ function shouldUseCompactMultiGrid(items: string[]) {
   return items.length >= 6 && items.every((item) => item.length <= 9);
 }
 
+function getSkipAnswer(question: Question): AnswerMap[string] {
+  if (question.answer_type === 'multi') {
+    const fallbackOption =
+      [question.option_2, question.option_3, question.option_1].find((option) => /없음|해당 없음|궁금/.test(option)) ||
+      question.option_2;
+    const normalized = stripOptionPrefix(fallbackOption);
+    return normalized ? [normalized] : [];
+  }
+
+  return '②';
+}
+
 function getQuestionTitleDisplay(questionText: string, maxSelect?: number) {
   const text = questionText.trim();
 
@@ -253,8 +265,7 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
       }
 
       const skipAnswers = questions.reduce<AnswerMap>((acc, q) => {
-        const existing = answers[q.question_code];
-        acc[q.question_code] = existing ?? (q.answer_type === 'multi' ? [stripOptionPrefix(q.option_2)] : '②');
+        acc[q.question_code] = getSkipAnswer(q);
         return acc;
       }, {});
       setAnswers(skipAnswers);
@@ -272,7 +283,7 @@ export function QuestionnaireScreen({ onBack, onComplete }: QuestionnaireScreenP
     } finally {
       setIsSkipping(false);
     }
-  }, [answers, isSkipping, onComplete, questionnaireId, questions]);
+  }, [isSkipping, onComplete, questionnaireId, questions]);
 
   if (isLoading) {
     return (

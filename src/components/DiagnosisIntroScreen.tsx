@@ -1,4 +1,4 @@
-import { useState, type UIEvent } from 'react';
+import { useEffect, useRef, useState, type UIEvent } from 'react';
 import { ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
@@ -49,6 +49,8 @@ const AXIS_ITEMS = [
 
 export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenProps) {
   const [canBegin, setCanBegin] = useState(false);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
     if (canBegin) return;
@@ -57,6 +59,40 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
       setCanBegin(true);
     }
   };
+
+  useEffect(() => {
+    const content = contentRef.current;
+    const bottom = bottomRef.current;
+
+    const checkScrollable = () => {
+      if (!content) return;
+      if (content.scrollHeight <= content.clientHeight + 80) {
+        setCanBegin(true);
+      }
+    };
+
+    checkScrollable();
+    const animationFrame = window.requestAnimationFrame(checkScrollable);
+    const timer = window.setTimeout(checkScrollable, 500);
+    const observer =
+      content && bottom && 'IntersectionObserver' in window
+        ? new IntersectionObserver(
+            ([entry]) => {
+              if (entry?.isIntersecting) setCanBegin(true);
+            },
+            { root: content, threshold: 0.8 },
+          )
+        : null;
+
+    observer?.observe(bottom);
+    window.addEventListener('resize', checkScrollable);
+    return () => {
+      observer?.disconnect();
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', checkScrollable);
+    };
+  }, []);
 
   return (
     <div
@@ -163,6 +199,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
           }}
         >
           <div
+            ref={contentRef}
             onScroll={handleContentScroll}
             style={{ flex: 1, overflowY: 'auto', padding: '24px 24px 22px' }}
           >
@@ -254,7 +291,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
               </p>
             </div>
 
-            <div style={{ height: '14px' }} />
+            <div ref={bottomRef} style={{ height: '14px' }} />
           </div>
 
           <div

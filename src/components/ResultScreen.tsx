@@ -523,8 +523,8 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px' }}>
-          <div style={{ display: 'grid', gap: '14px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px' }}>
+          <div style={{ display: 'grid', gap: '16px' }}>
             <section
               style={{
                 borderRadius: '30px',
@@ -635,7 +635,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>탭해서 크게 보기</div>
               </div>
 
-              <div style={{ display: 'grid', gap: '14px' }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
                 {axisRows.map((row) => (
                   <div key={row.key}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '7px' }}>

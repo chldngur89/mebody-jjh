@@ -241,7 +241,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px', display: 'grid', gap: '14px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
           {previewMode && !isLoggedIn && (
             <div
               style={{

@@ -111,6 +111,19 @@ export async function fetchLatestCompletedResultIdForUser(userId: string): Promi
   return data?.id ?? null;
 }
 
+export async function attachQuestionnaireResultToUser(questionnaireId: string | undefined, userId: string): Promise<void> {
+  if (!questionnaireId || !userId) return;
+
+  const { error } = await supabase
+    .from('questionnaire_responses')
+    .update({ user_id: userId, updated_at: new Date().toISOString() })
+    .eq('id', questionnaireId);
+
+  if (error && !isMissingTableOrColumn(error)) {
+    console.warn('attachQuestionnaireResultToUser failed:', error);
+  }
+}
+
 export async function fetchMembershipPlans(): Promise<MembershipPlan[]> {
   const { data, error } = await supabase
     .from('membership_plans')
@@ -210,4 +223,3 @@ export async function activateSubscription(userId: string, planCode: string): Pr
     cancel_at_period_end: Boolean(data.cancel_at_period_end),
   };
 }
-

@@ -1,25 +1,22 @@
 # MEBODY
 
-MEBODY는 40문항 설문으로 4축 체형 패턴을 분석하고, 16가지 body code와 후속 가이드 화면을 제공하는 모바일 중심 웹앱입니다.
+MEBODY는 4개 사전체크와 49개 본문 문항으로 현재 몸의 정렬 패턴을 기록하고, 4축 기반 mebody 코드와 후속 코드 플랜을 제공하는 모바일 중심 웹앱입니다.
 
-## 현재 상태
-- React + TypeScript + Vite 기반 단일 프론트엔드 앱
-- Supabase로 질문/결과/콘텐츠/이미지/인증 데이터를 읽고 저장
-- Vercel 배포 기준으로 동작
-- 모바일 1페이지 플로우 중심으로 UI를 재정리한 상태
-
-현재 구현된 핵심 흐름:
+## 현재 제품 흐름
 - 랜딩
 - 안내 및 동의
-- 40문항 설문
+- 측정 기준 안내
+- 53문항 설문: 사전체크 4개 + 본문 49개
 - 분석 중 화면
-- 결과 페이지
+- 무료 결과 페이지
 - 코드 플랜
 - 자세 사용 설명서
 - 내 코드 더 알아보기
 - 회원가입 / 로그인
-- 멤버십 / 체크아웃(가상 결제 단계)
 - 마이페이지
+- 멤버십 / 체크아웃 mock
+
+임시 검증용 버튼은 남겨둡니다. 운영 전에는 실제 회원/결제 흐름이 붙은 뒤 제거 여부를 다시 판단합니다.
 
 ## 기술 스택
 - React 18
@@ -27,7 +24,9 @@ MEBODY는 40문항 설문으로 4축 체형 패턴을 분석하고, 16가지 bod
 - Vite 6
 - Supabase JS Client
 - lucide-react
-- vite-plugin-pwa
+- Vercel 배포
+
+PWA 캐싱은 제거했습니다. [public/sw.js](./public/sw.js)는 과거 배포에서 등록된 service worker를 해제하기 위한 cleanup 파일입니다.
 
 ## 실행 방법
 ### 1. 의존성 설치
@@ -36,22 +35,21 @@ npm install
 ```
 
 ### 2. 환경변수 설정
-`.env` 또는 `.env.production`에 아래 값을 넣습니다.
+`.env` 또는 Vercel Environment Variables에 아래 값을 설정합니다.
 
 ```env
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
 
-### 3. 개발 서버 실행
+### 3. 개발 서버
 ```bash
-npm run dev
+npm run dev -- --host 127.0.0.1
 ```
 
-기본 개발 주소:
-- [http://localhost:3000](http://localhost:3000)
+기본 주소는 [http://127.0.0.1:3000](http://127.0.0.1:3000) 입니다.
 
-### 4. 프로덕션 빌드
+### 4. 빌드
 ```bash
 npm run build
 ```
@@ -61,108 +59,115 @@ npm run build
 npm run preview
 ```
 
-## 배포
-현재 배포 전제:
-- Vercel
-- Output Directory: `dist`
+## Vercel 배포 기준
+- Framework: Vite
 - Build Command: `npm run build`
+- Output Directory: `dist`
+- 필수 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
-필수 환경변수:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+Vercel 빌드 로그의 `Some chunks are larger than 500 kB`는 현재 실패가 아니라 경고입니다. 현재 `vite.config.ts`에서 경고 기준을 900 kB로 올려둔 상태이고, 실제 최적화는 라우트 단위 코드 스플리팅을 할 때 처리합니다.
 
-참고:
-- PWA 캐시가 켜져 있어서 배포 직후 예전 화면이 남아 보일 수 있습니다.
-- 이 경우 강력 새로고침 또는 서비스워커 갱신이 필요합니다.
+## 현재 코드 구조
+주요 진입점:
+- [src/App.tsx](./src/App.tsx): 화면 전환, 부트스트랩, 결과 기억 정책
+- [src/main.tsx](./src/main.tsx): React mount, 과거 service worker/cache 정리
 
-## 현재 앱 구조
-주요 화면 컴포넌트:
-- `src/components/LandingScreen.tsx`
-- `src/components/ConsentScreen.tsx`
-- `src/components/DiagnosisIntroScreen.tsx`
-- `src/components/QuestionnaireScreen.tsx`
-- `src/components/AnalyzingScreen.tsx`
-- `src/components/ResultScreen.tsx`
-- `src/components/CodePlanScreen.tsx`
-- `src/components/CommonGuideScreen.tsx`
-- `src/components/CodeDetailsScreen.tsx`
-- `src/components/AuthScreen.tsx`
-- `src/components/MembershipScreen.tsx`
-- `src/components/CheckoutScreen.tsx`
-- `src/components/MyPageScreen.tsx`
+주요 화면:
+- [src/components/LandingScreen.tsx](./src/components/LandingScreen.tsx)
+- [src/components/ConsentScreen.tsx](./src/components/ConsentScreen.tsx)
+- [src/components/DiagnosisIntroScreen.tsx](./src/components/DiagnosisIntroScreen.tsx)
+- [src/components/QuestionnaireScreen.tsx](./src/components/QuestionnaireScreen.tsx)
+- [src/components/AnalyzingScreen.tsx](./src/components/AnalyzingScreen.tsx)
+- [src/components/ResultScreen.tsx](./src/components/ResultScreen.tsx)
+- [src/components/CodePlanScreen.tsx](./src/components/CodePlanScreen.tsx)
+- [src/components/CommonGuideScreen.tsx](./src/components/CommonGuideScreen.tsx)
+- [src/components/CodeDetailsScreen.tsx](./src/components/CodeDetailsScreen.tsx)
+- [src/components/AuthScreen.tsx](./src/components/AuthScreen.tsx)
+- [src/components/MyPageScreen.tsx](./src/components/MyPageScreen.tsx)
+- [src/components/MembershipScreen.tsx](./src/components/MembershipScreen.tsx)
+- [src/components/CheckoutScreen.tsx](./src/components/CheckoutScreen.tsx)
 
 주요 로직:
-- `src/App.tsx`: 화면 전환 및 bootstrap
-- `src/api/questionnaire.ts`: 설문/결과 저장 및 조회
-- `src/api/account.ts`: 인증/프로필/구독 조회
-- `src/api/content.ts`: Supabase 콘텐츠/이미지 조회
-- `src/utils/bodyCodeCalculator.ts`: 16가지 코드 계산
-- `src/utils/characterImages.ts`: Supabase Storage 이미지 우선 로딩
+- [src/api/questionnaire.ts](./src/api/questionnaire.ts): 문항 조회, 응답 저장, 결과 조회
+- [src/api/account.ts](./src/api/account.ts): 프로필, 최근 결과, 멤버십 조회
+- [src/api/content.ts](./src/api/content.ts): 콘텐츠, 이미지, Ver6 액션 데이터 조회
+- [src/utils/bodyCodeCalculator.ts](./src/utils/bodyCodeCalculator.ts): 4축 mebody 코드 계산
+- [src/utils/characterImages.ts](./src/utils/characterImages.ts): Supabase Storage 우선 캐릭터 이미지 해석
+- [src/utils/axisIcons.ts](./src/utils/axisIcons.ts): 축 아이콘 이미지 해석
 
-## 현재 Supabase 사용 범위
-현재 사용 중인 핵심 데이터:
+## Supabase 사용 범위
+현재 앱이 사용하는 주요 테이블:
 - `questions`
 - `questionnaire_responses`
 - `body_code_content`
+- `result_guide`
+- `body_code_next_page`
+- `body_code_result_sections`
 - `app_content`
 - `app_images`
+- `immediate_action_discomfort_mapping`
+- `immediate_action_axis_mapping`
+- `immediate_action_content`
 - `user_profiles`
 - `membership_plans`
 - `user_subscriptions`
 
-이미지 규칙:
-- 캐릭터 정본은 Supabase Storage 기준
-- 캐릭터 경로: `images/characters/{BODY_CODE}.png`
-- 16체형 이미지: `body-types/bodyTypesImage.png`
-
-## 이미 구현된 핵심 사항
-- 40문항 설문 DB 로드 및 저장
-- 16가지 body code 계산
-- 결과 페이지 UI 개편
-- 결과 다음 장 `Code Plan` 분리
-- `자세 사용 설명서`, `내 코드 더 알아보기` 별도 페이지 구성
-- 결과 페이지 하단에 16체형 이미지 / 유튜브 / mock store 추가
-- Supabase Storage 이미지 로딩 규칙 통일
-- 로그인 사용자의 코드 플랜 풀스크린 모달 추가
-- 마이페이지 기본 셸 추가
-- 회원가입 / 로그인 연결
-- 멤버십 / 체크아웃 UI 추가
-- 비회원이면 항상 랜딩으로 시작하도록 bootstrap 수정
-
-## 아직 남아 있는 큰 작업
-1. 회원 데이터 보호용 RLS 재설계
-2. 결과를 비회원 -> 회원 계정으로 귀속시키는 서버 API
-3. 가상 결제를 서버 기반으로 변경
-4. 실제 결제 연동 준비 구조(`payment_transactions` 등)
-5. 심화 3문항 및 Ver3 확정 플로우
-6. 마이페이지 결과 히스토리 확장
-7. 인증 UX 보완(비밀번호 재설정, 이메일 인증 등)
-
-## 문서 위치
-핵심 문서:
-- [TODO.md](./TODO.md)
-- [docs/member-auth-billing-plan.md](./docs/member-auth-billing-plan.md)
-
-Supabase 관련 문서:
-- [supabase/auth_membership_and_revisit.sql](./supabase/auth_membership_and_revisit.sql)
-- [supabase/ver3_advanced_tags.sql](./supabase/ver3_advanced_tags.sql)
+현재 유지하는 SQL 파일:
 - [supabase/app_content_and_images.sql](./supabase/app_content_and_images.sql)
+- [supabase/auth_membership_and_revisit.sql](./supabase/auth_membership_and_revisit.sql)
+- [supabase/body_code_result_sections_15codes.sql](./supabase/body_code_result_sections_15codes.sql)
+- [supabase/fix_app_images_cleanup.sql](./supabase/fix_app_images_cleanup.sql)
 - [supabase/questionnaire_responses_rls.sql](./supabase/questionnaire_responses_rls.sql)
-- [supabase/연동_검증_체크리스트.md](./supabase/연동_검증_체크리스트.md)
+- [supabase/ver6_immediate_action.sql](./supabase/ver6_immediate_action.sql)
 
-새 컴퓨터에서 바로 이어받으려면 아래 문서를 먼저 보면 됩니다.
-- [docs/project-handoff-2026-04-15.md](./docs/project-handoff-2026-04-15.md)
+## 이미지 규칙
+Supabase Storage bucket 이름은 `images`입니다.
 
-## 새 컴퓨터에서 최소 체크
-1. repo clone
-2. `npm install`
-3. `.env` 복원
-4. `npm run dev`
-5. Supabase 연결 확인
-6. `npm run build`
-7. Vercel 환경변수 확인
+Storage 경로:
+- 캐릭터: `characters/{BODY_CODE}.png`
+- 축 아이콘: `axis/axis-neck.png`
+- 축 아이콘: `axis/axis-shoulder.png`
+- 축 아이콘: `axis/axis-pelvis.png`
+- 축 아이콘: `axis/axis-flexibility.png`
+- 16가지 체형 이미지: `body-types/bodyTypesImage.png`
 
-## 참고
-- 현재 체크아웃은 실제 결제가 아니라 테스트/가상 결제 단계입니다.
-- 현재 공유 결과 URL 정책은 회원 데이터 보안 구조를 다시 잡으면서 재설계할 가능성이 큽니다.
-- 현재 목표는 “디자인 정리 완료 후, 회원/결제/보안 구조를 안정화하는 것”입니다.
+캐릭터 이미지는 Storage를 우선 사용하고, 실패하면 `app_images`, 마지막으로 로컬 fallback을 사용합니다.
+
+## 결과 기억 정책
+- 비회원: 현재 탭의 `sessionStorage`에만 결과 id를 보관합니다.
+- 비회원: 새 탭, 새 브라우저, 공유 URL 단독 진입은 랜딩으로 보냅니다.
+- 로그인 사용자: `questionnaire_responses.user_id` 기준으로 최신 결과를 불러옵니다.
+- Supabase Auth 세션은 그대로 유지합니다.
+
+## 현재 구현 완료
+- 53문항 설문 로딩 및 저장
+- 사전체크 4개와 본문 49개 문항 UI 처리
+- 4축 기반 mebody 코드 계산
+- 결과 페이지와 코드 플랜 분리
+- Ver6 즉시 액션 데이터 조회 및 1순위/2순위 액션 UI
+- 액션 상세 모달과 미션 수행률 0% / 50% / 100% 흐름
+- 자세 사용 설명서와 내 코드 더 알아보기 화면
+- 결과 페이지 하단 16가지 체형 이미지, 유튜브 카드, mock store
+- Supabase Storage 이미지 우선 로딩
+- 로그인 사용자의 최근 결과 코드 플랜 풀스크린 모달
+- 회원가입 / 로그인 / 마이페이지 / 멤버십 mock UI
+- 비회원 첫 진입은 항상 랜딩으로 고정
+- 과거 service worker/cache cleanup
+
+## 검증 체크리스트
+```bash
+npm run build
+git diff --check
+```
+
+브라우저에서 확인할 흐름:
+- 비회원 새 접속이 랜딩에서 시작하는지 확인
+- 53문항 건너뛰기 후 결과와 코드 플랜이 최신 액션 UI로 나오는지 확인
+- 53문항 정상 완료 후에도 같은 코드 플랜 UI로 나오는지 확인
+- 미션 카드 클릭 시 0% -> 50% -> 100% 흐름이 정상인지 확인
+- 100%에서 미션 영역을 누르면 액션 전체 보기가 열리는지 확인
+- 비회원 새 탭에서는 이전 결과가 자동 복원되지 않는지 확인
+- 로그인 후에는 최근 결과 바로 보기가 Supabase 결과 기준으로 노출되는지 확인
+
+## 다음 작업
+다음 작업은 [TODO.md](./TODO.md)에 정리했습니다. 결제/회원 보안 계획은 [docs/member-auth-billing-plan.md](./docs/member-auth-billing-plan.md)에 유지합니다.

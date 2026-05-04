@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { VER2_QUESTIONS } from '../data/ver2Questions'
 import { calculateBodyCode, type AnswerMap, type ScoringQuestion } from '../utils/bodyCodeCalculator'
-import { analyzeAdvancedTags, type AdvancedTag } from '../utils/advancedTagEngine'
 
 export type QuestionAnswerType = 'single' | 'multi'
 
@@ -31,13 +30,7 @@ export interface QuestionnaireResponse {
   created_at: string
   updated_at: string
   completed_at?: string
-  deep_status?: DeepStatus
-  advanced_preview_tags?: AdvancedTag[]
-  advanced_confirmed_tags?: AdvancedTag[]
-  advanced_followup_answers?: Record<string, unknown>
 }
-
-export type DeepStatus = 'not_started' | 'previewed' | 'in_progress' | 'completed' | 'retest_required'
 
 export interface BodyCodeContent {
   body_code: string
@@ -61,10 +54,6 @@ export interface BodyCodeContent {
 
 const OPTIONAL_RESPONSE_COLUMNS = [
   'user_id',
-  'deep_status',
-  'advanced_preview_tags',
-  'advanced_confirmed_tags',
-  'advanced_followup_answers',
   'question_version',
 ] as const
 
@@ -228,9 +217,6 @@ export async function submitQuestionnaire(
   const result = calculateBodyCode(answers, scoringQuestions)
   const code = result.code
   const userId = await getCurrentAuthUserId()
-  const advancedTags = analyzeAdvancedTags(answers, scoringQuestions)
-  const nextDeepStatus: DeepStatus =
-    advancedTags.previewTags.length > 0 || advancedTags.confirmedTags.length > 0 ? 'previewed' : 'not_started'
 
   const now = new Date().toISOString()
   const payload = {
@@ -240,34 +226,11 @@ export async function submitQuestionnaire(
     completed_at: now,
     updated_at: now,
     user_id: userId,
-    deep_status: nextDeepStatus,
-    advanced_preview_tags: advancedTags.previewTags,
-    advanced_confirmed_tags: advancedTags.confirmedTags,
     question_version: 'v3_49_precheck',
   }
   const data = await mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
 
   return { ...data, body_code_meta: result }
-}
-
-interface SaveAdvancedAnalysisInput {
-  deepStatus?: DeepStatus
-  previewTags?: AdvancedTag[]
-  confirmedTags?: AdvancedTag[]
-  followupAnswers?: Record<string, unknown>
-}
-
-export async function saveAdvancedAnalysisSnapshot(questionnaireId: string, input: SaveAdvancedAnalysisInput) {
-  const payload: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  }
-
-  if (input.deepStatus) payload.deep_status = input.deepStatus
-  if (input.previewTags) payload.advanced_preview_tags = input.previewTags
-  if (input.confirmedTags) payload.advanced_confirmed_tags = input.confirmedTags
-  if (input.followupAnswers) payload.advanced_followup_answers = input.followupAnswers
-
-  return mutateQuestionnaireResponse(questionnaireId, payload)
 }
 
 export async function fetchQuestionnaireResult(questionnaireId: string) {

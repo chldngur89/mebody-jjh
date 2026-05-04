@@ -34,7 +34,7 @@ function renderReadableText(text: string) {
   const blocks = paragraphs.length ? paragraphs : [text];
 
   return (
-    <div style={{ display: 'grid', gap: '12px', fontSize: '14px', lineHeight: 1.8, color: '#4b5563', wordBreak: 'keep-all' }}>
+    <div style={{ display: 'grid', gap: '13px', fontSize: '14px', lineHeight: 1.82, color: '#4b5563', wordBreak: 'keep-all' }}>
       {blocks.map((block, blockIndex) => {
         const lines = block
           .split('\n')
@@ -200,7 +200,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px', display: 'grid', gap: '14px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
           <section
             style={{
               borderRadius: '22px',
@@ -218,7 +218,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
           {isLoading ? (
             <div style={{ textAlign: 'center', color: '#6b7280', paddingTop: '12px' }}>로딩 중...</div>
           ) : (
-            <div style={{ display: 'grid', gap: '10px' }}>
+            <div style={{ display: 'grid', gap: '12px' }}>
               {mergedSections.map((item, index) => {
                 const id = `detail-${item.section_key}`;
                 const isOpen = openId === id;
@@ -271,8 +271,8 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
                       {isOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
                     </button>
                     {isOpen && (
-                      <div style={{ padding: '0 18px 18px' }}>
-                        <div style={{ borderRadius: '16px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '16px' }}>
+                      <div style={{ padding: '0 18px 20px' }}>
+                        <div style={{ borderRadius: '16px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '18px' }}>
                           {renderReadableText(item.content)}
                         </div>
                       </div>

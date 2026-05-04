@@ -12,13 +12,12 @@ import { CodeDetailsScreen } from './components/CodeDetailsScreen';
 import { AuthScreen } from './components/AuthScreen';
 import { MembershipScreen } from './components/MembershipScreen';
 import { CheckoutScreen } from './components/CheckoutScreen';
-import { AdvancedPreviewScreen } from './components/AdvancedPreviewScreen';
 import { MyPageScreen } from './components/MyPageScreen';
 import { CodePlanFullscreenModal } from './components/CodePlanFullscreenModal';
-import { fetchLatestCompletedResultIdForUser, upsertProfileFromUser } from './api/account';
+import { attachQuestionnaireResultToUser, fetchLatestCompletedResultIdForUser, upsertProfileFromUser } from './api/account';
 import { supabase } from './lib/supabase';
 
-const LOCAL_LAST_RESULT_KEY = 'mebody:lastResultId';
+const SESSION_LAST_RESULT_KEY = 'mebody:sessionResultId';
 
 type Screen =
   | 'landing'
@@ -30,7 +29,6 @@ type Screen =
   | 'codePlan'
   | 'guideCommon'
   | 'guideDetails'
-  | 'advanced'
   | 'auth'
   | 'membership'
   | 'checkout'
@@ -40,7 +38,7 @@ type ResultEntrySource = 'questionnaire' | 'quick' | 'shared';
 
 export default function App() {
   const previewScreenParam = new URLSearchParams(window.location.search).get('ui');
-  const previewScreen = (['landing', 'auth', 'advanced', 'myPage', 'codePlan'] as const).find((screen) => screen === previewScreenParam);
+  const previewScreen = (['landing', 'auth', 'myPage', 'codePlan'] as const).find((screen) => screen === previewScreenParam);
   const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
   const [bodyCode, setBodyCode] = useState<string | undefined>();
@@ -55,8 +53,20 @@ export default function App() {
   const [landingCodePlanModalOpen, setLandingCodePlanModalOpen] = useState(false);
   const [codePlanPreviewMode, setCodePlanPreviewMode] = useState(false);
   const mountedRef = useRef(true);
+  const questionnaireIdRef = useRef<string | undefined>();
 
-  const resetAnonymousState = () => {
+  useEffect(() => {
+    questionnaireIdRef.current = questionnaireId;
+  }, [questionnaireId]);
+
+  const rememberResultForCurrentSession = (id: string, user: User | null = currentUser) => {
+    setLatestResultId(id);
+    if (!user) {
+      sessionStorage.setItem(SESSION_LAST_RESULT_KEY, id);
+    }
+  };
+
+  const resetAnonymousState = (clearSession = true) => {
     setLatestResultId(undefined);
     setQuestionnaireId(undefined);
     setBodyCode(undefined);
@@ -64,7 +74,9 @@ export default function App() {
     setLandingCodePlanModalOpen(false);
     setCodePlanPreviewMode(false);
     setMyPagePreviewMode(false);
-    localStorage.removeItem(LOCAL_LAST_RESULT_KEY);
+    if (clearSession) {
+      sessionStorage.removeItem(SESSION_LAST_RESULT_KEY);
+    }
     setCurrentScreen('landing');
   };
 
@@ -95,8 +107,7 @@ export default function App() {
     setQuestionnaireId(id);
     setCurrentScreen('result');
     setResultEntrySource(source);
-    setLatestResultId(id);
-    localStorage.setItem(LOCAL_LAST_RESULT_KEY, id);
+    rememberResultForCurrentSession(id);
   };
 
   const handleQuestionnaireComplete = (id: string, code: string) => {
@@ -105,9 +116,8 @@ export default function App() {
     setCodePlanPreviewMode(false);
     setQuestionnaireId(id);
     setBodyCode(code);
-    setLatestResultId(id);
+    rememberResultForCurrentSession(id);
     setResultEntrySource('questionnaire');
-    localStorage.setItem(LOCAL_LAST_RESULT_KEY, id);
     setCurrentScreen('analyzing');
   };
 
@@ -146,7 +156,7 @@ export default function App() {
       try {
         const params = new URLSearchParams(window.location.search);
         const sharedResultId = params.get('result');
-        const localResultId = localStorage.getItem(LOCAL_LAST_RESULT_KEY) ?? undefined;
+        const sessionResultId = sessionStorage.getItem(SESSION_LAST_RESULT_KEY) ?? undefined;
 
         const { data } = await supabase.auth.getSession();
         if (!mountedRef.current) return;
@@ -155,6 +165,10 @@ export default function App() {
         setCurrentUser(user);
 
         if (!user) {
+          if (sharedResultId && sessionResultId === sharedResultId) {
+            openResultScreen(sharedResultId, 'questionnaire');
+            return;
+          }
           resetAnonymousState();
           return;
         }
@@ -165,12 +179,11 @@ export default function App() {
           console.warn('upsertProfileFromUser failed:', error);
         }
 
-        let resolvedLatestResultId = localResultId;
+        let resolvedLatestResultId: string | undefined;
         const latestFromDb = await fetchLatestCompletedResultIdForUser(user.id);
         if (!mountedRef.current) return;
         if (latestFromDb) {
           resolvedLatestResultId = latestFromDb;
-          localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
         }
 
         setLatestResultId(resolvedLatestResultId);
@@ -203,6 +216,7 @@ export default function App() {
 
       try {
         await upsertProfileFromUser(user);
+        await attachQuestionnaireResultToUser(questionnaireIdRef.current, user.id);
       } catch (error) {
         console.warn('upsertProfileFromUser(auth) failed:', error);
       }
@@ -211,7 +225,8 @@ export default function App() {
       if (!mountedRef.current) return;
       if (latestFromDb) {
         setLatestResultId(latestFromDb);
-        localStorage.setItem(LOCAL_LAST_RESULT_KEY, latestFromDb);
+      } else if (questionnaireIdRef.current) {
+        setLatestResultId(questionnaireIdRef.current);
       }
     });
 
@@ -337,16 +352,6 @@ export default function App() {
             bodyCode={bodyCode}
             onBack={() => setCurrentScreen('guideCommon')}
             onDone={() => setCurrentScreen('codePlan')}
-          />
-        )}
-
-        {currentScreen === 'advanced' && (
-          <AdvancedPreviewScreen
-            questionnaireId={questionnaireId}
-            isLoggedIn={Boolean(currentUser)}
-            onBack={() => setCurrentScreen('result')}
-            onGoMembership={() => openMembership('advanced')}
-            onGoAuth={() => openAuth('advanced')}
           />
         )}
 
