@@ -1,6 +1,11 @@
 import { supabase } from '../lib/supabase';
 
+let appImagesCache: Record<string, string> | null = null;
+let immediateActionDataCache: ImmediateActionData | null = null;
+
 export async function fetchAppImages(): Promise<Record<string, string>> {
+  if (appImagesCache) return appImagesCache;
+
   const { data, error } = await supabase
     .from('app_images')
     .select('key, url');
@@ -14,6 +19,7 @@ export async function fetchAppImages(): Promise<Record<string, string>> {
   for (const row of data || []) {
     map[row.key] = row.url;
   }
+  appImagesCache = map;
   return map;
 }
 
@@ -226,6 +232,8 @@ function toNullableNumber(value: unknown): number | null {
 }
 
 export async function fetchImmediateActionData(): Promise<ImmediateActionData> {
+  if (immediateActionDataCache) return immediateActionDataCache;
+
   const [discomfortResult, axisResult, contentResult] = await Promise.all([
     supabase
       .from('immediate_action_discomfort_mapping')
@@ -252,7 +260,7 @@ export async function fetchImmediateActionData(): Promise<ImmediateActionData> {
     return { discomfortMappings: [], axisMappings: [], contents: [] };
   }
 
-  return {
+  immediateActionDataCache = {
     discomfortMappings: (discomfortResult.data || []).map((row) => ({
       mapping_id: String(row.mapping_id ?? ''),
       discomfort_part_key: String(row.discomfort_part_key ?? ''),
@@ -299,4 +307,5 @@ export async function fetchImmediateActionData(): Promise<ImmediateActionData> {
       sort_order: Number(row.sort_order ?? 999),
     })),
   };
+  return immediateActionDataCache;
 }

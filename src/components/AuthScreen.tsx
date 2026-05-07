@@ -1,17 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Sparkles, UserRound } from 'lucide-react';
-import { signInWithEmail, signOutAccount, signUpWithEmail, upsertProfileFromUser } from '../api/account';
+import { requestPasswordReset, signInWithEmail, signOutAccount, signUpWithEmail, upsertProfileFromUser } from '../api/account';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface AuthScreenProps {
   user: User | null;
+  initialMode?: 'signin' | 'signup';
   onBack?: () => void;
-  onSignedIn?: () => void;
+  onSignedIn?: (user: User) => void | Promise<void>;
   onGoMembership?: () => void;
 }
 
-export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScreenProps) {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
+export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, onGoMembership }: AuthScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -19,6 +23,17 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMode(initialMode);
+    setError(null);
+    setMessage(null);
+  }, [initialMode]);
+
+  const completeSignedIn = async (signedInUser: User, displayNameForSignup?: string) => {
+    await upsertProfileFromUser(signedInUser, displayNameForSignup);
+    await onSignedIn?.(signedInUser);
+  };
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -44,23 +59,51 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
 
     try {
       if (mode === 'signup') {
-        const data = await signUpWithEmail(email.trim(), password, displayName.trim() || undefined);
+        const trimmedEmail = email.trim();
+        const trimmedDisplayName = displayName.trim() || undefined;
+        let data: Awaited<ReturnType<typeof signUpWithEmail>>;
+
+        try {
+          data = await signUpWithEmail(trimmedEmail, password, trimmedDisplayName);
+        } catch (signUpError) {
+          try {
+            const signInData = await signInWithEmail(trimmedEmail, password);
+            if (signInData.user) {
+              await completeSignedIn(signInData.user, trimmedDisplayName);
+              setMessage('이미 가입된 계정으로 로그인되었습니다.');
+              return;
+            }
+          } catch {
+            throw signUpError;
+          }
+          throw signUpError;
+        }
+
         if (data.session && data.user) {
-          await upsertProfileFromUser(data.user, displayName.trim() || undefined);
-        }
-        if (data.session) {
+          await completeSignedIn(data.user, trimmedDisplayName);
           setMessage('회원가입과 로그인이 완료되었습니다.');
-          onSignedIn?.();
-        } else {
-          setMessage('회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.');
+          return;
         }
+
+        try {
+          const signInData = await signInWithEmail(trimmedEmail, password);
+          if (signInData.user) {
+            await completeSignedIn(signInData.user, trimmedDisplayName);
+            setMessage('회원가입 후 로그인되었습니다.');
+            return;
+          }
+        } catch {
+          setMessage('회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.');
+          return;
+        }
+
+        setMessage('회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.');
       } else {
         const data = await signInWithEmail(email.trim(), password);
         if (data.user) {
-          await upsertProfileFromUser(data.user, displayName.trim() || undefined);
+          await completeSignedIn(data.user);
         }
         setMessage('로그인되었습니다.');
-        onSignedIn?.();
       }
     } catch (err) {
       setError((err as Error)?.message ?? '인증 처리 중 오류가 발생했습니다.');
@@ -83,15 +126,37 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
     }
   };
 
+  const handlePasswordReset = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('비밀번호를 재설정할 이메일을 먼저 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await requestPasswordReset(trimmedEmail);
+      setMessage('비밀번호 재설정 메일을 보냈습니다. 메일함에서 링크를 확인해주세요.');
+    } catch (err) {
+      setError((err as Error)?.message ?? '비밀번호 재설정 메일 발송에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
-        background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #ecfeff 100%)',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
+        background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
@@ -126,7 +191,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
           position: 'relative',
           zIndex: 1,
           display: 'flex',
-          height: '100%',
+          flex: 1,
           flexDirection: 'column',
           padding: '22px 24px 18px',
           fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
@@ -179,17 +244,21 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
         <div
           style={{
             flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
             overflowY: 'auto',
             borderRadius: '24px',
             background: 'rgba(255,255,255,0.74)',
             boxShadow: '0 20px 46px rgba(15, 23, 42, 0.12)',
             backdropFilter: 'blur(20px)',
             padding: '22px',
+            paddingBottom: 'calc(22px + env(safe-area-inset-bottom))',
           }}
         >
-          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+          <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>ACCOUNT</div>
-            <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2, color: '#1f2937' }}>회원가입 / 로그인</h1>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2, color: '#1f2937' }}>로그인 / 회원가입</h1>
           </div>
 
           {user ? (
@@ -284,7 +353,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
               >
                 <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>WELCOME</div>
                 <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
-                  회원가입 후 로그인하면 결과가 계정에 연결되어, 다음 방문에서 바로 결과를 확인할 수 있습니다.
+                  로그인하면 결과가 계정에 연결되어, 다음 방문에서 바로 결과를 확인할 수 있습니다.
                 </p>
               </div>
 
@@ -297,28 +366,6 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                   border: '1px solid rgba(229,231,235,0.95)',
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('signup');
-                    setError(null);
-                    setMessage(null);
-                  }}
-                  style={{
-                    flex: 1,
-                    height: '38px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: mode === 'signup' ? '#ffffff' : 'transparent',
-                    color: mode === 'signup' ? '#111827' : '#6b7280',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    boxShadow: mode === 'signup' ? '0 4px 10px rgba(15,23,42,0.08)' : 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  회원가입
-                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -341,6 +388,28 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                   }}
                 >
                   로그인
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signup');
+                    setError(null);
+                    setMessage(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: '38px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: mode === 'signup' ? '#ffffff' : 'transparent',
+                    color: mode === 'signup' ? '#111827' : '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    boxShadow: mode === 'signup' ? '0 4px 10px rgba(15,23,42,0.08)' : 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  회원가입
                 </button>
               </div>
 
@@ -373,6 +442,9 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onFocus={(e) => {
+                        setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                      }}
                       placeholder="you@example.com"
                       autoComplete="email"
                       style={{
@@ -380,7 +452,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                         border: 'none',
                         outline: 'none',
                         background: 'transparent',
-                        fontSize: '14px',
+                        fontSize: '16px',
                         color: '#111827',
                       }}
                     />
@@ -406,6 +478,9 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onFocus={(e) => {
+                        setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                      }}
                       placeholder="8자 이상 권장"
                       autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                       style={{
@@ -413,7 +488,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                         border: 'none',
                         outline: 'none',
                         background: 'transparent',
-                        fontSize: '14px',
+                        fontSize: '16px',
                         color: '#111827',
                       }}
                     />
@@ -440,6 +515,9 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                         type="password"
                         value={passwordConfirm}
                         onChange={(e) => setPasswordConfirm(e.target.value)}
+                        onFocus={(e) => {
+                          setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                        }}
                         placeholder="비밀번호를 다시 입력"
                         autoComplete="new-password"
                         style={{
@@ -447,7 +525,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                           border: 'none',
                           outline: 'none',
                           background: 'transparent',
-                          fontSize: '14px',
+                          fontSize: '16px',
                           color: '#111827',
                         }}
                       />
@@ -460,37 +538,43 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                   </label>
                 )}
 
-                <label style={{ display: 'block' }}>
-                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>이름(선택)</span>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '0 12px',
-                      height: '46px',
-                      border: '1px solid rgba(209,213,219,1)',
-                      borderRadius: '12px',
-                      background: 'rgba(249,250,251,0.98)',
-                    }}
-                  >
-                    <UserRound size={16} color="#6b7280" />
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="표시 이름"
+                {mode === 'signup' && (
+                  <label style={{ display: 'block' }}>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>이름(선택)</span>
+                    <div
                       style={{
-                        width: '100%',
-                        border: 'none',
-                        outline: 'none',
-                        background: 'transparent',
-                        fontSize: '14px',
-                        color: '#111827',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '0 12px',
+                        height: '46px',
+                        border: '1px solid rgba(209,213,219,1)',
+                        borderRadius: '12px',
+                        background: 'rgba(249,250,251,0.98)',
                       }}
-                    />
-                  </div>
-                </label>
+                    >
+                      <UserRound size={16} color="#6b7280" />
+                      <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        onFocus={(e) => {
+                          setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                        }}
+                        placeholder="표시 이름"
+                        autoComplete="name"
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          outline: 'none',
+                          background: 'transparent',
+                          fontSize: '16px',
+                          color: '#111827',
+                        }}
+                      />
+                    </div>
+                  </label>
+                )}
 
                 <button
                   type="button"
@@ -516,9 +600,32 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
                   {loading ? '처리 중...' : mode === 'signup' ? '회원가입하고 시작' : '로그인'}
                 </button>
 
-                <p style={{ fontSize: '12px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all' }}>
-                  이메일 인증 설정이 켜져 있으면, 회원가입 후 메일 인증을 완료해야 로그인됩니다.
-                </p>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    disabled={loading}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#0f766e',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '3px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.55 : 1,
+                    }}
+                  >
+                    비밀번호를 잊으셨나요?
+                  </button>
+                )}
+
+                {mode === 'signup' && (
+                  <p style={{ fontSize: '12px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all' }}>
+                    회원가입이 완료되면 바로 로그인 상태로 다음 단계에 연결됩니다.
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -554,6 +661,7 @@ export function AuthScreen({ user, onBack, onSignedIn, onGoMembership }: AuthScr
               {error}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

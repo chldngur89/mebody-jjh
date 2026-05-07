@@ -9,6 +9,8 @@ node_modules/
 # Build output
 dist/
 build/
+target/
+Server/target/
 output/
 .playwright-cli/
 .playwright-mcp/

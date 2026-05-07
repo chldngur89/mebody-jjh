@@ -22,6 +22,7 @@ import {
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { characterNames, getAxisScoreBreakdown, type AnswerMap } from '../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 type ResultWithContent = QuestionnaireResponse & { body_code_content?: BodyCodeContent | null };
 type AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility';
@@ -954,6 +955,8 @@ function ActionDetailOverlay({
 }
 
 export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePlanDetailContentProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [guideOpen, setGuideOpen] = useState(false);
   const [routineOpen, setRoutineOpen] = useState(false);
   const [actionDetailOpen, setActionDetailOpen] = useState(false);

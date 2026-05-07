@@ -1,24 +1,64 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface AnalyzingScreenProps {
   onBack?: () => void;
-  onComplete: () => void;
+  onAnalyze: () => Promise<void>;
 }
 
-export function AnalyzingScreen({ onBack, onComplete }: AnalyzingScreenProps) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onComplete();
-    }, 3000);
+export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
 
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+  const startedRef = useRef(false);
+  const mountedRef = useRef(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const runAnalysis = useCallback(async () => {
+    setErrorMessage(null);
+    setIsRunning(true);
+    try {
+      await onAnalyze();
+    } catch (error) {
+      console.error('Failed to analyze questionnaire:', error);
+      if (mountedRef.current) {
+        setErrorMessage('결과 계산 중 문제가 발생했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.');
+      }
+    } finally {
+      if (mountedRef.current) {
+        setIsRunning(false);
+      }
+    }
+  }, [onAnalyze]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    if (!startedRef.current) {
+      startedRef.current = true;
+      void runAnalysis();
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [runAnalysis]);
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
-      <div className="h-full flex flex-col items-center justify-center px-8 relative overflow-hidden">
+    <div
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
+        background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
+        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', position: 'relative' }}>
         {onBack && (
           <button
             type="button"
@@ -59,8 +99,19 @@ export function AnalyzingScreen({ onBack, onComplete }: AnalyzingScreenProps) {
 
           {/* Subtitle */}
           <p className="text-gray-600 mb-12">
-            잠시만 기다려주세요...
+            {errorMessage ?? '답변을 저장하고 mebody 코드를 계산하는 중입니다.'}
           </p>
+
+          {errorMessage && (
+            <button
+              type="button"
+              onClick={runAnalysis}
+              disabled={isRunning}
+              className="mb-8 inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 text-sm font-black text-white shadow-lg shadow-emerald-100 disabled:opacity-60"
+            >
+              {isRunning ? '다시 계산 중...' : '다시 계산하기'}
+            </button>
+          )}
 
           {/* 4-Axis Visual Hint - Ver2 축 아이콘 통일 */}
           <div className="bg-gray-50/80 backdrop-blur rounded-2xl p-6 inline-block">

@@ -1,4 +1,7 @@
 import { ChevronRight, Clock3, LayoutDashboard, Sparkles, UserRound } from 'lucide-react';
+import { useRef } from 'react';
+import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface LandingScreenProps {
   onStart: () => void;
@@ -6,6 +9,8 @@ interface LandingScreenProps {
   hasQuickResult?: boolean;
   isLoggedIn?: boolean;
   userEmail?: string;
+  userDisplayName?: string;
+  latestBodyCode?: string;
   onAccount?: () => void;
   onPreviewSignedIn?: () => void;
 }
@@ -16,23 +21,37 @@ export function LandingScreen({
   hasQuickResult = false,
   isLoggedIn = false,
   userEmail,
+  userDisplayName,
+  latestBodyCode,
   onAccount,
   onPreviewSignedIn,
 }: LandingScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+  const scrollRef = useRef<HTMLDivElement>(null);
   const showQuickResult = isLoggedIn && hasQuickResult && !!onQuickResult;
+  const memberName = (userDisplayName?.trim() || userEmail?.split('@')[0]?.trim() || '회원').replace(/\s*회원님$/, '');
+  const memberGreeting = `${memberName} 회원님`;
+  const normalizedBodyCode = latestBodyCode?.trim().toUpperCase();
+  const accountTitle = isLoggedIn ? memberGreeting : 'ACCOUNT';
   const accountLabel = isLoggedIn ? '내 페이지' : '로그인';
   const accountDescription = isLoggedIn
-    ? `${userEmail ?? '회원'} 계정에 결과 저장과 코드 플랜 연결이 준비되어 있습니다.`
-    : '결과 저장, 지난 결과 다시 보기, 결제/메일 알림 연결을 쓰려면 회원가입/로그인이 필요합니다.';
-  const accountActionLabel = isLoggedIn ? '내 페이지 열기' : '회원가입/로그인';
+    ? hasQuickResult
+      ? normalizedBodyCode
+        ? `최근 mebody 코드 ${normalizedBodyCode}가 저장되어 있습니다. 내 페이지에서 코드 플랜과 오늘의 미션을 이어서 확인하세요.`
+        : '최근 mebody 결과가 저장되어 있습니다. 내 페이지에서 코드 플랜과 오늘의 미션을 이어서 확인하세요.'
+      : normalizedBodyCode
+        ? `저장된 mebody 코드 ${normalizedBodyCode}가 있습니다. 내 페이지에서 현재 상태를 확인하세요.`
+        : '재접속 반갑습니다. 첫 진단을 완료하면 mebody 코드와 코드 플랜이 내 페이지에 저장됩니다.'
+    : '회원가입하면 결과 저장, 지난 결과 확인, 코드 플랜과 오늘의 미션을 다음 방문에서도 이어서 볼 수 있습니다.';
+  const accountActionLabel = isLoggedIn ? '내 페이지' : '회원가입 / 로그인';
 
   return (
     <div
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
@@ -65,6 +84,7 @@ export function LandingScreen({
       </div>
 
       <div
+        ref={scrollRef}
         style={{
           position: 'relative',
           zIndex: 1,
@@ -73,9 +93,10 @@ export function LandingScreen({
           flexDirection: 'column',
           padding: '22px 24px 18px',
           fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
+          overflowY: 'auto',
         }}
       >
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div
             style={{
               display: 'inline-flex',
@@ -118,6 +139,8 @@ export function LandingScreen({
         <div
           style={{
             flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'hidden',
             borderRadius: '28px',
             background: 'rgba(255,255,255,0.78)',
@@ -125,7 +148,7 @@ export function LandingScreen({
             backdropFilter: 'blur(20px)',
           }}
         >
-          <div style={{ display: 'flex', height: '100%', flexDirection: 'column', padding: '30px 26px 24px' }}>
+          <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column', padding: '30px 26px 24px' }}>
             <div style={{ marginBottom: '30px', textAlign: 'center' }}>
               <div
                 style={{
@@ -196,7 +219,7 @@ export function LandingScreen({
               </p>
             </div>
 
-            <div style={{ marginTop: 'auto', display: 'grid', gap: '14px' }}>
+            <div style={{ display: 'grid', gap: '14px' }}>
               <button
                 type="button"
                 onClick={onStart}
@@ -242,7 +265,7 @@ export function LandingScreen({
                   }}
                 >
                   <Clock3 size={16} />
-                  지난 결과 바로 보기 &gt;
+                  지난 결과 · 오늘의 미션 보기 &gt;
                 </button>
               )}
 
@@ -256,9 +279,29 @@ export function LandingScreen({
               >
                 <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <UserRound size={16} color="#059669" />
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#374151' }}>ACCOUNT</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#374151' }}>{accountTitle}</h3>
                 </div>
                 <p style={{ marginBottom: '14px', fontSize: '12px', lineHeight: 1.6, color: '#4b5563', wordBreak: 'keep-all' }}>{accountDescription}</p>
+                {isLoggedIn && normalizedBodyCode && (
+                  <div
+                    style={{
+                      marginBottom: '12px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      borderRadius: '999px',
+                      background: 'rgba(236,253,245,0.95)',
+                      border: '1px solid rgba(167,243,208,0.92)',
+                      padding: '7px 11px',
+                      color: '#047857',
+                      fontSize: '12px',
+                      fontWeight: 900,
+                    }}
+                  >
+                    최근 코드
+                    <span style={{ color: '#111827' }}>{normalizedBodyCode}</span>
+                  </div>
+                )}
                 {onAccount && (
                   <button
                     type="button"
@@ -312,6 +355,7 @@ export function LandingScreen({
           Powered by Mebody • Designed for Mebody
         </p>
       </div>
+      <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
     </div>
   );
 }

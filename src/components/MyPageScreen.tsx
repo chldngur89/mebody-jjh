@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { ArrowLeft, ChevronRight, Crown, LayoutDashboard, Sparkles, UserRound } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Crown, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { fetchQuestionnaireResult, type BodyCodeContent, type QuestionnaireResponse } from '../api/questionnaire';
-import { fetchMySubscription, type UserSubscription } from '../api/account';
+import { fetchLatestCompletedResultIdForUser, fetchMySubscription, type UserSubscription } from '../api/account';
 import { fetchAppImages } from '../api/content';
+import { supabase } from '../lib/supabase';
 import { characterNames } from '../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface MyPageScreenProps {
   user: User | null;
@@ -15,10 +17,17 @@ interface MyPageScreenProps {
   onOpenMembership?: () => void;
   onStartDiagnosis?: () => void;
   onRequireAuth?: () => void;
+  onLatestResultResolved?: (resultId: string) => void;
+  onLogout?: () => void | Promise<void>;
   previewMode?: boolean;
 }
 
 type ResultWithContent = QuestionnaireResponse & { body_code_content?: BodyCodeContent | null };
+type UserRole = 'MEMBER' | 'SELLER' | 'ADMIN';
+type RoleLookupResult = { role: UserRole | null; unavailable: boolean };
+
+const ADMIN_CACHE_PREFIX = 'mebody:admin-role:';
+const ADMIN_WEB_BASE_URL = String(import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 
 function getDisplayName(user: User | null): string {
   if (!user) return '게스트';
@@ -44,6 +53,65 @@ function getSummaryLine(content: BodyCodeContent | null): string {
   return line || '최근 결과를 기준으로 다시 볼 수 있는 mebody 코드입니다.';
 }
 
+function formatKoreanDate(value?: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+}
+
+function normalizeUserRole(role: unknown): UserRole | null {
+  return role === 'MEMBER' || role === 'SELLER' || role === 'ADMIN' ? role : null;
+}
+
+function readCachedAdminFlag(userId: string | undefined): boolean {
+  if (!userId || typeof window === 'undefined') return false;
+
+  try {
+    return window.sessionStorage.getItem(`${ADMIN_CACHE_PREFIX}${userId}`) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeCachedAdminFlag(userId: string, isAdmin: boolean) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const key = `${ADMIN_CACHE_PREFIX}${userId}`;
+    if (isAdmin) {
+      window.sessionStorage.setItem(key, 'true');
+    } else {
+      window.sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Storage can be unavailable in private mode; Supabase role lookup remains the source.
+  }
+}
+
+async function fetchProfileRoleFromSupabase(userId: string, email?: string | null): Promise<RoleLookupResult> {
+  const filters = [`id.eq.${userId}`, `auth_user_id.eq.${userId}`];
+  if (email) filters.push(`email.eq.${email}`);
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .or(filters.join(','))
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('MyPageScreen profile role lookup failed:', error);
+    return { role: null, unavailable: true };
+  }
+
+  return { role: normalizeUserRole(data?.role), unavailable: false };
+}
+
 export function MyPageScreen({
   user,
   latestResultId,
@@ -52,56 +120,186 @@ export function MyPageScreen({
   onOpenMembership,
   onStartDiagnosis,
   onRequireAuth,
+  onLatestResultResolved,
+  onLogout,
   previewMode = false,
 }: MyPageScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const [latestResult, setLatestResult] = useState<ResultWithContent | null>(null);
+  const [resolvedLatestResultId, setResolvedLatestResultId] = useState<string | undefined>(latestResultId);
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [appImages, setAppImages] = useState<Record<string, string>>({});
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [resultLoading, setResultLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminRoleUnavailable, setAdminRoleUnavailable] = useState(false);
+  const [adminToolsOpen, setAdminToolsOpen] = useState(false);
+  const effectiveLatestResultId = latestResultId ?? resolvedLatestResultId;
 
   useEffect(() => {
     fetchAppImages().then(setAppImages).catch(() => setAppImages({}));
   }, []);
 
   useEffect(() => {
+    if (latestResultId) setResolvedLatestResultId(latestResultId);
+  }, [latestResultId]);
+
+  useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      if (!user) {
-        setLatestResult(null);
-        setSubscription(null);
-        setLoading(false);
-        return;
-      }
+    async function resolveLatestResultId() {
+      if (!user || previewMode || latestResultId) return;
 
-      setLoading(true);
+      setResultLoading(true);
       try {
-        const [resultData, subscriptionData] = await Promise.all([
-          latestResultId ? fetchQuestionnaireResult(latestResultId) : Promise.resolve(null),
-          fetchMySubscription(user.id),
-        ]);
-
+        const resultId = await fetchLatestCompletedResultIdForUser(user.id);
         if (cancelled) return;
-        setLatestResult((resultData as ResultWithContent | null) ?? null);
-        setSubscription(subscriptionData);
+
+        setResolvedLatestResultId(resultId ?? undefined);
+        if (resultId) {
+          onLatestResultResolved?.(resultId);
+        } else {
+          setLatestResult(null);
+          setResultLoading(false);
+        }
       } catch (loadError) {
         if (cancelled) return;
-        console.warn('MyPageScreen load failed:', loadError);
+        console.warn('MyPageScreen latest result id lookup failed:', loadError);
+        setResolvedLatestResultId(undefined);
         setLatestResult(null);
-      } finally {
-        if (!cancelled) setLoading(false);
+        setResultLoading(false);
       }
     }
 
-    load();
+    resolveLatestResultId();
     return () => {
       cancelled = true;
     };
-  }, [latestResultId, user]);
+  }, [latestResultId, onLatestResultResolved, previewMode, user?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLatestResult() {
+      if (!user || !effectiveLatestResultId) {
+        setLatestResult(null);
+        setResultLoading(false);
+        return;
+      }
+
+      setResultLoading(true);
+      try {
+        const resultData = await fetchQuestionnaireResult(effectiveLatestResultId);
+
+        if (cancelled) return;
+        setLatestResult((resultData as ResultWithContent | null) ?? null);
+      } catch (loadError) {
+        if (cancelled) return;
+        console.warn('MyPageScreen latest result load failed:', loadError);
+        setLatestResult(null);
+      } finally {
+        if (!cancelled) setResultLoading(false);
+      }
+    }
+
+    loadLatestResult();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveLatestResultId, user?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSubscription() {
+      if (!user) {
+        setSubscription(null);
+        return;
+      }
+
+      try {
+        const subscriptionData = await fetchMySubscription(user.id);
+        if (!cancelled) setSubscription(subscriptionData);
+      } catch (loadError) {
+        if (!cancelled) setSubscription(null);
+        console.warn('MyPageScreen subscription load failed:', loadError);
+      }
+    }
+
+    loadSubscription();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAdminRole() {
+      if (!user || previewMode) {
+        setIsAdmin(false);
+        setAdminRoleUnavailable(false);
+        setAdminToolsOpen(false);
+        return;
+      }
+
+      const isHardcodedAdmin = Boolean(user.email && ['chldngur89@gmail.com'].includes(user.email));
+      const cachedAdmin = readCachedAdminFlag(user.id);
+      if (cachedAdmin || isHardcodedAdmin) setIsAdmin(true);
+
+      const profileRole = await fetchProfileRoleFromSupabase(user.id, user.email);
+      if (!cancelled) {
+        if (profileRole.unavailable) {
+          const fallbackAdmin = cachedAdmin || isHardcodedAdmin;
+          setIsAdmin(fallbackAdmin);
+          setAdminRoleUnavailable(true);
+          if (!fallbackAdmin) setAdminToolsOpen(false);
+          return;
+        }
+
+        const verifiedAdmin = profileRole.role === 'ADMIN' || isHardcodedAdmin;
+
+        setIsAdmin(verifiedAdmin);
+        setAdminRoleUnavailable(false);
+        if (!verifiedAdmin) setAdminToolsOpen(false);
+        writeCachedAdminFlag(user.id, verifiedAdmin);
+      }
+    }
+
+    loadAdminRole();
+    return () => {
+      cancelled = true;
+    };
+  }, [previewMode, user?.email, user?.id]);
 
   const handleImageError = useCallback((url: string) => {
     setFailedImageUrls((prev) => new Set(prev).add(url));
+  }, []);
+
+  const handleOpenAdminConsole = useCallback(async () => {
+    if (!ADMIN_WEB_BASE_URL) {
+      window.alert('관리자 웹 콘솔 주소가 설정되어 있지 않습니다. VITE_API_BASE_URL을 확인해주세요.');
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 1200);
+
+    try {
+      const response = await fetch(`${ADMIN_WEB_BASE_URL}/api/public/config`, { signal: controller.signal });
+
+      if (!response.ok) {
+        window.alert('관리자 웹 콘솔 서버가 응답하지 않습니다. 8000 서버를 실행한 뒤 다시 시도해주세요.');
+        return;
+      }
+    } catch {
+      window.alert('관리자 웹 콘솔은 서버(8000)를 실행한 뒤 사용할 수 있습니다.');
+      return;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+
+    window.open(`${ADMIN_WEB_BASE_URL}/admin`, '_blank', 'noopener,noreferrer');
   }, []);
 
   const isPreviewMode = previewMode && !user;
@@ -110,6 +308,7 @@ export function MyPageScreen({
   const characterName = content?.character_name || (bodyCode ? characterNames[bodyCode] : '나의 mebody 코드');
   const summaryLine = latestResult ? getSummaryLine(content) : isPreviewMode ? '가입 후에는 최근 결과와 코드 플랜, 멤버십 상태를 이 화면에서 이어서 확인합니다.' : getSummaryLine(content);
   const characterImage = bodyCode ? resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls) : '';
+  const latestResultDate = formatKoreanDate(latestResult?.completed_at || latestResult?.updated_at || latestResult?.created_at);
   const displayName = user ? getDisplayName(user) : 'Preview';
   const displayEmail = user?.email ?? 'preview@mebody.app';
   const effectiveStatusLabel = isPreviewMode ? '체험 사용 중' : getStatusLabel(subscription);
@@ -120,8 +319,8 @@ export function MyPageScreen({
         style={{
           position: 'relative',
           overflow: 'hidden',
-          height: '844px',
-          borderRadius: '32px',
+          minHeight: '100dvh',
+          borderRadius: isDesktopMockup ? '32px' : 0,
           background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
           boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
         }}
@@ -199,7 +398,7 @@ export function MyPageScreen({
             </div>
             <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginBottom: '10px' }}>내 페이지는 로그인 후 연결됩니다</h1>
             <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', marginBottom: '20px', wordBreak: 'keep-all' }}>
-              계정 정보, 최근 결과, 멤버십 상태는 로그인 후 이 화면에서 관리할 수 있습니다.
+              회원가입하면 몸BTI 결과, 코드 플랜, 오늘의 미션을 계정에 저장하고 다음 방문에서도 이어서 확인할 수 있습니다.
             </p>
             {onRequireAuth && (
               <button
@@ -237,8 +436,8 @@ export function MyPageScreen({
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
@@ -333,6 +532,7 @@ export function MyPageScreen({
             boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
             backdropFilter: 'blur(20px)',
             padding: '24px',
+            paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
           }}
         >
           <div
@@ -381,6 +581,123 @@ export function MyPageScreen({
             </div>
           </div>
 
+          {isAdmin && (
+            <div
+              style={{
+                borderRadius: '22px',
+                border: '1px solid rgba(20,184,166,0.28)',
+                background: 'linear-gradient(135deg, rgba(240,253,250,0.96) 0%, rgba(255,255,255,0.98) 100%)',
+                padding: '18px',
+                marginBottom: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <ShieldCheck size={20} color="#0f766e" />
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>ADMIN</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>관리자 도구</h3>
+                </div>
+              </div>
+              <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#4b5563', marginBottom: '12px', wordBreak: 'keep-all' }}>
+                {adminRoleUnavailable
+                  ? '이전 세션에서 관리자 권한이 확인되었습니다. 현재 DB role 재확인이 지연되어 웹 콘솔은 서버 상태를 확인한 뒤 연결합니다.'
+                  : 'Supabase DB에서 관리자 권한이 확인되었습니다. 모바일에서는 바로가기만 제공하고 실제 관리는 웹 콘솔에서 진행합니다.'}
+              </p>
+              <button
+                type="button"
+                onClick={handleOpenAdminConsole}
+                style={{
+                  display: 'inline-flex',
+                  width: '100%',
+                  height: '52px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  background: 'linear-gradient(90deg, #0f766e 0%, #14b8a6 100%)',
+                  color: '#ffffff',
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  boxShadow: '0 14px 28px rgba(15,118,110,0.18)',
+                  cursor: 'pointer',
+                }}
+              >
+                관리자 웹 콘솔 열기
+                <ChevronRight size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminToolsOpen((open) => !open)}
+                style={{
+                  marginTop: '10px',
+                  display: 'inline-flex',
+                  width: '100%',
+                  height: '44px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(167,243,208,0.95)',
+                  background: 'rgba(255,255,255,0.88)',
+                  color: '#0f766e',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {adminToolsOpen ? '모바일 관리 항목 닫기' : '모바일 관리 항목 보기'}
+              </button>
+              {adminToolsOpen && (
+                <div style={{ marginTop: '14px', display: 'grid', gap: '10px' }}>
+                  {[
+                    ['회원 관리', '회원 목록, 권한, 상태 변경 기능 준비 중'],
+                    ['이미지 관리', 'Supabase Storage 캐릭터/축 이미지 관리 준비 중'],
+                    ['서비스 설정', '문항, 콘텐츠, 노출 문구 관리 준비 중'],
+                  ].map(([title, desc]) => (
+                    <button
+                      key={title}
+                      type="button"
+                      onClick={() => window.alert(`${title} 기능은 현재 준비 중이며, 실제 서버와 연결되어 있지 않습니다.`)}
+                      style={{
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'block',
+                        width: '100%',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(167,243,208,0.9)',
+                        background: 'rgba(255,255,255,0.86)',
+                        padding: '13px 14px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+                        <strong style={{ fontSize: '14px', color: '#111827' }}>{title}</strong>
+                        <span style={{ borderRadius: '999px', background: '#ecfdf5', padding: '4px 8px', fontSize: '11px', fontWeight: 900, color: '#047857' }}>
+                          준비 중
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#64748b', wordBreak: 'keep-all' }}>{desc}</p>
+                    </button>
+                  ))}
+                  <div
+                    style={{
+                      borderRadius: '16px',
+                      background: 'rgba(236,253,245,0.75)',
+                      padding: '12px 14px',
+                      fontSize: '12px',
+                      lineHeight: 1.55,
+                      color: '#047857',
+                      fontWeight: 800,
+                      wordBreak: 'keep-all',
+                    }}
+                  >
+                    버튼을 눌렀을 때 서버가 꺼져 있으면 안내창만 표시합니다. 서버가 켜져 있으면 8000 웹 관리자 화면으로 이동합니다.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div
             style={{
               borderRadius: '22px',
@@ -400,10 +717,33 @@ export function MyPageScreen({
               ) : null}
             </div>
 
-            {loading ? (
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>최근 결과를 불러오는 중...</div>
+            {resultLoading ? (
+              <div style={{ display: 'grid', gap: '12px' }} aria-label="최근 결과 로딩 중">
+                <div style={{ height: '18px', width: '58%', borderRadius: '999px', background: 'linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f8fafc 100%)' }} />
+                <div style={{ height: '14px', width: '84%', borderRadius: '999px', background: '#f1f5f9' }} />
+                <div style={{ height: '14px', width: '66%', borderRadius: '999px', background: '#f1f5f9' }} />
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: '#64748b', fontWeight: 800, wordBreak: 'keep-all' }}>
+                  최신 mebody 코드를 확인하고 있습니다.
+                </p>
+              </div>
             ) : latestResult || isPreviewMode ? (
               <div style={{ display: 'grid', gap: '14px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ borderRadius: '14px', background: 'rgba(236,253,245,0.86)', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.12em', color: '#059669', marginBottom: '4px' }}>현재 저장 코드</div>
+                    <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827' }}>{bodyCode}</div>
+                  </div>
+                  <div style={{ borderRadius: '14px', background: 'rgba(248,250,252,0.96)', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.12em', color: '#64748b', marginBottom: '4px' }}>마지막 진단일</div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: '#111827' }}>{latestResultDate || '확인 중'}</div>
+                  </div>
+                </div>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                   <div
                     style={{
@@ -456,15 +796,30 @@ export function MyPageScreen({
                     opacity: onOpenLatestResult ? 1 : 0.76,
                   }}
                 >
-                  {isPreviewMode ? '가입 후 최근 결과 보기' : '최근 결과 보기'}
+                  {isPreviewMode ? '가입 후 최근 결과 보기' : '코드 플랜 / 오늘의 미션 보기'}
                   <ChevronRight size={18} />
                 </button>
               </div>
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
-                <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#6b7280', wordBreak: 'keep-all' }}>
-                  아직 계정에 연결된 최근 결과가 없습니다. 새 진단을 완료하면 여기에 가장 최근 결과가 표시됩니다.
+                <p style={{ fontSize: '15px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
+                  아직 저장된 몸BTI가 없습니다. 빠르게 결과를 확인해 보세요. 완료하면 코드 플랜과 오늘의 미션이 계정에 바로 연결됩니다.
                 </p>
+                <div
+                  style={{
+                    borderRadius: '16px',
+                    background: 'rgba(236,253,245,0.86)',
+                    border: '1px solid rgba(167,243,208,0.9)',
+                    padding: '13px 14px',
+                    color: '#047857',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    lineHeight: 1.55,
+                    wordBreak: 'keep-all',
+                  }}
+                >
+                  약 3~5분 소요 · 완료 후 바로 결과와 오늘의 미션 확인
+                </div>
                 {onStartDiagnosis && (
                   <button
                     type="button"
@@ -486,7 +841,7 @@ export function MyPageScreen({
                       cursor: 'pointer',
                     }}
                   >
-                    새 진단 시작하기
+                    빠르게 코드 확인하기
                     <ChevronRight size={18} />
                   </button>
                 )}
@@ -500,6 +855,7 @@ export function MyPageScreen({
               border: '1px solid rgba(229,231,235,0.95)',
               background: '#ffffff',
               padding: '18px',
+              marginBottom: onLogout && user && !isPreviewMode ? '16px' : 0,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
@@ -540,6 +896,31 @@ export function MyPageScreen({
               </button>
             )}
           </div>
+
+          {onLogout && user && !isPreviewMode && (
+            <button
+              type="button"
+              onClick={onLogout}
+              style={{
+                display: 'inline-flex',
+                width: '100%',
+                height: '52px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                borderRadius: '16px',
+                border: '1px solid rgba(229,231,235,0.95)',
+                background: 'rgba(255,255,255,0.78)',
+                color: '#4b5563',
+                fontSize: '15px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              <LogOut size={18} />
+              로그아웃
+            </button>
+          )}
         </div>
       </div>
     </div>

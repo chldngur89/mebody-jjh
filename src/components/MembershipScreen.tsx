@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, Crown, ShieldCheck, Sparkles } from 'lucide-react';
 import { fetchMembershipPlans, fetchMySubscription, type MembershipPlan, type UserSubscription } from '../api/account';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface MembershipScreenProps {
   user: User | null;
@@ -21,6 +22,8 @@ function billingLabel(cycle: MembershipPlan['billing_cycle']): string {
 }
 
 export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: MembershipScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,8 +65,8 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}

@@ -4,6 +4,7 @@ import { fetchQuestionnaireResult } from '../api/questionnaire';
 import { fetchResultSectionsByBodyCode, type ResultSectionItem } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { characterNames, getAxisLabels } from '../utils/bodyCodeCalculator';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface CodeDetailsScreenProps {
   questionnaireId?: string;
@@ -92,6 +93,8 @@ function buildDetailFallbackSections(code: string): ResultSectionItem[] {
 }
 
 export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }: CodeDetailsScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [resolvedCode, setResolvedCode] = useState(bodyCode ?? '');
   const [sections, setSections] = useState<ResultSectionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,8 +147,8 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
@@ -207,6 +210,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
               background: '#ffffff',
               padding: '18px',
+            paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
             }}
           >
             <div style={{ fontSize: '12px', fontWeight: 800, color: '#059669', marginBottom: '6px' }}>내 코드 상세</div>

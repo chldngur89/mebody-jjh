@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { fetchResultGuideCommon, type ResultGuide } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { RESULT_GUIDE_SECTIONS, RESULT_GUIDE_TITLE } from '../data/resultGuideContent';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface CommonGuideScreenProps {
   onBack?: () => void;
@@ -65,6 +66,8 @@ function renderReadableText(text: string) {
 }
 
 export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [guide, setGuide] = useState<ResultGuide | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>('guide-0');
@@ -99,8 +102,8 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}

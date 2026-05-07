@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { fetchQuestionnaireResult, fetchQuestions, type BodyCodeContent, type Question, type QuestionnaireResponse } from '../api/questionnaire';
 import {
@@ -7,8 +7,10 @@ import {
 } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
+import { ScrollIndicator } from './ScrollIndicator';
 import { characterNames, getAxisScoreBreakdown } from '../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 type AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility';
 type ResultWithContent = QuestionnaireResponse & { body_code_content?: BodyCodeContent | null };
@@ -42,15 +44,19 @@ type StoreItem = {
   ctaLabel: string;
 };
 
+type ResultSaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
+
 interface ResultScreenProps {
   questionnaireId?: string;
   onRestart?: () => void;
   onBack?: () => void;
   onResultLoad?: (bodyCode: string) => void;
   isLoggedIn?: boolean;
+  isAdmin?: boolean;
   onGoAuth?: () => void;
   onContinue?: () => void;
   onPreviewContinue?: () => void;
+  resultSaveStatus?: ResultSaveStatus;
 }
 
 const AXIS_META: Record<
@@ -283,7 +289,19 @@ function buildStoreItems(products: BodyCodeContent['health_products'] | undefine
   }));
 }
 
-export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad, isLoggedIn = false, onGoAuth, onContinue, onPreviewContinue }: ResultScreenProps) {
+export function ResultScreen({
+  questionnaireId,
+  onRestart,
+  onBack,
+  onResultLoad,
+  isLoggedIn = false,
+  isAdmin = false,
+  onGoAuth,
+  onContinue,
+  onPreviewContinue,
+  resultSaveStatus = 'idle',
+}: ResultScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const [result, setResult] = useState<ResultWithContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -293,6 +311,10 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
   const [scoringQuestions, setScoringQuestions] = useState<Question[]>([]);
   const [axisModalOpen, setAxisModalOpen] = useState(false);
   const [bodyTypesModalOpen, setBodyTypesModalOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bodyTypesRef = useRef<HTMLElement | null>(null);
+  const routineRef = useRef<HTMLElement | null>(null);
+  const storeRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     fetchAppImages().then(setAppImages).catch(() => setAppImages({}));
@@ -376,11 +398,20 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
     ];
   }, [bodyCode, content]);
 
-  const ctaItems = [
-    '지난 결과를 저장하고 재방문 시 바로 이어서 볼 수 있습니다.',
-    '나의 mebody 코드 가이드와 다음 장 코드 플랜이 연결됩니다.',
-    '맞춤 15분 케어 루틴과 이후 확장 기능을 이어서 확인할 수 있습니다.',
-  ];
+  const ctaEyebrow = isLoggedIn ? 'CODE PLAN · MISSION' : 'CODE PLAN';
+  const ctaTitle = isLoggedIn ? '코드 플랜 및 오늘의 미션' : '회원가입 후 내 코드 플랜 받기';
+  const ctaButtonLabel = isLoggedIn ? '코드 플랜 및 오늘의 미션 보기' : '회원가입 후 내 코드 플랜 받기';
+  const ctaItems = isLoggedIn
+    ? [
+        '오늘의 미션 수행률과 지금 해야 할 액션을 이어서 확인합니다.',
+        '나의 mebody 코드 가이드와 자세 사용 설명서로 연결됩니다.',
+        '맞춤 15분 케어 루틴을 바로 확인할 수 있습니다.',
+      ]
+    : [
+        '지난 결과를 저장하고 재방문 시 바로 이어서 볼 수 있습니다.',
+        '나의 mebody 코드 가이드와 다음 장 코드 플랜이 연결됩니다.',
+        '맞춤 15분 케어 루틴과 이후 확장 기능을 이어서 확인할 수 있습니다.',
+      ];
 
   const bodyTypesImageUrl = useMemo(
     () =>
@@ -409,17 +440,49 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
     onGoAuth?.();
   };
 
+  const scrollToSection = (target: 'bodyTypes' | 'routine' | 'store') => {
+    const ref = target === 'bodyTypes' ? bodyTypesRef : target === 'routine' ? routineRef : storeRef;
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+
+
   if (isLoading) {
     return (
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ height: '844px' }}>
-        <div className="text-gray-500">로딩 중...</div>
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden" style={{ minHeight: '100dvh' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '28px 24px', gap: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ width: '126px', height: '42px', borderRadius: '999px', background: '#ecfdf5' }} />
+            <div style={{ width: '78px', height: '42px', borderRadius: '999px', background: '#f8fafc' }} />
+          </div>
+          <div
+            style={{
+              borderRadius: '28px',
+              border: `1px solid ${AXIS_GREEN_THEME.border}`,
+              background: 'linear-gradient(135deg, rgba(236,253,245,0.96) 0%, rgba(255,255,255,0.98) 100%)',
+              padding: '22px',
+              display: 'grid',
+              gap: '14px',
+            }}
+          >
+            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#059669' }}>RESULT</div>
+            <div style={{ height: '28px', width: '64%', borderRadius: '999px', background: '#d1fae5' }} />
+            <div style={{ height: '14px', width: '92%', borderRadius: '999px', background: '#f1f5f9' }} />
+            <div style={{ height: '14px', width: '74%', borderRadius: '999px', background: '#f1f5f9' }} />
+          </div>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} style={{ height: '86px', borderRadius: '22px', border: `1px solid ${AXIS_GREEN_THEME.border}`, background: '#ffffff' }} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center px-6" style={{ height: '844px' }}>
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center px-6" style={{ minHeight: '100dvh' }}>
         <div className="text-red-500 mb-4">{error}</div>
         {onRestart && (
           <button onClick={onRestart} className="bg-emerald-500 text-white px-6 py-3 rounded-xl">
@@ -432,7 +495,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
 
   if (!result) {
     return (
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ height: '844px' }}>
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ minHeight: '100dvh' }}>
         <div className="text-gray-500">결과를 찾을 수 없습니다.</div>
       </div>
     );
@@ -443,8 +506,8 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
@@ -523,8 +586,8 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px' }}>
-          <div style={{ display: 'grid', gap: '16px' }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'grid', gap: '16px', margin: 'auto 0' }}>
             <section
               style={{
                 borderRadius: '30px',
@@ -605,7 +668,11 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
               </div>
             </section>
 
+
+
+
             <section
+              ref={bodyTypesRef}
               style={{
                 borderRadius: '22px',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
@@ -653,6 +720,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
             </section>
 
             <section
+              ref={routineRef}
               style={{
                 borderRadius: '22px',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
@@ -660,8 +728,8 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>CODE PLAN</div>
-              <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '10px' }}>회원가입 후 내 코드 플랜 받기</h2>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>{ctaEyebrow}</div>
+              <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '10px' }}>{ctaTitle}</h2>
               <div style={{ display: 'grid', gap: '8px', marginBottom: '14px' }}>
                 {ctaItems.map((item) => (
                   <div key={item} style={{ display: 'flex', gap: '10px', fontSize: '14px', lineHeight: 1.6, color: '#374151' }}>
@@ -690,7 +758,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
                   cursor: 'pointer',
                 }}
               >
-                회원가입 후 내 코드 플랜 받기
+                {ctaButtonLabel}
                 <ChevronRight size={18} />
               </button>
               {!isLoggedIn && onPreviewContinue && (
@@ -716,6 +784,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
             </section>
 
             <section
+              ref={storeRef}
               style={{
                 borderRadius: '22px',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
@@ -960,7 +1029,7 @@ export function ResultScreen({ questionnaireId, onRestart, onBack, onResultLoad,
                 cursor: 'pointer',
               }}
             >
-              회원가입 후 내 코드 플랜 받기
+              {ctaButtonLabel}
               <ChevronRight size={18} />
             </button>
           </div>

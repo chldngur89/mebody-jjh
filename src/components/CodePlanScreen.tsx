@@ -1,5 +1,6 @@
 import { ArrowLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { CodePlanDetailContent, useCodePlanData } from './codePlanShared';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface CodePlanScreenProps {
   questionnaireId?: string;
@@ -11,6 +12,8 @@ interface CodePlanScreenProps {
 }
 
 export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMode = false, onBack, onRequireAuth, onNextGuide }: CodePlanScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const data = useCodePlanData(questionnaireId);
 
   if (!isLoggedIn && !previewMode) {
@@ -19,8 +22,8 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
         style={{
           position: 'relative',
           overflow: 'hidden',
-          height: '844px',
-          borderRadius: '32px',
+          minHeight: '100dvh',
+          borderRadius: isDesktopMockup ? '32px' : 0,
           background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
           boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
         }}
@@ -133,7 +136,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
 
   if (data.isLoading) {
     return (
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ height: '844px' }}>
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ minHeight: '100dvh' }}>
         <div className="text-gray-500">로딩 중...</div>
       </div>
     );
@@ -141,7 +144,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
 
   if (data.error) {
     return (
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center px-6" style={{ height: '844px' }}>
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col items-center justify-center px-6" style={{ minHeight: '100dvh' }}>
         <div className="text-red-500 mb-4">{data.error}</div>
       </div>
     );
@@ -149,7 +152,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
 
   if (!data.result) {
     return (
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ height: '844px' }}>
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" style={{ minHeight: '100dvh' }}>
         <div className="text-gray-500">연결된 결과가 없습니다.</div>
       </div>
     );
@@ -160,8 +163,8 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}

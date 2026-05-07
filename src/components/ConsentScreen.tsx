@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, ArrowLeft, Sparkles } from 'lucide-react';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface ConsentScreenProps {
   onBack?: () => void;
@@ -7,6 +8,8 @@ interface ConsentScreenProps {
 }
 
 export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [agreeContent, setAgreeContent] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
@@ -18,8 +21,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
@@ -137,6 +140,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 border: '1px solid rgba(209,250,229,0.95)',
                 background: 'rgba(236,253,245,0.92)',
                 padding: '16px 18px',
+            paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
                 marginBottom: '16px',
               }}
             >
@@ -253,7 +257,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 >
                   {agreeContent && <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
                 </span>
-                <span style={{ fontSize: '15px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
+                <span style={{ fontSize: '16px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
                   위 내용을 이해했고, mebody가 웰니스 목적의 체형 분석 서비스임을 확인했습니다.
                 </span>
               </label>
@@ -294,7 +298,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 >
                   {agreePrivacy && <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
                 </span>
-                <span style={{ fontSize: '15px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
+                <span style={{ fontSize: '16px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
                   개인정보 처리방침과 이용약관에 동의합니다.
                 </span>
               </label>

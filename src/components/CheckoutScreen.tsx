@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, CreditCard } from 'lucide-react';
 import { activateSubscription, fetchMembershipPlans, type MembershipPlan } from '../api/account';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface CheckoutScreenProps {
   user: User | null;
@@ -16,6 +17,8 @@ function formatKrw(value: number): string {
 }
 
 export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAuth }: CheckoutScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +65,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ height: '844px' }}>
+    <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ minHeight: '100dvh' }}>
       <div className="h-full flex flex-col">
         <div className="flex-shrink-0 bg-white/85 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
           {onBack && (

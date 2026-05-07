@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type UIEvent } from 'react';
 import { ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
+import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface DiagnosisIntroScreenProps {
   onBack?: () => void;
@@ -48,6 +50,8 @@ const AXIS_ITEMS = [
 ] as const;
 
 export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenProps) {
+  const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+
   const [canBegin, setCanBegin] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -99,8 +103,8 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: '844px',
-        borderRadius: '32px',
+        minHeight: '100dvh',
+        borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
@@ -196,6 +200,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             background: 'rgba(255,255,255,0.78)',
             boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
             backdropFilter: 'blur(20px)',
+            position: 'relative',
           }}
         >
           <div
@@ -293,6 +298,8 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
 
             <div ref={bottomRef} style={{ height: '14px' }} />
           </div>
+
+          <ScrollIndicator containerRef={contentRef} bottomOffset="120px" />
 
           <div
             style={{

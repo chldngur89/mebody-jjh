@@ -21,6 +21,21 @@ export interface UserSubscription {
   cancel_at_period_end: boolean;
 }
 
+export interface LatestCompletedResultSummary {
+  id: string;
+  calculated_code: string;
+  completed_at: string | null;
+  updated_at: string | null;
+  created_at: string | null;
+}
+
+export interface UserBodyCodeSummary {
+  body_bti_code: string;
+  body_bti_title: string | null;
+  body_bti_description: string | null;
+  updated_at: string | null;
+}
+
 const FALLBACK_PLANS: MembershipPlan[] = [
   {
     code: 'basic_monthly',
@@ -76,29 +91,62 @@ export async function signOutAccount() {
   if (error) throw error;
 }
 
+export async function requestPasswordReset(email: string) {
+  const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    email,
+    redirectTo ? { redirectTo } : undefined,
+  );
+
+  if (error) throw error;
+}
+
 export async function upsertProfileFromUser(user: User, displayName?: string) {
+  const resolvedDisplayName =
+    displayName ?? (typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : null);
+
   const payload = {
     id: user.id,
+    auth_user_id: user.id,
     email: user.email ?? null,
-    display_name: displayName ?? (typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : null),
+    display_name: resolvedDisplayName,
+    name: resolvedDisplayName,
   };
 
   const { error } = await supabase
     .from('user_profiles')
     .upsert(payload, { onConflict: 'id' });
 
-  if (error && !isMissingTableOrColumn(error)) {
+  if (error && isMissingTableOrColumn(error)) {
+    const legacyPayload = {
+      id: user.id,
+      email: user.email ?? null,
+      display_name: resolvedDisplayName,
+    };
+    const { error: legacyError } = await supabase
+      .from('user_profiles')
+      .upsert(legacyPayload, { onConflict: 'id' });
+    if (legacyError && !isMissingTableOrColumn(legacyError)) {
+      throw legacyError;
+    }
+    return;
+  }
+
+  if (error) {
     throw error;
   }
 }
 
-export async function fetchLatestCompletedResultIdForUser(userId: string): Promise<string | null> {
+export async function fetchLatestCompletedResultForUser(userId: string): Promise<LatestCompletedResultSummary | null> {
   const { data, error } = await supabase
     .from('questionnaire_responses')
-    .select('id, completed_at')
+    .select('id, completed_at, updated_at, created_at, calculated_code')
     .eq('user_id', userId)
     .eq('status', 'completed')
-    .order('completed_at', { ascending: false })
+    .not('calculated_code', 'is', null)
+    .order('completed_at', { ascending: false, nullsFirst: false })
+    .order('updated_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false, nullsFirst: false })
     .limit(1)
     .maybeSingle();
 
@@ -108,7 +156,112 @@ export async function fetchLatestCompletedResultIdForUser(userId: string): Promi
     }
     return null;
   }
-  return data?.id ?? null;
+
+  if (!data?.id || !data.calculated_code) return null;
+  return {
+    id: String(data.id),
+    calculated_code: String(data.calculated_code),
+    completed_at: data.completed_at ?? null,
+    updated_at: data.updated_at ?? null,
+    created_at: data.created_at ?? null,
+  };
+}
+
+export async function fetchLatestCompletedResultIdForUser(userId: string): Promise<string | null> {
+  const latestResult = await fetchLatestCompletedResultForUser(userId);
+  return latestResult?.id ?? null;
+}
+
+export async function fetchUserBodyCodeForUser(userId: string, email?: string | null): Promise<UserBodyCodeSummary | null> {
+  const filters = [`id.eq.${userId}`, `auth_user_id.eq.${userId}`];
+  if (email) filters.push(`email.eq.${email}`);
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('body_bti_code, body_bti_title, body_bti_description, updated_at')
+    .or(filters.join(','))
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (!isMissingTableOrColumn(error)) {
+      console.warn('fetchUserBodyCodeForUser failed:', error);
+    }
+    return null;
+  }
+
+  if (!data?.body_bti_code) return null;
+  return {
+    body_bti_code: String(data.body_bti_code),
+    body_bti_title: data.body_bti_title ? String(data.body_bti_title) : null,
+    body_bti_description: data.body_bti_description ? String(data.body_bti_description) : null,
+    updated_at: data.updated_at ?? null,
+  };
+}
+
+async function syncProfileFromQuestionnaireResult(questionnaireId: string, userId: string): Promise<void> {
+  const { data: resultData, error: resultError } = await supabase
+    .from('questionnaire_responses')
+    .select('calculated_code')
+    .eq('id', questionnaireId)
+    .maybeSingle();
+
+  if (resultError || !resultData?.calculated_code) {
+    if (resultError && !isMissingTableOrColumn(resultError)) {
+      console.warn('syncProfileFromQuestionnaireResult result lookup failed:', resultError);
+    }
+    return;
+  }
+
+  const bodyCode = String(resultData.calculated_code);
+  const { data: contentData, error: contentError } = await supabase
+    .from('body_code_content')
+    .select('character_name, description')
+    .eq('body_code', bodyCode)
+    .maybeSingle();
+
+  if (contentError && !isMissingTableOrColumn(contentError)) {
+    console.warn('syncProfileFromQuestionnaireResult content lookup failed:', contentError);
+  }
+
+  const { data: authData } = await supabase.auth.getUser();
+  const currentUser = authData.user?.id === userId ? authData.user : null;
+  const displayName = typeof currentUser?.user_metadata?.display_name === 'string' ? currentUser.user_metadata.display_name : null;
+
+  if (currentUser?.email) {
+    const { error: upsertError } = await supabase
+      .from('user_profiles')
+      .upsert({
+        id: userId,
+        auth_user_id: userId,
+        email: currentUser.email,
+        display_name: displayName,
+        name: displayName,
+        body_bti_code: bodyCode,
+        body_bti_title: String(contentData?.character_name ?? bodyCode),
+        body_bti_description: String(contentData?.description ?? ''),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+
+    if (!upsertError) return;
+    if (!isMissingTableOrColumn(upsertError)) {
+      console.warn('syncProfileFromQuestionnaireResult profile upsert failed:', upsertError);
+    }
+  }
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({
+      body_bti_code: bodyCode,
+      body_bti_title: String(contentData?.character_name ?? bodyCode),
+      body_bti_description: String(contentData?.description ?? ''),
+      updated_at: new Date().toISOString(),
+    })
+    .or(`id.eq.${userId},auth_user_id.eq.${userId}`);
+
+  if (error && !isMissingTableOrColumn(error)) {
+    console.warn('syncProfileFromQuestionnaireResult profile update failed:', error);
+  }
 }
 
 export async function attachQuestionnaireResultToUser(questionnaireId: string | undefined, userId: string): Promise<void> {
@@ -121,6 +274,10 @@ export async function attachQuestionnaireResultToUser(questionnaireId: string | 
 
   if (error && !isMissingTableOrColumn(error)) {
     console.warn('attachQuestionnaireResultToUser failed:', error);
+  }
+
+  if (!error) {
+    await syncProfileFromQuestionnaireResult(questionnaireId, userId);
   }
 }
 

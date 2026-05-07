@@ -1,9 +1,11 @@
 # MEBODY
 
-MEBODY는 4개 사전체크와 49개 본문 문항으로 현재 몸의 정렬 패턴을 기록하고, 4축 기반 mebody 코드와 후속 코드 플랜을 제공하는 모바일 중심 웹앱입니다.
+MEBODY 앱은 4개 사전체크와 49개 본문 문항으로 현재 몸의 정렬 패턴을 기록하고, 4축 기반 mebody 코드와 후속 코드 플랜을 제공하는 모바일 전용 웹앱입니다.
+
+웹 홈페이지와 웹 관리자 화면은 이 Vite 앱이 아니라 상위 폴더의 Spring Boot 서버(`../Server`)에서 제공합니다.
 
 ## 현재 제품 흐름
-- 랜딩
+- 모바일 랜딩
 - 안내 및 동의
 - 측정 기준 안내
 - 53문항 설문: 사전체크 4개 + 본문 49개
@@ -40,6 +42,7 @@ npm install
 ```env
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ### 3. 개발 서버
@@ -48,6 +51,8 @@ npm run dev -- --host 127.0.0.1
 ```
 
 기본 주소는 [http://127.0.0.1:3000](http://127.0.0.1:3000) 입니다.
+
+이 포트는 모바일 앱 전용입니다. 웹 홈페이지와 웹 관리자 화면은 `../Server`를 실행한 뒤 [http://localhost:8000](http://localhost:8000), [http://localhost:8000/admin](http://localhost:8000/admin)에서 확인합니다.
 
 ### 4. 빌드
 ```bash
