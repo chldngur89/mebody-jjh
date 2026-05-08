@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, Crown, ShieldCheck, Sparkles } from 'lucide-react';
 import { fetchMembershipPlans, fetchMySubscription, type MembershipPlan, type UserSubscription } from '../api/account';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface MembershipScreenProps {
   user: User | null;
@@ -27,6 +28,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +155,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
         </div>
 
         <div
+          ref={scrollRef}
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -365,6 +368,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
             </div>
           )}
         </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

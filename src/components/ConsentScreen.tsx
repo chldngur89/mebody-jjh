@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, ArrowLeft, Sparkles } from 'lucide-react';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface ConsentScreenProps {
   onBack?: () => void;
@@ -9,10 +10,12 @@ interface ConsentScreenProps {
 
 export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+  const screenHeight = isDesktopMockup ? '100%' : '100dvh';
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [agreeContent, setAgreeContent] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const consentScrollRef = useRef<HTMLDivElement>(null);
 
   const canProceed = agreeContent && agreePrivacy;
 
@@ -21,7 +24,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '100dvh',
+        height: isDesktopMockup ? '100%' : undefined,
+        minHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
@@ -59,13 +63,15 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
           position: 'relative',
           zIndex: 1,
           display: 'flex',
-          height: '100%',
+          height: screenHeight,
+          minHeight: screenHeight,
           flexDirection: 'column',
           padding: '22px 24px 20px',
           fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
+          overflowY: 'auto',
         }}
       >
-        <div style={{ marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ marginTop: 'auto', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div
             style={{
               display: 'inline-flex',
@@ -110,7 +116,9 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
 
         <div
           style={{
-            flex: 1,
+            flex: '0 1 auto',
+            maxHeight: 'calc(100% - 86px)',
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -133,7 +141,16 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
             </p>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '2px' }}>
+          <div
+            style={{
+              flex: 1,
+              position: 'relative',
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div ref={consentScrollRef} style={{ flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
             <div
               style={{
                 borderRadius: '18px',
@@ -303,6 +320,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 </span>
               </label>
             </div>
+            </div>
+            <ScrollIndicator containerRef={consentScrollRef} bottomOffset="30px" />
           </div>
 
           <button
@@ -311,6 +330,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
             disabled={!canProceed}
             style={{
               marginTop: '18px',
+              flexShrink: 0,
               display: 'inline-flex',
               width: '100%',
               height: '58px',
@@ -331,6 +351,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
             <span style={{ fontSize: '18px' }}>→</span>
           </button>
         </div>
+        <div style={{ height: 0, marginBottom: 'auto', flexShrink: 0 }} />
       </div>
     </div>
   );

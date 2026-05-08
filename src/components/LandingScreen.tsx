@@ -44,13 +44,15 @@ export function LandingScreen({
         : '재접속 반갑습니다. 첫 진단을 완료하면 mebody 코드와 코드 플랜이 내 페이지에 저장됩니다.'
     : '회원가입하면 결과 저장, 지난 결과 확인, 코드 플랜과 오늘의 미션을 다음 방문에서도 이어서 볼 수 있습니다.';
   const accountActionLabel = isLoggedIn ? '내 페이지' : '회원가입 / 로그인';
+  const landingHeight = isDesktopMockup ? '100%' : '100dvh';
 
   return (
     <div
       style={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '100dvh',
+        height: isDesktopMockup ? '100%' : undefined,
+        minHeight: landingHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
@@ -89,14 +91,15 @@ export function LandingScreen({
           position: 'relative',
           zIndex: 1,
           display: 'flex',
-          height: '100%',
+          height: landingHeight,
+          minHeight: landingHeight,
           flexDirection: 'column',
-          padding: '22px 24px 18px',
+          padding: '22px 24px 20px',
           fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
           overflowY: 'auto',
         }}
       >
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ marginTop: 'auto', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div
             style={{
               display: 'inline-flex',
@@ -138,7 +141,7 @@ export function LandingScreen({
 
         <div
           style={{
-            flex: 1,
+            flex: '0 0 auto',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -148,7 +151,7 @@ export function LandingScreen({
             backdropFilter: 'blur(20px)',
           }}
         >
-          <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column', padding: '30px 26px 24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', padding: '30px 26px 24px' }}>
             <div style={{ marginBottom: '30px', textAlign: 'center' }}>
               <div
                 style={{
@@ -351,7 +354,7 @@ export function LandingScreen({
           </div>
         </div>
 
-        <p style={{ marginTop: '12px', textAlign: 'center', fontSize: '12px', color: '#6b7280' }}>
+        <p style={{ marginTop: '12px', marginBottom: 'auto', textAlign: 'center', fontSize: '12px', color: '#6b7280' }}>
           Powered by Mebody • Designed for Mebody
         </p>
       </div>

@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { fetchResultGuideCommon, type ResultGuide } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { RESULT_GUIDE_SECTIONS, RESULT_GUIDE_TITLE } from '../data/resultGuideContent';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface CommonGuideScreenProps {
   onBack?: () => void;
@@ -71,6 +72,7 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
   const [guide, setGuide] = useState<ResultGuide | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>('guide-0');
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +175,7 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
           <section
             style={{
               borderRadius: '22px',
@@ -261,6 +263,7 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
             </button>
           )}
         </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

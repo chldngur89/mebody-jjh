@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, ChevronRight, Crown, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { fetchQuestionnaireResult, type BodyCodeContent, type QuestionnaireResponse } from '../api/questionnaire';
@@ -8,10 +8,12 @@ import { supabase } from '../lib/supabase';
 import { characterNames } from '../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface MyPageScreenProps {
   user: User | null;
   latestResultId?: string;
+  latestBodyCode?: string;
   onBack?: () => void;
   onOpenLatestResult?: () => void;
   onOpenMembership?: () => void;
@@ -115,6 +117,7 @@ async function fetchProfileRoleFromSupabase(userId: string, email?: string | nul
 export function MyPageScreen({
   user,
   latestResultId,
+  latestBodyCode,
   onBack,
   onOpenLatestResult,
   onOpenMembership,
@@ -135,6 +138,7 @@ export function MyPageScreen({
   const [adminRoleUnavailable, setAdminRoleUnavailable] = useState(false);
   const [adminToolsOpen, setAdminToolsOpen] = useState(false);
   const effectiveLatestResultId = latestResultId ?? resolvedLatestResultId;
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchAppImages().then(setAppImages).catch(() => setAppImages({}));
@@ -278,7 +282,7 @@ export function MyPageScreen({
 
   const handleOpenAdminConsole = useCallback(async () => {
     if (!ADMIN_WEB_BASE_URL) {
-      window.alert('관리자 웹 콘솔 주소가 설정되어 있지 않습니다. VITE_API_BASE_URL을 확인해주세요.');
+      window.alert('관리자 웹 콘솔 주소가 설정되어 있지 않습니다. 배포 환경변수 VITE_API_BASE_URL을 확인해주세요.');
       return;
     }
 
@@ -289,11 +293,11 @@ export function MyPageScreen({
       const response = await fetch(`${ADMIN_WEB_BASE_URL}/api/public/config`, { signal: controller.signal });
 
       if (!response.ok) {
-        window.alert('관리자 웹 콘솔 서버가 응답하지 않습니다. 8000 서버를 실행한 뒤 다시 시도해주세요.');
+        window.alert('관리자 웹 콘솔 서버가 응답하지 않습니다. 배포된 API 서버 상태와 VITE_API_BASE_URL 값을 확인해주세요.');
         return;
       }
     } catch {
-      window.alert('관리자 웹 콘솔은 서버(8000)를 실행한 뒤 사용할 수 있습니다.');
+      window.alert('관리자 웹 콘솔에 연결할 수 없습니다. 배포된 API 서버와 CORS 설정을 확인해주세요.');
       return;
     } finally {
       window.clearTimeout(timeoutId);
@@ -303,10 +307,17 @@ export function MyPageScreen({
   }, []);
 
   const isPreviewMode = previewMode && !user;
-  const bodyCode = latestResult?.calculated_code || (isPreviewMode ? 'FRRS' : '');
+  const normalizedLatestBodyCode = (latestBodyCode ?? '').trim().toUpperCase();
+  const bodyCode = (latestResult?.calculated_code || normalizedLatestBodyCode || (isPreviewMode ? 'FRRS' : '')).toUpperCase();
   const content = latestResult?.body_code_content ?? null;
   const characterName = content?.character_name || (bodyCode ? characterNames[bodyCode] : '나의 mebody 코드');
-  const summaryLine = latestResult ? getSummaryLine(content) : isPreviewMode ? '가입 후에는 최근 결과와 코드 플랜, 멤버십 상태를 이 화면에서 이어서 확인합니다.' : getSummaryLine(content);
+  const summaryLine = latestResult
+    ? getSummaryLine(content)
+    : isPreviewMode
+      ? '가입 후에는 최근 결과와 코드 플랜, 멤버십 상태를 이 화면에서 이어서 확인합니다.'
+      : normalizedLatestBodyCode
+        ? '이 계정의 저장된 mebody 코드입니다. 상세 결과를 새로 생성하면 코드 플랜과 미션이 자동으로 연결됩니다.'
+        : getSummaryLine(content);
   const characterImage = bodyCode ? resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls) : '';
   const latestResultDate = formatKoreanDate(latestResult?.completed_at || latestResult?.updated_at || latestResult?.created_at);
   const displayName = user ? getDisplayName(user) : 'Preview';
@@ -524,6 +535,7 @@ export function MyPageScreen({
         </div>
 
         <div
+          ref={scrollRef}
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -691,7 +703,7 @@ export function MyPageScreen({
                       wordBreak: 'keep-all',
                     }}
                   >
-                    버튼을 눌렀을 때 서버가 꺼져 있으면 안내창만 표시합니다. 서버가 켜져 있으면 8000 웹 관리자 화면으로 이동합니다.
+                    버튼을 눌렀을 때 API 서버가 응답하지 않으면 안내창만 표시합니다. 서버가 정상일 때는 설정된 관리자 웹 콘솔로 이동합니다.
                   </div>
                 </div>
               )}
@@ -726,7 +738,7 @@ export function MyPageScreen({
                   최신 mebody 코드를 확인하고 있습니다.
                 </p>
               </div>
-            ) : latestResult || isPreviewMode ? (
+            ) : latestResult || isPreviewMode || Boolean(normalizedLatestBodyCode) ? (
               <div style={{ display: 'grid', gap: '14px' }}>
                 <div
                   style={{
@@ -741,7 +753,7 @@ export function MyPageScreen({
                   </div>
                   <div style={{ borderRadius: '14px', background: 'rgba(248,250,252,0.96)', padding: '10px 12px' }}>
                     <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.12em', color: '#64748b', marginBottom: '4px' }}>마지막 진단일</div>
-                    <div style={{ fontSize: '13px', fontWeight: 900, color: '#111827' }}>{latestResultDate || '확인 중'}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: '#111827' }}>{latestResultDate || (normalizedLatestBodyCode ? '기존 저장 코드' : '확인 중')}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
@@ -922,6 +934,7 @@ export function MyPageScreen({
             </button>
           )}
         </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

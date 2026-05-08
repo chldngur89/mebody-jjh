@@ -7,6 +7,7 @@ import { AXIS_ICON_FALLBACK_SRC, AXIS_ICON_SRC } from '../data/axisIcons';
 import type { AxisKey } from '../data/axisIcons';
 import type { AnswerMap } from '../utils/bodyCodeCalculator';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface QuestionnaireScreenProps {
   onBack?: () => void;
@@ -166,6 +167,7 @@ export function QuestionnaireScreen({
   const progress = questions.length ? (currentIndex / totalQuestions) * 100 : 0;
  
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const questionScrollRef = useRef<HTMLDivElement>(null);
 
   const loadQuestions = useCallback(async () => {
     setIsLoading(true);
@@ -525,9 +527,10 @@ export function QuestionnaireScreen({
             ></div>
           </div>
         </div>
-        
+
         {/* Question Content */}
-        <div className="flex-1 overflow-y-auto px-6 pb-4 pt-1">
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div ref={questionScrollRef} className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-1">
           {/* Question Number + Axis */}
           <div
             className="grid items-center gap-3"
@@ -776,8 +779,10 @@ export function QuestionnaireScreen({
               )}
             </div>
           )}
+          </div>
+          <ScrollIndicator containerRef={questionScrollRef} bottomOffset="72px" />
         </div>
-        
+
         {/* Bottom Space */}
         <div className="pb-8"></div>
       </div>

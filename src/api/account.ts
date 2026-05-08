@@ -36,6 +36,22 @@ export interface UserBodyCodeSummary {
   updated_at: string | null;
 }
 
+function resolveBodyCodeFromProfileRow(row: Record<string, unknown> | null | undefined): string | null {
+  if (!row) return null;
+  const candidates = [
+    row.body_bti_code,
+    row.body_code,
+    row.mebody_code,
+    row.calculated_code,
+    row.code,
+  ];
+  for (const value of candidates) {
+    const normalized = String(value ?? '').trim();
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
 const FALLBACK_PLANS: MembershipPlan[] = [
   {
     code: 'basic_monthly',
@@ -173,29 +189,59 @@ export async function fetchLatestCompletedResultIdForUser(userId: string): Promi
 }
 
 export async function fetchUserBodyCodeForUser(userId: string, email?: string | null): Promise<UserBodyCodeSummary | null> {
-  const filters = [`id.eq.${userId}`, `auth_user_id.eq.${userId}`];
+  const filters = [`id.eq.${userId}`, `auth_user_id.eq.${userId}`, `user_id.eq.${userId}`];
   if (email) filters.push(`email.eq.${email}`);
 
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('body_bti_code, body_bti_title, body_bti_description, updated_at')
+    .select('*')
     .or(filters.join(','))
+    .order('updated_at', { ascending: false, nullsFirst: false })
     .limit(1)
     .maybeSingle();
 
-  if (error) {
-    if (!isMissingTableOrColumn(error)) {
-      console.warn('fetchUserBodyCodeForUser failed:', error);
+  if (error && !isMissingTableOrColumn(error)) {
+    console.warn('fetchUserBodyCodeForUser primary lookup failed:', error);
+  }
+
+  const resolvedPrimaryCode = resolveBodyCodeFromProfileRow(data as Record<string, unknown> | null);
+  if (resolvedPrimaryCode) {
+    return {
+      body_bti_code: resolvedPrimaryCode,
+      body_bti_title: data?.body_bti_title ? String(data.body_bti_title) : null,
+      body_bti_description: data?.body_bti_description ? String(data.body_bti_description) : null,
+      updated_at: data?.updated_at ?? null,
+    };
+  }
+
+  // Legacy fallback: some rows are keyed by email only.
+  if (!email) return null;
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+
+  const { data: emailData, error: emailError } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .ilike('email', normalizedEmail)
+    .order('updated_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (emailError) {
+    if (!isMissingTableOrColumn(emailError)) {
+      console.warn('fetchUserBodyCodeForUser email fallback failed:', emailError);
     }
     return null;
   }
 
-  if (!data?.body_bti_code) return null;
+  const resolvedEmailCode = resolveBodyCodeFromProfileRow(emailData as Record<string, unknown> | null);
+  if (!resolvedEmailCode) return null;
   return {
-    body_bti_code: String(data.body_bti_code),
-    body_bti_title: data.body_bti_title ? String(data.body_bti_title) : null,
-    body_bti_description: data.body_bti_description ? String(data.body_bti_description) : null,
-    updated_at: data.updated_at ?? null,
+    body_bti_code: resolvedEmailCode,
+    body_bti_title: emailData.body_bti_title ? String(emailData.body_bti_title) : null,
+    body_bti_description: emailData.body_bti_description ? String(emailData.body_bti_description) : null,
+    updated_at: emailData.updated_at ?? null,
   };
 }
 

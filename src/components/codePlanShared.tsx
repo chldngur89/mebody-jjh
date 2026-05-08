@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, ChevronUp, X } from 'lucide-react';
 import {
   fetchQuestionnaireResult,
@@ -23,6 +23,7 @@ import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { characterNames, getAxisScoreBreakdown, type AnswerMap } from '../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 type ResultWithContent = QuestionnaireResponse & { body_code_content?: BodyCodeContent | null };
 type AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility';
@@ -806,6 +807,7 @@ function ActionDetailOverlay({
     contents: dedupeContents(item.contentKeys.map((key) => detailByKey.get(key)).filter((content): content is ImmediateActionContent => Boolean(content))),
   }));
   const title = mode === 'all' ? '지금 해야 할 액션 전체' : mode === 1 ? '1순위 액션 상세' : '2순위 액션 상세';
+  const actionDetailScrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
@@ -825,17 +827,29 @@ function ActionDetailOverlay({
       <div
         onClick={(event) => event.stopPropagation()}
         style={{
+          position: 'relative',
           width: '100%',
           maxWidth: '430px',
           maxHeight: '86vh',
-          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
           borderRadius: '30px',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(236,253,245,0.98) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
           boxShadow: '0 28px 80px rgba(15,23,42,0.24)',
-          padding: '20px',
+          overflow: 'hidden',
         }}
       >
+        <div
+          ref={actionDetailScrollRef}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            padding: '20px',
+          }}
+        >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', marginBottom: '16px' }}>
           <div>
             <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#059669', marginBottom: '6px' }}>ACTION DETAIL</div>
@@ -949,6 +963,8 @@ function ActionDetailOverlay({
             </section>
           ))}
         </div>
+        </div>
+        <ScrollIndicator containerRef={actionDetailScrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

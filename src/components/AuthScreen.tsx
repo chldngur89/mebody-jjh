@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Sparkles, UserRound } from 'lucide-react';
 import { requestPasswordReset, signInWithEmail, signOutAccount, signUpWithEmail, upsertProfileFromUser } from '../api/account';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface AuthScreenProps {
   user: User | null;
@@ -14,6 +15,7 @@ interface AuthScreenProps {
 
 export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, onGoMembership }: AuthScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+  const screenHeight = isDesktopMockup ? '100%' : '100dvh';
 
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
@@ -23,6 +25,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMode(initialMode);
@@ -151,7 +154,8 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
       style={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '100dvh',
+        height: isDesktopMockup ? '100%' : undefined,
+        minHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
@@ -191,13 +195,15 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
           position: 'relative',
           zIndex: 1,
           display: 'flex',
-          flex: 1,
+          height: screenHeight,
+          minHeight: screenHeight,
           flexDirection: 'column',
           padding: '22px 24px 18px',
           fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
+          overflowY: 'auto',
         }}
       >
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ marginTop: 'auto', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div
             style={{
               display: 'inline-flex',
@@ -242,8 +248,11 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
         </div>
 
         <div
+          ref={scrollRef}
           style={{
-            flex: 1,
+            flex: '0 1 auto',
+            maxHeight: 'calc(100% - 88px)',
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',
@@ -257,7 +266,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
         >
           <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>ACCOUNT</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>{user ? 'ACCOUNT' : '회원가입하고 결과 저장하기'}</div>
             <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2, color: '#1f2937' }}>로그인 / 회원가입</h1>
           </div>
 
@@ -663,6 +672,8 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
           )}
           </div>
         </div>
+        <div style={{ height: 0, marginBottom: 'auto', flexShrink: 0 }} />
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

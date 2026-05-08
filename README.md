@@ -1,26 +1,16 @@
-# MEBODY
+# MEBODY Mobile Service
 
-MEBODY 앱은 4개 사전체크와 49개 본문 문항으로 현재 몸의 정렬 패턴을 기록하고, 4축 기반 mebody 코드와 후속 코드 플랜을 제공하는 모바일 전용 웹앱입니다.
+MEBODY 모바일 서비스는 사전체크 4개와 본문 49개, 총 53문항으로 현재 몸의 정렬 패턴을 기록하고 4축 기반 mebody 코드와 코드 플랜을 제공하는 고객용 웹앱입니다.
 
-웹 홈페이지와 웹 관리자 화면은 이 Vite 앱이 아니라 상위 폴더의 Spring Boot 서버(`../Server`)에서 제공합니다.
+- 로컬 앱: http://localhost:3000
+- 배포 앱: https://mebody-jjh.vercel.app/
+- 정상 진단, 문항, 계산, 결과 표시는 Supabase와 클라이언트 계산 로직만 사용합니다.
+- Railway/Spring 서버가 꺼져 있어도 고객 진단과 결과 제공은 막히면 안 됩니다.
 
-## 현재 제품 흐름
-- 모바일 랜딩
-- 안내 및 동의
-- 측정 기준 안내
-- 53문항 설문: 사전체크 4개 + 본문 49개
-- 분석 중 화면
-- 무료 결과 페이지
-- 코드 플랜
-- 자세 사용 설명서
-- 내 코드 더 알아보기
-- 회원가입 / 로그인
-- 마이페이지
-- 멤버십 / 체크아웃 mock
+웹 홈페이지와 관리자 화면은 이 앱이 아니라 `../Server`에서 제공합니다.
 
-임시 검증용 버튼은 남겨둡니다. 운영 전에는 실제 회원/결제 흐름이 붙은 뒤 제거 여부를 다시 판단합니다.
+## Stack
 
-## 기술 스택
 - React 18
 - TypeScript
 - Vite 6
@@ -28,80 +18,67 @@ MEBODY 앱은 4개 사전체크와 49개 본문 문항으로 현재 몸의 정�
 - lucide-react
 - Vercel 배포
 
-PWA 캐싱은 제거했습니다. [public/sw.js](./public/sw.js)는 과거 배포에서 등록된 service worker를 해제하기 위한 cleanup 파일입니다.
+## Product Flow
 
-## 실행 방법
-### 1. 의존성 설치
-```bash
-npm install
-```
+- 랜딩
+- 안내 및 동의
+- 측정 기준 안내
+- 53문항 설문: 사전체크 4개 + 본문 49개
+- 분석 중 화면
+- 무료 결과 페이지
+- 코드 플랜 / 오늘의 미션
+- 자세 사용 설명서
+- 내 코드 더 알아보기
+- 회원가입 / 로그인
+- 마이페이지
+- 멤버십 / 체크아웃 mock
 
-### 2. 환경변수 설정
-`.env` 또는 Vercel Environment Variables에 아래 값을 설정합니다.
+## Runtime Rules
+
+- 첫 문항은 번들된 53문항 스냅샷으로 즉시 표시합니다.
+- Supabase `questions`는 백그라운드로 갱신합니다.
+- Supabase 문항 응답이 53개 미만이거나 `A-1`, `B-1`, `49`가 없으면 캐시하지 않습니다.
+- 53문항 완료 후 즉시 `analyzing` 화면으로 이동합니다.
+- 결과 코드는 클라이언트에서 즉시 계산합니다.
+- Supabase 저장이 실패해도 고객은 로컬 결과 화면을 봅니다.
+- 로그인 사용자의 최신 코드 정본은 `questionnaire_responses`의 최신 `completed` 결과입니다.
+- `user_profiles.body_bti_code`는 빠른 표시용 캐시이며 제출 성공 시 최신 코드로 갱신합니다.
+
+## Environment Variables
+
+`.env` 또는 Vercel Environment Variables에 설정합니다.
 
 ```env
-VITE_SUPABASE_URL=...
-VITE_SUPABASE_ANON_KEY=...
-VITE_API_BASE_URL=http://localhost:8000
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# 선택값: 모바일 마이페이지에서 서버 관리자 버튼/서버 프로필 동기화에만 사용합니다.
+# 이 값이 없어도 진단, 문항, 결과, 코드 플랜은 동작해야 합니다.
+VITE_API_BASE_URL=https://mebody-server-production.up.railway.app
 ```
 
-### 3. 개발 서버
+로컬에서 서버와 같이 테스트할 때만 `VITE_API_BASE_URL=http://localhost:8080`으로 바꿉니다.
+
+## Run
+
 ```bash
-npm run dev -- --host 127.0.0.1
+cd /Users/wh.choi/Desktop/Code/mebody/mebody
+npm install
+npm run dev
 ```
 
-기본 주소는 [http://127.0.0.1:3000](http://127.0.0.1:3000) 입니다.
+접속: http://localhost:3000
 
-이 포트는 모바일 앱 전용입니다. 웹 홈페이지와 웹 관리자 화면은 `../Server`를 실행한 뒤 [http://localhost:8000](http://localhost:8000), [http://localhost:8000/admin](http://localhost:8000/admin)에서 확인합니다.
+## Build
 
-### 4. 빌드
 ```bash
+cd /Users/wh.choi/Desktop/Code/mebody/mebody
 npm run build
+git diff --check
 ```
 
-### 5. 빌드 미리보기
-```bash
-npm run preview
-```
+## Supabase Tables Used
 
-## Vercel 배포 기준
-- Framework: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- 필수 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-
-Vercel 빌드 로그의 `Some chunks are larger than 500 kB`는 현재 실패가 아니라 경고입니다. 현재 `vite.config.ts`에서 경고 기준을 900 kB로 올려둔 상태이고, 실제 최적화는 라우트 단위 코드 스플리팅을 할 때 처리합니다.
-
-## 현재 코드 구조
-주요 진입점:
-- [src/App.tsx](./src/App.tsx): 화면 전환, 부트스트랩, 결과 기억 정책
-- [src/main.tsx](./src/main.tsx): React mount, 과거 service worker/cache 정리
-
-주요 화면:
-- [src/components/LandingScreen.tsx](./src/components/LandingScreen.tsx)
-- [src/components/ConsentScreen.tsx](./src/components/ConsentScreen.tsx)
-- [src/components/DiagnosisIntroScreen.tsx](./src/components/DiagnosisIntroScreen.tsx)
-- [src/components/QuestionnaireScreen.tsx](./src/components/QuestionnaireScreen.tsx)
-- [src/components/AnalyzingScreen.tsx](./src/components/AnalyzingScreen.tsx)
-- [src/components/ResultScreen.tsx](./src/components/ResultScreen.tsx)
-- [src/components/CodePlanScreen.tsx](./src/components/CodePlanScreen.tsx)
-- [src/components/CommonGuideScreen.tsx](./src/components/CommonGuideScreen.tsx)
-- [src/components/CodeDetailsScreen.tsx](./src/components/CodeDetailsScreen.tsx)
-- [src/components/AuthScreen.tsx](./src/components/AuthScreen.tsx)
-- [src/components/MyPageScreen.tsx](./src/components/MyPageScreen.tsx)
-- [src/components/MembershipScreen.tsx](./src/components/MembershipScreen.tsx)
-- [src/components/CheckoutScreen.tsx](./src/components/CheckoutScreen.tsx)
-
-주요 로직:
-- [src/api/questionnaire.ts](./src/api/questionnaire.ts): 문항 조회, 응답 저장, 결과 조회
-- [src/api/account.ts](./src/api/account.ts): 프로필, 최근 결과, 멤버십 조회
-- [src/api/content.ts](./src/api/content.ts): 콘텐츠, 이미지, Ver6 액션 데이터 조회
-- [src/utils/bodyCodeCalculator.ts](./src/utils/bodyCodeCalculator.ts): 4축 mebody 코드 계산
-- [src/utils/characterImages.ts](./src/utils/characterImages.ts): Supabase Storage 우선 캐릭터 이미지 해석
-- [src/utils/axisIcons.ts](./src/utils/axisIcons.ts): 축 아이콘 이미지 해석
-
-## Supabase 사용 범위
-현재 앱이 사용하는 주요 테이블:
 - `questions`
 - `questionnaire_responses`
 - `body_code_content`
@@ -117,18 +94,10 @@ Vercel 빌드 로그의 `Some chunks are larger than 500 kB`는 현재 실패가
 - `membership_plans`
 - `user_subscriptions`
 
-현재 유지하는 SQL 파일:
-- [supabase/app_content_and_images.sql](./supabase/app_content_and_images.sql)
-- [supabase/auth_membership_and_revisit.sql](./supabase/auth_membership_and_revisit.sql)
-- [supabase/body_code_result_sections_15codes.sql](./supabase/body_code_result_sections_15codes.sql)
-- [supabase/fix_app_images_cleanup.sql](./supabase/fix_app_images_cleanup.sql)
-- [supabase/questionnaire_responses_rls.sql](./supabase/questionnaire_responses_rls.sql)
-- [supabase/ver6_immediate_action.sql](./supabase/ver6_immediate_action.sql)
+## Storage Rules
 
-## 이미지 규칙
-Supabase Storage bucket 이름은 `images`입니다.
+Supabase Storage bucket: `images`
 
-Storage 경로:
 - 캐릭터: `characters/{BODY_CODE}.png`
 - 축 아이콘: `axis/axis-neck.png`
 - 축 아이콘: `axis/axis-shoulder.png`
@@ -138,41 +107,28 @@ Storage 경로:
 
 캐릭터 이미지는 Storage를 우선 사용하고, 실패하면 `app_images`, 마지막으로 로컬 fallback을 사용합니다.
 
-## 결과 기억 정책
-- 비회원: 현재 탭의 `sessionStorage`에만 결과 id를 보관합니다.
+## Result Memory Policy
+
+- 비회원: 현재 탭 `sessionStorage`에만 결과 id를 보관합니다.
 - 비회원: 새 탭, 새 브라우저, 공유 URL 단독 진입은 랜딩으로 보냅니다.
-- 로그인 사용자: `questionnaire_responses.user_id` 기준으로 최신 결과를 불러옵니다.
-- Supabase Auth 세션은 그대로 유지합니다.
+- 로그인 사용자: `questionnaire_responses.user_id` 기준 최신 완료 결과를 불러옵니다.
+- Supabase Auth 세션 저장은 유지합니다.
 
-## 현재 구현 완료
-- 53문항 설문 로딩 및 저장
-- 사전체크 4개와 본문 49개 문항 UI 처리
-- 4축 기반 mebody 코드 계산
-- 결과 페이지와 코드 플랜 분리
-- Ver6 즉시 액션 데이터 조회 및 1순위/2순위 액션 UI
-- 액션 상세 모달과 미션 수행률 0% / 50% / 100% 흐름
-- 자세 사용 설명서와 내 코드 더 알아보기 화면
-- 결과 페이지 하단 16가지 체형 이미지, 유튜브 카드, mock store
-- Supabase Storage 이미지 우선 로딩
-- 로그인 사용자의 최근 결과 코드 플랜 풀스크린 모달
-- 회원가입 / 로그인 / 마이페이지 / 멤버십 mock UI
-- 비회원 첫 진입은 항상 랜딩으로 고정
-- 과거 service worker/cache cleanup
+## Important Files
 
-## 검증 체크리스트
-```bash
-npm run build
-git diff --check
-```
+- `src/App.tsx`: 화면 전환, 결과 저장 상태, 로그인 후 분기
+- `src/api/questionnaire.ts`: 문항 조회, 53문항 검증, 응답 저장, 결과 조회
+- `src/api/account.ts`: 프로필, 최신 결과, 멤버십 조회
+- `src/api/content.ts`: 콘텐츠, 이미지, Ver6 액션 데이터 조회
+- `src/utils/bodyCodeCalculator.ts`: 53문항 기반 4축 mebody 코드 계산
+- `src/data/ver3QuestionsSnapshot.ts`: 즉시 렌더링용 53문항 스냅샷
+- `src/utils/characterImages.ts`: Supabase Storage 우선 캐릭터 이미지 해석
 
-브라우저에서 확인할 흐름:
-- 비회원 새 접속이 랜딩에서 시작하는지 확인
-- 53문항 건너뛰기 후 결과와 코드 플랜이 최신 액션 UI로 나오는지 확인
-- 53문항 정상 완료 후에도 같은 코드 플랜 UI로 나오는지 확인
-- 미션 카드 클릭 시 0% -> 50% -> 100% 흐름이 정상인지 확인
-- 100%에서 미션 영역을 누르면 액션 전체 보기가 열리는지 확인
-- 비회원 새 탭에서는 이전 결과가 자동 복원되지 않는지 확인
-- 로그인 후에는 최근 결과 바로 보기가 Supabase 결과 기준으로 노출되는지 확인
+## Verification Checklist
 
-## 다음 작업
-다음 작업은 [TODO.md](./TODO.md)에 정리했습니다. 결제/회원 보안 계획은 [docs/member-auth-billing-plan.md](./docs/member-auth-billing-plan.md)에 유지합니다.
+- 서버를 끄고도 첫 문항이 빠르게 표시되는지 확인합니다.
+- Supabase active questions가 `total=53`, `precheck=4`, `scored=49`인지 확인합니다.
+- 53문항 완료 후 바로 분석 화면으로 이동하는지 확인합니다.
+- 저장 실패 상황에서도 결과 화면이 막히지 않는지 확인합니다.
+- 같은 회원이 다시 진단하면 랜딩, 마이페이지, 코드플랜, 관리자 모두 마지막 완료 코드 기준으로 표시되는지 확인합니다.
+- 앱 문구에서 과거 문항수 표현이 노출되지 않는지 확인합니다.

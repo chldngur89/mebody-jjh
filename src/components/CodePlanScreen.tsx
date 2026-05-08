@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { ArrowLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { CodePlanDetailContent, useCodePlanData } from './codePlanShared';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface CodePlanScreenProps {
   questionnaireId?: string;
@@ -13,6 +15,7 @@ interface CodePlanScreenProps {
 
 export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMode = false, onBack, onRequireAuth, onNextGuide }: CodePlanScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const data = useCodePlanData(questionnaireId);
 
@@ -239,12 +242,11 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
             </button>
           )}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '4px' }}>CODE PLAN</div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>나의 mebody 코드</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Code Plan</h1>
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
           {previewMode && !isLoggedIn && (
             <div
               style={{
@@ -288,6 +290,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
             </button>
           )}
         </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

@@ -931,6 +931,7 @@ export function ResultScreen({
             </section>
           </div>
         </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="72px" />
       </div>
 
       {axisModalOpen && (

@@ -1,10 +1,11 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { fetchQuestionnaireResult } from '../api/questionnaire';
 import { fetchResultSectionsByBodyCode, type ResultSectionItem } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { characterNames, getAxisLabels } from '../utils/bodyCodeCalculator';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface CodeDetailsScreenProps {
   questionnaireId?: string;
@@ -99,6 +100,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
   const [sections, setSections] = useState<ResultSectionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>('detail-0');
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,7 +205,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
           <section
             style={{
               borderRadius: '22px',
@@ -313,6 +315,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
             </button>
           )}
         </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
       </div>
     </div>
   );

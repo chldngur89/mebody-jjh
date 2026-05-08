@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { X } from 'lucide-react';
 import { CodePlanDetailContent, useCodePlanData } from './codePlanShared';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface CodePlanFullscreenModalProps {
   questionnaireId?: string;
@@ -8,6 +10,7 @@ interface CodePlanFullscreenModalProps {
 
 export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFullscreenModalProps) {
   const data = useCodePlanData(questionnaireId);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
@@ -82,9 +85,8 @@ export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFu
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '4px' }}>CODE PLAN</div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                나의 mebody 코드
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Code Plan
               </h1>
             </div>
             <button
@@ -110,7 +112,7 @@ export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFu
             </button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px' }}>
+          <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px' }}>
             {data.isLoading ? (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}>로딩 중...</div>
             ) : data.error ? (
@@ -121,6 +123,7 @@ export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFu
               <CodePlanDetailContent data={data} />
             )}
           </div>
+          <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
         </div>
       </div>
     </div>

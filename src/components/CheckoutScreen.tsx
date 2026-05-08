@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, CreditCard } from 'lucide-react';
 import { activateSubscription, fetchMembershipPlans, type MembershipPlan } from '../api/account';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { ScrollIndicator } from './ScrollIndicator';
 
 interface CheckoutScreenProps {
   user: User | null;
@@ -24,6 +25,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,7 +68,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white rounded-3xl shadow-xl overflow-hidden" style={{ minHeight: '100dvh' }}>
-      <div className="h-full flex flex-col">
+      <div className="relative flex h-full min-h-0 flex-col">
         <div className="flex-shrink-0 bg-white/85 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center gap-3 z-10">
           {onBack && (
             <button
@@ -83,8 +85,10 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
           </div>
         </div>
 
+        <div className="relative flex min-h-0 flex-1 flex-col">
         <div
-          className="flex-1 overflow-y-auto px-6 py-6"
+          ref={scrollRef}
+          className="min-h-0 flex-1 overflow-y-auto px-6 py-6"
           style={{ fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif' }}
         >
           {!user ? (
@@ -157,6 +161,8 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
               {error}
             </div>
           )}
+        </div>
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
         </div>
       </div>
     </div>

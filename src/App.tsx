@@ -53,7 +53,7 @@ type PendingAnalysis = {
   questionnaireId?: string;
 } | null;
 
-const MIN_ANALYSIS_VISIBLE_MS = 800;
+const MIN_ANALYSIS_VISIBLE_MS = 1000;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -158,17 +158,52 @@ export default function App() {
   };
 
   const handleAnalyzePendingAnswers = async () => {
-    if (!pendingAnalysis) {
+    const currentPending = pendingAnalysis;
+    if (!currentPending) {
       setCurrentScreen('questionnaire');
       return;
     }
 
     const startedAt = Date.now();
+    const answers = currentPending.answers;
+    const questions = currentPending.questions;
+    const initialDraftId = currentPending.questionnaireId;
+    const localResult = createLocalQuestionnaireResult(answers, questions);
 
-    // 1. Calculate local result instantly
-    const localResult = createLocalQuestionnaireResult(pendingAnalysis.answers, pendingAnalysis.questions);
+    let resultId = localResult.id;
+    let resultCode = localResult.calculated_code;
+    let finalSaveStatus: ResultSaveStatus = currentUser ? 'saved' : 'idle';
 
-    // 2. Wait for the exact animation time (0.8s)
+    try {
+      let persistedId = initialDraftId;
+      if (!persistedId) {
+        const draft = await saveDraft(answers);
+        persistedId = String(draft.id);
+      }
+
+      let dbResult;
+      try {
+        dbResult = await submitQuestionnaire(answers, persistedId, questions);
+      } catch (firstError) {
+        console.warn('First save attempt failed, retrying once...', firstError);
+        await wait(1000);
+        dbResult = await submitQuestionnaire(answers, persistedId, questions);
+      }
+
+      const dbResultId = String(dbResult.id);
+      resultId = dbResultId;
+      resultCode = dbResult.calculated_code || resultCode;
+
+      if (currentUser) {
+        await attachQuestionnaireResultToUser(dbResultId, currentUser.id);
+      }
+    } catch (error) {
+      console.error('[mebody-error] submit failed. Showing local result and keeping retry state:', error);
+      finalSaveStatus = currentUser ? 'failed' : 'idle';
+    }
+
+    // Analysis screen should remain visible until save finishes,
+    // then keep it for at least 1 second for visual continuity.
     const elapsed = Date.now() - startedAt;
     if (elapsed < MIN_ANALYSIS_VISIBLE_MS) {
       await wait(MIN_ANALYSIS_VISIBLE_MS - elapsed);
@@ -176,59 +211,16 @@ export default function App() {
 
     if (!mountedRef.current) return;
 
-    // 3. Immediately transition to Result Screen with local result
     setMyPagePreviewMode(false);
     setLandingCodePlanModalOpen(false);
     setCodePlanPreviewMode(false);
-
-    setQuestionnaireId(localResult.id);
-    setBodyCode(localResult.calculated_code);
-    rememberResultForCurrentSession(localResult.id);
-    setResultEntrySource('questionnaire');
-    setResultSaveStatus('saving');
-    setCurrentScreen('result');
-
-    // 4. Perform DB save in the background
-    const answers = pendingAnalysis.answers;
-    const questions = pendingAnalysis.questions;
-    const initialDraftId = pendingAnalysis.questionnaireId;
     setPendingAnalysis(null);
-
-    (async () => {
-      try {
-        let persistedId = initialDraftId;
-        if (!persistedId) {
-          const draft = await saveDraft(answers);
-          persistedId = String(draft.id);
-        }
-
-        let dbResult;
-        try {
-          dbResult = await submitQuestionnaire(answers, persistedId, questions);
-        } catch (firstError) {
-          console.warn('First save attempt failed, retrying once...', firstError);
-          await wait(1000);
-          dbResult = await submitQuestionnaire(answers, persistedId, questions);
-        }
-
-        const dbResultId = String(dbResult.id);
-
-        if (currentUser) {
-          await attachQuestionnaireResultToUser(dbResultId, currentUser.id);
-        }
-
-        if (mountedRef.current) {
-          setQuestionnaireId(dbResultId);
-          rememberResultForCurrentSession(dbResultId);
-          setResultSaveStatus(currentUser ? 'saved' : 'idle');
-        }
-      } catch (error) {
-        console.error('[mebody-error] Background save failed completely after retry:', error);
-        if (mountedRef.current) {
-          setResultSaveStatus('failed');
-        }
-      }
-    })();
+    setQuestionnaireId(resultId);
+    setBodyCode(resultCode);
+    rememberResultForCurrentSession(resultId);
+    setResultEntrySource('questionnaire');
+    setResultSaveStatus(finalSaveStatus);
+    setCurrentScreen('result');
   };
 
   const handleRestart = () => {
@@ -286,11 +278,20 @@ export default function App() {
     const currentQuestionnaireId = questionnaireIdRef.current;
 
     try {
-      await upsertProfileFromUser(user);
+      // Profile sync should not block post-login routing.
+      try {
+        await upsertProfileFromUser(user);
+      } catch (profileError) {
+        console.warn('handleSignedInRoute upsertProfileFromUser failed:', profileError);
+      }
 
       if (currentQuestionnaireId) {
         setResultSaveStatus('saving');
-        await attachQuestionnaireResultToUser(currentQuestionnaireId, user.id);
+        try {
+          await attachQuestionnaireResultToUser(currentQuestionnaireId, user.id);
+        } catch (attachError) {
+          console.warn('handleSignedInRoute attachQuestionnaireResultToUser failed:', attachError);
+        }
         setQuestionnaireId(currentQuestionnaireId);
         setLatestResultId(currentQuestionnaireId);
         setResultEntrySource('questionnaire');
@@ -310,13 +311,14 @@ export default function App() {
         return;
       }
 
+      // Fallback path: legacy users may have only profile body code.
       const profileCode = await fetchUserBodyCodeForUser(user.id, user.email);
       setQuestionnaireId(undefined);
       setLatestResultId(undefined);
       setBodyCode(profileCode?.body_bti_code);
       setResultEntrySource('questionnaire');
       setResultSaveStatus('idle');
-      setCurrentScreen('consent');
+      setCurrentScreen(profileCode?.body_bti_code ? 'myPage' : 'consent');
     } catch (error) {
       console.warn('handleSignedInRoute failed:', error);
       setQuestionnaireId(undefined);
@@ -365,6 +367,20 @@ export default function App() {
 
         syncUserInBackground(user);
         refreshLatestResultInBackground(user.id, user.email);
+        try {
+          const latestFromDb = await fetchLatestCompletedResultForUser(user.id);
+          if (latestFromDb) {
+            setLatestResultId(latestFromDb.id);
+            setBodyCode(latestFromDb.calculated_code);
+          } else {
+            const profileCode = await fetchUserBodyCodeForUser(user.id, user.email);
+            if (profileCode?.body_bti_code) {
+              setBodyCode(profileCode.body_bti_code);
+            }
+          }
+        } catch (resolveError) {
+          console.warn('bootstrap user result/profile resolution failed:', resolveError);
+        }
 
         if (sharedResultId) {
           openResultScreen(sharedResultId, 'shared');
@@ -465,7 +481,12 @@ export default function App() {
     try {
       await signOutAccount();
     } catch (error) {
-      console.warn('signOutAccount failed:', error);
+      console.warn('signOutAccount failed, trying local signout:', error);
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch (localError) {
+        console.warn('local signOut fallback failed:', localError);
+      }
     } finally {
       setCurrentUser(null);
       resetAnonymousState(true);
@@ -496,8 +517,18 @@ export default function App() {
           {currentScreen === 'landing' && (
             <LandingScreen
               onStart={startNewDiagnosis}
-              onQuickResult={currentUser && latestResultId ? () => setLandingCodePlanModalOpen(true) : undefined}
-              hasQuickResult={Boolean(currentUser && latestResultId)}
+              onQuickResult={
+                currentUser && (latestResultId || bodyCode)
+                  ? () => {
+                      if (latestResultId) {
+                        setLandingCodePlanModalOpen(true);
+                        return;
+                      }
+                      openMyPage();
+                    }
+                  : undefined
+              }
+              hasQuickResult={Boolean(currentUser && (latestResultId || bodyCode))}
               isLoggedIn={Boolean(currentUser)}
               userEmail={currentUser?.email}
               userDisplayName={
@@ -589,6 +620,7 @@ export default function App() {
               }}
               onOpenLatestResult={latestResultId ? openQuickResult : undefined}
               onOpenMembership={() => openMembership('myPage')}
+              latestBodyCode={bodyCode}
               onStartDiagnosis={startNewDiagnosis}
               onRequireAuth={() => openAuth('myPage')}
               onLatestResultResolved={(resultId) => setLatestResultId(resultId)}

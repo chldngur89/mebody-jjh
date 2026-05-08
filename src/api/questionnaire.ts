@@ -117,12 +117,32 @@ let questionsCache: Question[] | null = null
 let questionsRequest: Promise<Question[]> | null = null
 const QUESTION_QUERY_TIMEOUT_MS = 2500
 const MIN_ACTIVE_QUESTION_COUNT = 53
+const MIN_PRECHECK_QUESTION_COUNT = 4
+const MIN_SCORED_QUESTION_COUNT = 49
+const REQUIRED_QUESTION_CODES = ['A-1', 'B-1', '49'] as const
 const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:v3_49_precheck'
 const LOCAL_RESULT_PREFIX = 'local-result-'
 const LOCAL_RESULT_STORAGE_PREFIX = 'mebody:local-result:'
 
 function getSnapshotQuestions(): Question[] {
   return VER3_QUESTIONS_SNAPSHOT.map((item) => mapQuestionRow(item as Record<string, unknown>))
+}
+
+function isValidQuestionSet(questions: Question[]): boolean {
+  if (questions.length < MIN_ACTIVE_QUESTION_COUNT) return false
+
+  const questionCodes = new Set(questions.map((question) => question.question_code))
+  const hasRequiredCodes = REQUIRED_QUESTION_CODES.every((code) => questionCodes.has(code))
+  if (!hasRequiredCodes) return false
+
+  const precheckCount = questions.filter((question) => question.is_precheck).length
+  const scoredCount = questions.filter((question) => question.is_scored && !question.is_precheck).length
+  return precheckCount >= MIN_PRECHECK_QUESTION_COUNT && scoredCount >= MIN_SCORED_QUESTION_COUNT
+}
+
+function normalizeQuestionSet(questions: Question[]): Question[] | null {
+  const sortedQuestions = [...questions].sort((a, b) => a.sort_order - b.sort_order)
+  return isValidQuestionSet(sortedQuestions) ? sortedQuestions : null
 }
 
 function getFallbackBodyCodeContent(bodyCode: string): BodyCodeContent {
@@ -223,7 +243,7 @@ function readPersistedQuestions(): Question[] | null {
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed) || parsed.length < MIN_ACTIVE_QUESTION_COUNT) return null
 
-    return parsed.map((item) => mapQuestionRow(item as Record<string, unknown>))
+    return normalizeQuestionSet(parsed.map((item) => mapQuestionRow(item as Record<string, unknown>)))
   } catch (error) {
     console.warn('readPersistedQuestions failed:', error)
     return null
@@ -231,7 +251,7 @@ function readPersistedQuestions(): Question[] | null {
 }
 
 function persistQuestions(questions: Question[]) {
-  if (typeof window === 'undefined' || questions.length < MIN_ACTIVE_QUESTION_COUNT) return
+  if (typeof window === 'undefined' || !isValidQuestionSet(questions)) return
 
   try {
     window.localStorage.setItem(QUESTION_CACHE_STORAGE_KEY, JSON.stringify(questions))
@@ -379,15 +399,22 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
   }
 
   if (!error && data && data.length > 0) {
-    questionsCache = data.map(mapQuestionRow)
-    persistQuestions(questionsCache)
-    return questionsCache
+    const mappedQuestions = normalizeQuestionSet(data.map(mapQuestionRow))
+    if (mappedQuestions) {
+      questionsCache = mappedQuestions
+      persistQuestions(questionsCache)
+      return questionsCache
+    }
+
+    console.warn(
+      `fetchQuestions ignored invalid Supabase question set. received=${data.length}, required=${MIN_ACTIVE_QUESTION_COUNT}`,
+    )
   }
 
   if (error) {
     console.warn(
       isTimeoutError(error)
-        ? 'fetchQuestions Supabase query timed out. Falling back to local questions.'
+        ? 'fetchQuestions Supabase query timed out. Falling back to bundled 53-question snapshot.'
         : 'fetchQuestions from Supabase v3 schema failed. Trying legacy question schema.',
       error,
     )
@@ -416,13 +443,16 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
     }
 
     if (!legacyError && legacyData && legacyData.length >= MIN_ACTIVE_QUESTION_COUNT) {
-      questionsCache = legacyData.map(mapLegacyQuestionRow)
-      persistQuestions(questionsCache)
-      return questionsCache
+      const mappedLegacyQuestions = normalizeQuestionSet(legacyData.map(mapLegacyQuestionRow))
+      if (mappedLegacyQuestions) {
+        questionsCache = mappedLegacyQuestions
+        persistQuestions(questionsCache)
+        return questionsCache
+      }
     }
 
     if (legacyError) {
-      console.warn('fetchQuestions legacy schema failed. Falling back to local Ver2 questions.', legacyError)
+      console.warn('fetchQuestions legacy schema failed. Falling back to bundled 53-question snapshot.', legacyError)
     }
   }
 

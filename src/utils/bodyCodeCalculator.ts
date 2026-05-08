@@ -1,17 +1,14 @@
 /**
- * Ver2 체형 코드 계산 (Tug-of-War 가중치 방식)
+ * 53문항 체형 코드 계산 (Tug-of-War 가중치 방식)
  * ① = A방향 가중치, ② = 0점, ③ = B방향 가중치
- * 축별: 1 F/C, 2 R/L, 3 R/L, 4 S/F
+ * 축별: 목 F/C, 어깨 R/L, 골반 R/L, 하체 S/F
  */
 
-import {
-  VER2_QUESTIONS,
-  VER2_LOW_CONFIDENCE_THRESHOLD,
-  type AxisKey,
-} from '../data/ver2Questions';
+import { VER3_QUESTIONS_SNAPSHOT } from '../data/ver3QuestionsSnapshot';
 
 export type AnswerValue = string | string[]
 export type AnswerMap = Record<string, AnswerValue>
+export type AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility'
 
 export interface ScoringQuestion {
   question_code?: string
@@ -54,19 +51,19 @@ function isScoredQuestion(question: ScoringQuestion): boolean {
 
 function getQuestionSet(scoringQuestions?: ScoringQuestion[]): ScoringQuestion[] {
   if (scoringQuestions?.length) return scoringQuestions;
-  return VER2_QUESTIONS.map((question) => ({
-    question_code: String(question.question_number),
+  return VER3_QUESTIONS_SNAPSHOT.map((question) => ({
+    question_code: String(question.question_code),
     question_number: question.question_number,
-    sort_order: question.question_number,
+    sort_order: question.sort_order,
     axis: question.axis,
     weight_a: question.weight_a,
     weight_b: question.weight_b,
-    is_precheck: false,
-    is_scored: true,
+    is_precheck: question.is_precheck,
+    is_scored: question.is_scored,
   }));
 }
 
-/** Ver2/V3: 가중치 합산 후 더 높은 쪽으로 코드 결정 */
+/** 가중치 합산 후 더 높은 쪽으로 코드 결정 */
 export function calculateBodyCode(answers: AnswerMap, scoringQuestions?: ScoringQuestion[]): BodyCodeResult {
   const axisKeys: AxisKey[] = ['neck', 'shoulder', 'pelvis', 'flexibility'];
   const questionSet = getQuestionSet(scoringQuestions);
@@ -88,7 +85,7 @@ export function calculateBodyCode(answers: AnswerMap, scoringQuestions?: Scoring
 
     const total = scoreA + scoreB;
     const maxScore = axisQuestions.reduce((s, q) => s + q.weight_a + q.weight_b, 0) / 2; // 한쪽 최대
-    const threshold = scoringQuestions?.length ? maxScore * 0.4 : VER2_LOW_CONFIDENCE_THRESHOLD[axis];
+    const threshold = maxScore * 0.4;
     if (total < threshold) lowConfidence[axis] = true;
 
     const ratioA = total > 0 ? scoreA / total : 0.5;
@@ -131,7 +128,7 @@ export function getBodyCodeKeywords(code: string) {
   return keywords;
 }
 
-// Figma Character Names (한국어) — Ver2 동일 유지
+// Figma Character Names (한국어)
 export const characterNames: Record<string, string> = {
   FRRS: '암사가는 잠금 로봇',
   FRRF: '기대면 흐르는 젤리인간',

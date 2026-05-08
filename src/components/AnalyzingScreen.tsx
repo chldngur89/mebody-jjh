@@ -113,7 +113,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
             </button>
           )}
 
-          {/* 4-Axis Visual Hint - Ver2 축 아이콘 통일 */}
+          {/* 4-Axis Visual Hint */}
           <div className="bg-gray-50/80 backdrop-blur rounded-2xl p-6 inline-block">
             <div className="text-xs text-gray-500 mb-3">4가지 축 분석 중</div>
             <div className="flex items-center justify-center gap-4">
