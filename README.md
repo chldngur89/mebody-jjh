@@ -9,6 +9,11 @@ MEBODY 모바일 서비스는 사전체크 4개와 본문 49개, 총 53문항으
 
 웹 홈페이지와 관리자 화면은 이 앱이 아니라 `../Server`에서 제공합니다.
 
+## Repositories
+
+- Mobile (this repo): https://github.com/chldngur89/mebody-jjh
+- Server (Spring Boot): https://github.com/chldngur89/mebody-server
+
 ## Stack
 
 - React 18
@@ -48,6 +53,10 @@ MEBODY 모바일 서비스는 사전체크 4개와 본문 49개, 총 53문항으
 
 `.env` 또는 Vercel Environment Variables에 설정합니다.
 
+```bash
+cp .env.example .env
+```
+
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
@@ -62,7 +71,6 @@ VITE_API_BASE_URL=https://mebody-server-production.up.railway.app
 ## Run
 
 ```bash
-cd /Users/wh.choi/Desktop/Code/mebody/mebody
 npm install
 npm run dev
 ```
@@ -72,7 +80,6 @@ npm run dev
 ## Build
 
 ```bash
-cd /Users/wh.choi/Desktop/Code/mebody/mebody
 npm run build
 git diff --check
 ```
