@@ -628,6 +628,11 @@ export function ResultScreen({
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '30px', lineHeight: 1, fontWeight: 800, letterSpacing: '-0.04em', color: '#111827', marginBottom: '6px' }}>{bodyCode}</div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#374151', wordBreak: 'keep-all' }}>{characterName}</div>
+                    {(result as { primary_identity?: string } | null)?.primary_identity && (
+                      <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 800, color: '#059669', wordBreak: 'keep-all' }}>
+                        {(result as { primary_identity?: string }).primary_identity}
+                      </div>
+                    )}
                   </div>
                 </div>
 

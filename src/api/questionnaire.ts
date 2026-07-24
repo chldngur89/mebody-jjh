@@ -1,27 +1,11 @@
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import { VER3_QUESTIONS_SNAPSHOT } from '../data/ver3QuestionsSnapshot'
+import { V1_QUESTION_SET, V1_QUESTIONS_SNAPSHOT, type V1Question } from '../data/v1QuestionsSnapshot'
 import { calculateBodyCode, type AnswerMap, type ScoringQuestion } from '../utils/bodyCodeCalculator'
 
 export type QuestionAnswerType = 'single' | 'multi'
 
-export interface Question {
-  id: number
-  question_code: string
-  question_number: number | null
-  sort_order: number
-  axis: string
-  question_text: string
-  option_1: string
-  option_2: string
-  option_3: string
-  weight_a: number
-  weight_b: number
-  is_precheck: boolean
-  is_scored: boolean
-  answer_type: QuestionAnswerType
-  max_select: number | null
-}
+export interface Question extends V1Question {}
 
 export interface QuestionnaireResponse {
   id: string
@@ -31,6 +15,8 @@ export interface QuestionnaireResponse {
   created_at: string
   updated_at: string
   completed_at?: string
+  primary_identity?: string
+  scoring_meta?: Record<string, unknown>
 }
 
 export interface BodyCodeContent {
@@ -56,7 +42,16 @@ export interface BodyCodeContent {
 const OPTIONAL_RESPONSE_COLUMNS = [
   'user_id',
   'question_version',
+  'primary_identity',
+  'scoring_meta',
 ] as const
+
+const MIN_ACTIVE_QUESTION_COUNT = 32
+const REQUIRED_QUESTION_CODES = ['A1', 'B1', 'C1', 'D7'] as const
+const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:mebody_v1_32'
+const LOCAL_RESULT_PREFIX = 'local-result-'
+const LOCAL_RESULT_STORAGE_PREFIX = 'mebody:local-result:'
+const QUESTION_QUERY_TIMEOUT_MS = 2500
 
 function getErrorText(error: unknown): string {
   return String((error as { message?: string } | null)?.message ?? error ?? '').toLowerCase()
@@ -115,29 +110,15 @@ async function mutateQuestionnaireResponse(questionnaireId: string | undefined, 
 
 let questionsCache: Question[] | null = null
 let questionsRequest: Promise<Question[]> | null = null
-const QUESTION_QUERY_TIMEOUT_MS = 2500
-const MIN_ACTIVE_QUESTION_COUNT = 53
-const MIN_PRECHECK_QUESTION_COUNT = 4
-const MIN_SCORED_QUESTION_COUNT = 49
-const REQUIRED_QUESTION_CODES = ['A-1', 'B-1', '49'] as const
-const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:v3_49_precheck'
-const LOCAL_RESULT_PREFIX = 'local-result-'
-const LOCAL_RESULT_STORAGE_PREFIX = 'mebody:local-result:'
 
 function getSnapshotQuestions(): Question[] {
-  return VER3_QUESTIONS_SNAPSHOT.map((item) => mapQuestionRow(item as Record<string, unknown>))
+  return V1_QUESTIONS_SNAPSHOT.map((item) => ({ ...item }))
 }
 
 function isValidQuestionSet(questions: Question[]): boolean {
   if (questions.length < MIN_ACTIVE_QUESTION_COUNT) return false
-
   const questionCodes = new Set(questions.map((question) => question.question_code))
-  const hasRequiredCodes = REQUIRED_QUESTION_CODES.every((code) => questionCodes.has(code))
-  if (!hasRequiredCodes) return false
-
-  const precheckCount = questions.filter((question) => question.is_precheck).length
-  const scoredCount = questions.filter((question) => question.is_scored && !question.is_precheck).length
-  return precheckCount >= MIN_PRECHECK_QUESTION_COUNT && scoredCount >= MIN_SCORED_QUESTION_COUNT
+  return REQUIRED_QUESTION_CODES.every((code) => questionCodes.has(code))
 }
 
 function normalizeQuestionSet(questions: Question[]): Question[] | null {
@@ -220,6 +201,8 @@ export function createLocalQuestionnaireResult(
     created_at: now,
     updated_at: now,
     completed_at: now,
+    primary_identity: bodyCodeResult.primaryIdentityLabel,
+    scoring_meta: bodyCodeResult.scoringMeta,
   }
 
   if (typeof window !== 'undefined') {
@@ -298,37 +281,26 @@ function mapQuestionRow(q: Record<string, unknown>): Question {
     question_code: String(q.question_code ?? q.question_number ?? q.id),
     question_number: q.question_number === null || q.question_number === undefined ? null : Number(q.question_number),
     sort_order: Number(q.sort_order ?? q.question_number ?? q.id ?? 0),
-    axis: String(q.axis ?? ''),
+    axis: String(q.axis ?? 'none'),
     question_text: String(q.question_text ?? ''),
     option_1: String(q.option_1 ?? ''),
     option_2: String(q.option_2 ?? ''),
     option_3: String(q.option_3 ?? ''),
-    weight_a: Number(q.weight_a ?? 1),
-    weight_b: Number(q.weight_b ?? 1),
+    weight_a: Number(q.weight_a ?? 0),
+    weight_b: Number(q.weight_b ?? 0),
     is_precheck: Boolean(q.is_precheck),
     is_scored: q.is_scored !== false,
-    answer_type: toQuestionAnswerType(q.answer_type),
+    answer_type: q.answer_type === 'multi' ? 'multi' : 'single',
     max_select: q.max_select === null || q.max_select === undefined ? null : Number(q.max_select),
-  }
-}
-
-function mapLegacyQuestionRow(q: Record<string, unknown>): Question {
-  return {
-    id: Number.isFinite(Number(q.id)) && Number(q.id) > 0 ? Number(q.id) : Number(q.question_number),
-    question_code: String(q.question_number),
-    question_number: Number(q.question_number),
-    sort_order: Number(q.question_number),
-    axis: String(q.axis ?? ''),
-    question_text: String(q.question_text ?? ''),
-    option_1: String(q.option_1 ?? ''),
-    option_2: String(q.option_2 ?? ''),
-    option_3: String(q.option_3 ?? ''),
-    weight_a: Number(q.weight_a ?? 1),
-    weight_b: Number(q.weight_b ?? 1),
-    is_precheck: false,
-    is_scored: true,
-    answer_type: 'single',
-    max_select: null,
+    title: String(q.title ?? ''),
+    part: String(q.part ?? ''),
+    instruction: String(q.instruction ?? ''),
+    guide_text: String(q.guide_text ?? ''),
+    axis_anchor: String(q.axis_anchor ?? 'None'),
+    axis_priority: q.axis_priority === null || q.axis_priority === undefined ? null : Number(q.axis_priority),
+    question_set: String(q.question_set ?? V1_QUESTION_SET),
+    media_type: q.media_type == null || q.media_type === '' ? null : String(q.media_type),
+    media_url: q.media_url == null || q.media_url === '' ? null : String(q.media_url),
   }
 }
 
@@ -374,23 +346,22 @@ async function syncLatestBodyCodeToProfile(user: User | null, bodyCode: string) 
   }
 }
 
-function toQuestionAnswerType(value: unknown): QuestionAnswerType {
-  return value === 'multi' ? 'multi' : 'single'
-}
-
 async function loadQuestionsFromSource(): Promise<Question[]> {
   let data: Record<string, unknown>[] | null = null
   let error: unknown = null
 
   try {
     const result = await withTimeout(
+      // DO NOT drop public.questions — this is the live UI source (32 rows).
+      // question_choice_scores is scoring-only and does not replace questions.
       supabase
         .from('questions')
-        .select('id, question_code, question_number, sort_order, axis, question_text, option_1, option_2, option_3, weight_a, weight_b, is_precheck, is_scored, answer_type, max_select')
+        .select('id, question_code, question_number, sort_order, axis, question_text, option_1, option_2, option_3, weight_a, weight_b, is_precheck, is_scored, answer_type, max_select, title, part, instruction, guide_text, axis_anchor, axis_priority, question_set, media_type, media_url')
         .eq('is_active', true)
+        .eq('question_set', V1_QUESTION_SET)
         .order('sort_order', { ascending: true }),
       QUESTION_QUERY_TIMEOUT_MS,
-      'fetchQuestions primary schema',
+      'fetchQuestions v1',
     )
     data = result.data
     error = result.error
@@ -414,91 +385,57 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
   if (error) {
     console.warn(
       isTimeoutError(error)
-        ? 'fetchQuestions Supabase query timed out. Falling back to bundled 53-question snapshot.'
-        : 'fetchQuestions from Supabase v3 schema failed. Trying legacy question schema.',
+        ? 'fetchQuestions Supabase query timed out. Falling back to bundled 32-question snapshot.'
+        : 'fetchQuestions from Supabase failed. Falling back to bundled 32-question snapshot.',
       error,
     )
-
-    if (isTimeoutError(error) || isNetworkError(error)) {
-      questionsCache = getSnapshotQuestions()
-      return questionsCache
-    }
-
-    let legacyData: Record<string, unknown>[] | null = null
-    let legacyError: unknown = null
-
-    try {
-      const legacyResult = await withTimeout(
-        supabase
-          .from('questions')
-          .select('id, question_number, axis, question_text, option_1, option_2, option_3, weight_a, weight_b')
-          .order('question_number', { ascending: true }),
-        QUESTION_QUERY_TIMEOUT_MS,
-        'fetchQuestions legacy schema',
-      )
-      legacyData = legacyResult.data
-      legacyError = legacyResult.error
-    } catch (caught) {
-      legacyError = caught
-    }
-
-    if (!legacyError && legacyData && legacyData.length >= MIN_ACTIVE_QUESTION_COUNT) {
-      const mappedLegacyQuestions = normalizeQuestionSet(legacyData.map(mapLegacyQuestionRow))
-      if (mappedLegacyQuestions) {
-        questionsCache = mappedLegacyQuestions
-        persistQuestions(questionsCache)
-        return questionsCache
-      }
-    }
-
-    if (legacyError) {
-      console.warn('fetchQuestions legacy schema failed. Falling back to bundled 53-question snapshot.', legacyError)
-    }
   }
 
   questionsCache = getSnapshotQuestions()
   return questionsCache
 }
 
-/** 첫 렌더는 53문항 스냅샷으로 즉시 열고, Supabase questions 테이블은 백그라운드로 최신화 */
+/** Supabase를 우선 조회해 DB 수정이 화면에 바로 반영되게 함. 실패 시에만 캐시/스냅샷. */
 export async function fetchQuestions(): Promise<Question[]> {
-  if (questionsCache) return questionsCache
   if (questionsRequest) return questionsRequest
 
-  const persistedQuestions = readPersistedQuestions()
-  if (persistedQuestions) {
-    questionsCache = persistedQuestions
-    questionsRequest = loadQuestionsFromSource()
-      .then((questions) => {
-        questionsCache = questions
-        return questionsCache
-      })
-      .catch((error) => {
-        console.warn('fetchQuestions background refresh failed:', error)
-        return questionsCache ?? persistedQuestions
-      })
-      .finally(() => {
-        questionsRequest = null
-      })
-    return questionsCache
-  }
+  questionsRequest = (async () => {
+    try {
+      // 구버전 캐시 키 정리
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.removeItem('mebody:questions:v3_49_precheck')
+        } catch {
+          /* ignore */
+        }
+      }
 
-  questionsCache = getSnapshotQuestions()
-  questionsRequest = loadQuestionsFromSource()
-    .then((questions) => {
-      questionsCache = questions
-      persistQuestions(questionsCache)
+      const fromNetwork = await loadQuestionsFromSource()
+      questionsCache = fromNetwork
+      return fromNetwork
+    } catch (error) {
+      console.warn('fetchQuestions failed. Falling back to cache/snapshot.', error)
+      const persisted = readPersistedQuestions()
+      questionsCache = persisted ?? getSnapshotQuestions()
       return questionsCache
-    })
-    .catch((error) => {
-      console.warn('fetchQuestions background refresh failed. Using bundled question snapshot.', error)
-      return questionsCache ?? getSnapshotQuestions()
-    })
-    .finally(() => {
+    } finally {
       questionsRequest = null
-    })
+    }
+  })()
 
-  return questionsCache
+  return questionsRequest
+}
+
+export function clearQuestionsCache(): void {
+  questionsCache = null
+  questionsRequest = null
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(QUESTION_CACHE_STORAGE_KEY)
+    window.localStorage.removeItem('mebody:questions:v3_49_precheck')
+  } catch {
+    /* ignore */
+  }
 }
 
 export function preloadQuestions(): void {
@@ -516,7 +453,7 @@ export async function saveDraft(answers: AnswerMap, questionnaireId?: string) {
     status: 'draft' as const,
     updated_at: now,
     user_id: user?.id ?? null,
-    question_version: 'v3_49_precheck',
+    question_version: V1_QUESTION_SET,
   }
   return mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
 }
@@ -538,7 +475,9 @@ export async function submitQuestionnaire(
     completed_at: now,
     updated_at: now,
     user_id: user?.id ?? null,
-    question_version: 'v3_49_precheck',
+    question_version: V1_QUESTION_SET,
+    primary_identity: result.primaryIdentityLabel ?? null,
+    scoring_meta: result.scoringMeta ?? {},
   }
   const data = await mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
   await syncLatestBodyCodeToProfile(user, code)
@@ -555,7 +494,6 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
     }
   }
 
-  // 1단계: 설문 응답 가져오기
   const { data: responseData, error: responseError } = await withTimeout(
     supabase
       .from('questionnaire_responses')
@@ -571,7 +509,6 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
     throw responseError
   }
 
-  // 2단계: body_code_content에서 캐릭터 정보 가져오기
   const { data: contentData, error: contentError } = await withTimeout(
     supabase
       .from('body_code_content')
@@ -584,16 +521,14 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
 
   if (contentError) {
     console.error('Error fetching body code content:', contentError)
-    // 콘텐츠가 없어도 결과는 반환 (캐릭터 정보 없이)
     return {
       ...responseData,
       body_code_content: getFallbackBodyCodeContent(responseData.calculated_code),
     }
   }
 
-  // 응답에 body_code_content 합치기
   return {
     ...responseData,
-    body_code_content: contentData
+    body_code_content: contentData,
   }
 }

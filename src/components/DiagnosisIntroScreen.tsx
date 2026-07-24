@@ -211,9 +211,9 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             <div style={{ marginBottom: '20px', textAlign: 'center' }}>
               <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '10px' }}>MEASUREMENT AXES</div>
               <h1 style={{ fontSize: '27px', lineHeight: 1.34, fontWeight: 850, color: '#111827', marginBottom: '12px', wordBreak: 'keep-all', letterSpacing: '-0.045em' }}>
-                49문항은 아래 4개 축을 기준으로
+                32문항은 아래 4개 축을 기준으로
                 <br />
-                나의 mebody 코드를 계산합니다
+                나의 mebody 코드와 아이덴티티를 계산합니다
               </h1>
               <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
                 정답을 맞히는 방식이 아니라, 지금 몸이 더 가깝게 느끼는 방향을 선택해주면 됩니다.

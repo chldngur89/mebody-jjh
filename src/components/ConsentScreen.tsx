@@ -168,7 +168,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
                   <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
-                  <span>사전체크 4개와 49문항 응답을 바탕으로 현재의 mebody 코드를 추정합니다.</span>
+                  <span>32문항 응답을 바탕으로 현재의 mebody 코드와 아이덴티티를 추정합니다.</span>
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
                   <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
@@ -218,7 +218,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공 범위</div>
                     <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-                      사전체크 4개와 49문항 설문을 바탕으로 현재의 정렬 패턴과 mebody 코드를 추정하고, 결과 이해를 위한 가이드를 제공합니다.
+                      32문항 설문을 바탕으로 현재의 정렬 패턴과 mebody 코드를 추정하고, 결과 이해를 위한 가이드를 제공합니다.
                     </p>
                   </div>
                   <div>
