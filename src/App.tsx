@@ -60,12 +60,14 @@ function wait(ms: number) {
 }
 
 export default function App() {
-  const previewScreenParam = new URLSearchParams(window.location.search).get('ui');
+  const bootSearchParams = new URLSearchParams(window.location.search);
+  const previewScreenParam = bootSearchParams.get('ui');
   const previewScreen = (['landing', 'auth', 'myPage', 'codePlan'] as const).find((screen) => screen === previewScreenParam);
+  const bootAuthMode = bootSearchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
   const [bodyCode, setBodyCode] = useState<string | undefined>();
-  const sharedResultIdParam = new URLSearchParams(window.location.search).get('result');
+  const sharedResultIdParam = bootSearchParams.get('result');
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     return getStoredSupabaseSession()?.user ?? null;
   });
@@ -75,7 +77,7 @@ export default function App() {
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>('idle');
   const [isBootstrapping, setIsBootstrapping] = useState(!previewScreen && !!sharedResultIdParam);
   const [authReturnScreen, setAuthReturnScreen] = useState<Screen>('landing');
-  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>('signin');
+  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>(bootAuthMode);
   const [membershipReturnScreen, setMembershipReturnScreen] = useState<Screen>('landing');
   const [myPagePreviewMode, setMyPagePreviewMode] = useState(false);
   const [landingCodePlanModalOpen, setLandingCodePlanModalOpen] = useState(false);
