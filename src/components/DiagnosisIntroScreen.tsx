@@ -161,7 +161,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#059669" />
+            <Sparkles size={18} color="#014725" />
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
           </div>
           {onBack && (
@@ -209,7 +209,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             style={{ flex: 1, overflowY: 'auto', padding: '24px 24px 22px' }}
           >
             <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '10px' }}>MEASUREMENT AXES</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>MEASUREMENT AXES</div>
               <h1 style={{ fontSize: '27px', lineHeight: 1.34, fontWeight: 850, color: '#111827', marginBottom: '12px', wordBreak: 'keep-all', letterSpacing: '-0.045em' }}>
                 32문항은 아래 4개 축을 기준으로
                 <br />
@@ -324,12 +324,12 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                 borderRadius: '18px',
                 border: 'none',
                 background: canBegin
-                  ? 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)'
+                  ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)'
                   : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)',
                 color: canBegin ? '#ffffff' : '#94a3b8',
                 fontSize: '16px',
                 fontWeight: 800,
-                boxShadow: canBegin ? '0 14px 28px rgba(20,184,166,0.25)' : 'none',
+                boxShadow: canBegin ? '0 14px 28px rgba(1,71,37,0.25)' : 'none',
                 cursor: canBegin ? 'pointer' : 'not-allowed',
                 transition: 'background 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease',
               }}

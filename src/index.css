@@ -2482,3 +2482,59 @@ html {
     background-color: oklch(.954 .038 75.164);
   }
 }
+
+/* =============================================================================
+   MEBODY BRAND OVERRIDE — cream #FFFFF3 / green #014725
+   ROLLBACK: delete this entire block (and revert src/theme/brand.ts + hex replaces)
+   or: git checkout main
+   ============================================================================= */
+:root,
+:host {
+  --mebody-cream: #fffff3;
+  --mebody-green: #014725;
+  --mebody-green-mid: #016b38;
+  --mebody-green-soft: #e8f5ee;
+  --mebody-green-muted: #a8d5c0;
+
+  --color-emerald-50: #e8f5ee;
+  --color-emerald-100: #d4ebe0;
+  --color-emerald-200: #a8d5c0;
+  --color-emerald-300: #5fad86;
+  --color-emerald-400: #2d8a5c;
+  --color-emerald-500: #016b38;
+  --color-emerald-600: #014725;
+  --color-emerald-700: #013820;
+  --color-emerald-800: #012816;
+  --color-emerald-900: #011a0f;
+  --color-emerald-950: #010f09;
+
+  --color-teal-100: #d4ebe0;
+  --color-teal-200: #a8d5c0;
+  --color-teal-300: #5fad86;
+  --color-teal-500: #016b38;
+  --color-teal-600: #014725;
+
+  --color-gray-50: #fffff3;
+  --background: #fffff3;
+  /* keep true white for desktop chrome / card frames */
+  --color-white: #ffffff;
+}
+
+body {
+  background-color: var(--mebody-cream);
+  color: var(--mebody-green);
+}
+
+/* Soft surfaces / desktop chrome: cream; phone app frame: white */
+.bg-gray-50 {
+  background-color: var(--mebody-cream) !important;
+}
+
+.mebody-desktop-backdrop {
+  background-color: #fffff3 !important;
+}
+
+.mebody-app-surface {
+  background-color: #ffffff !important;
+}
+

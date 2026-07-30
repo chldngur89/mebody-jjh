@@ -168,7 +168,7 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
             </button>
           )}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '4px' }}>POSTURE GUIDE</div>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '4px' }}>POSTURE GUIDE</div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               자세 사용 공통
             </h1>
@@ -184,7 +184,7 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
               padding: '18px',
             }}
           >
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#059669', marginBottom: '6px' }}>공통 설명서</div>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#014725', marginBottom: '6px' }}>공통 설명서</div>
             <div style={{ fontSize: '16px', lineHeight: 1.7, fontWeight: 700, color: '#111827', wordBreak: 'keep-all' }}>{title}</div>
           </section>
 
@@ -250,11 +250,11 @@ export function CommonGuideScreen({ onBack, onNext }: CommonGuideScreenProps) {
                 gap: '8px',
                 borderRadius: '16px',
                 border: 'none',
-                background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                 color: '#ffffff',
                 fontSize: '15px',
                 fontWeight: 800,
-                boxShadow: '0 14px 28px rgba(20,184,166,0.22)',
+                boxShadow: '0 14px 28px rgba(1,71,37,0.22)',
                 cursor: 'pointer',
               }}
             >

@@ -217,7 +217,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#059669" />
+            <Sparkles size={18} color="#014725" />
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#1f2937' }}>MEBODY</span>
           </div>
 
@@ -266,7 +266,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
         >
           <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>{user ? 'ACCOUNT' : '회원가입하고 결과 저장하기'}</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>{user ? 'ACCOUNT' : '회원가입하고 결과 저장하기'}</div>
             <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2, color: '#1f2937' }}>로그인 / 회원가입</h1>
           </div>
 
@@ -295,7 +295,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                   padding: '16px',
                 }}
               >
-                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>NEXT STEP</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>NEXT STEP</div>
                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>재방문 자동 결과 / 멤버십 연결</h2>
                 <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
                   재방문 시 최근 결과로 바로 진입할 수 있고, 멤버십 결제를 통해 심화 리포트를 사용할 수 있습니다.
@@ -313,7 +313,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                       justifyContent: 'center',
                       borderRadius: '12px',
                       border: 'none',
-                      background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                      background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                       color: '#ffffff',
                       fontSize: '15px',
                       fontWeight: 700,
@@ -360,7 +360,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                   padding: '16px',
                 }}
               >
-                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>WELCOME</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>WELCOME</div>
                 <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
                   로그인하면 결과가 계정에 연결되어, 다음 방문에서 바로 결과를 확인할 수 있습니다.
                 </p>
@@ -597,13 +597,13 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                     justifyContent: 'center',
                     borderRadius: '12px',
                     border: 'none',
-                    background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                     color: '#ffffff',
                     fontSize: '16px',
                     fontWeight: 700,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     opacity: loading ? 0.6 : 1,
-                    boxShadow: '0 10px 22px rgba(20,184,166,0.30)',
+                    boxShadow: '0 10px 22px rgba(1,71,37,0.30)',
                   }}
                 >
                   {loading ? '처리 중...' : mode === 'signup' ? '회원가입하고 시작' : '로그인'}
@@ -617,7 +617,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                     style={{
                       border: 'none',
                       background: 'transparent',
-                      color: '#0f766e',
+                      color: '#014725',
                       fontSize: '12px',
                       fontWeight: 800,
                       textDecoration: 'underline',

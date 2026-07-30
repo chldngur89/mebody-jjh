@@ -497,9 +497,9 @@ export default function App() {
 
   if (isBootstrapping) {
     return (
-      <div className={isDesktopMockup ? "min-h-screen bg-gray-50 flex items-center justify-center p-4" : ""}>
+      <div className={isDesktopMockup ? "mebody-desktop-backdrop min-h-screen flex items-center justify-center p-4" : ""}>
         <div 
-          className={isDesktopMockup ? "w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" : "w-full min-h-screen bg-white flex items-center justify-center"} 
+          className={isDesktopMockup ? "mebody-app-surface w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex items-center justify-center" : "mebody-app-surface w-full min-h-screen flex items-center justify-center"} 
           style={isDesktopMockup ? { height: '844px' } : {}}
         >
           <div className="text-gray-500">로딩 중...</div>
@@ -509,7 +509,7 @@ export default function App() {
   }
 
   return (
-    <div className={isDesktopMockup ? "min-h-screen bg-gray-50 flex items-center justify-center p-4" : ""}>
+    <div className={isDesktopMockup ? "mebody-desktop-backdrop min-h-screen flex items-center justify-center p-4" : ""}>
       <div className={isDesktopMockup ? "w-full max-w-md relative" : "w-full min-h-screen relative"}>
         <Suspense fallback={
           <div className="min-h-screen flex items-center justify-center">

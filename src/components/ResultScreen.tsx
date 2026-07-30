@@ -465,7 +465,7 @@ export function ResultScreen({
               gap: '14px',
             }}
           >
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#059669' }}>RESULT</div>
+            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725' }}>RESULT</div>
             <div style={{ height: '28px', width: '64%', borderRadius: '999px', background: '#d1fae5' }} />
             <div style={{ height: '14px', width: '92%', borderRadius: '999px', background: '#f1f5f9' }} />
             <div style={{ height: '14px', width: '74%', borderRadius: '999px', background: '#f1f5f9' }} />
@@ -622,14 +622,14 @@ export function ResultScreen({
                         onError={() => handleImageError(characterImage)}
                       />
                     ) : (
-                      <div style={{ fontSize: '34px', fontWeight: 800, color: '#059669' }}>{bodyCode}</div>
+                      <div style={{ fontSize: '34px', fontWeight: 800, color: '#014725' }}>{bodyCode}</div>
                     )}
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '30px', lineHeight: 1, fontWeight: 800, letterSpacing: '-0.04em', color: '#111827', marginBottom: '6px' }}>{bodyCode}</div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#374151', wordBreak: 'keep-all' }}>{characterName}</div>
                     {(result as { primary_identity?: string } | null)?.primary_identity && (
-                      <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 800, color: '#059669', wordBreak: 'keep-all' }}>
+                      <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 800, color: '#014725', wordBreak: 'keep-all' }}>
                         {(result as { primary_identity?: string }).primary_identity}
                       </div>
                     )}
@@ -685,7 +685,7 @@ export function ResultScreen({
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#059669', marginBottom: '6px' }}>한 줄 이해</div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#014725', marginBottom: '6px' }}>한 줄 이해</div>
               <div style={{ fontSize: '16px', lineHeight: 1.7, fontWeight: 700, color: '#111827', wordBreak: 'keep-all' }}>{summaryLine}</div>
             </section>
 
@@ -701,7 +701,7 @@ export function ResultScreen({
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>4 AXIS GRAPH</div>
+                  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>4 AXIS GRAPH</div>
                   <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827' }}>4축 퍼센티지 그래프</h2>
                 </div>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>탭해서 크게 보기</div>
@@ -733,12 +733,12 @@ export function ResultScreen({
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>{ctaEyebrow}</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>{ctaEyebrow}</div>
               <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '10px' }}>{ctaTitle}</h2>
               <div style={{ display: 'grid', gap: '8px', marginBottom: '14px' }}>
                 {ctaItems.map((item) => (
                   <div key={item} style={{ display: 'flex', gap: '10px', fontSize: '14px', lineHeight: 1.6, color: '#374151' }}>
-                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                     <span>{item}</span>
                   </div>
                 ))}
@@ -755,11 +755,11 @@ export function ResultScreen({
                   gap: '8px',
                   borderRadius: '16px',
                   border: 'none',
-                  background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                  background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                   color: '#ffffff',
                   fontSize: '15px',
                   fontWeight: 800,
-                  boxShadow: '0 14px 28px rgba(20,184,166,0.22)',
+                  boxShadow: '0 14px 28px rgba(1,71,37,0.22)',
                   cursor: 'pointer',
                 }}
               >
@@ -775,7 +775,7 @@ export function ResultScreen({
                     width: '100%',
                     border: 'none',
                     background: 'transparent',
-                    color: '#0f766e',
+                    color: '#014725',
                     fontSize: '13px',
                     fontWeight: 700,
                     textDecoration: 'underline',
@@ -797,7 +797,7 @@ export function ResultScreen({
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>16 BODY TYPES</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>16 BODY TYPES</div>
               <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>전체 16가지 체형 분류</h2>
               <p style={{ fontSize: '13px', lineHeight: 1.65, color: '#4b5563', marginBottom: '14px', wordBreak: 'keep-all' }}>
                 전체 맵에서 나의 위치를 보고, 다른 코드와 어떤 차이가 있는지도 함께 확인할 수 있습니다.
@@ -833,7 +833,7 @@ export function ResultScreen({
                 <span>
                   내 코드: <strong style={{ color: '#047857' }}>{bodyCode}</strong> {characterNames[bodyCode] ? `· ${characterNames[bodyCode]}` : ''}
                 </span>
-                {bodyTypesImageUrl && <span style={{ fontWeight: 700, color: '#0f766e' }}>사진 탭해서 크게 보기</span>}
+                {bodyTypesImageUrl && <span style={{ fontWeight: 700, color: '#014725' }}>사진 탭해서 크게 보기</span>}
               </div>
             </section>
 
@@ -845,7 +845,7 @@ export function ResultScreen({
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>MEBODY ROUTINE</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>MEBODY ROUTINE</div>
               <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '12px' }}>추천 mebody 루틴</h2>
               <div style={{ display: 'grid', gap: '12px' }}>
                 {youtubeVideos.map((video) => (
@@ -891,7 +891,7 @@ export function ResultScreen({
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>MEBODY STORE</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>MEBODY STORE</div>
               <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>건강/헬스 용품 스토어</h2>
               <p style={{ fontSize: '13px', lineHeight: 1.65, color: '#4b5563', marginBottom: '14px', wordBreak: 'keep-all' }}>
                 결과 코드에 맞춰 같이 쓰면 좋은 회복/자세 보조 용품을 가상 스토어 형태로 구성했습니다.
@@ -908,7 +908,7 @@ export function ResultScreen({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', color: '#0f766e' }}>{item.badge}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725' }}>{item.badge}</span>
                       <span style={{ fontSize: '14px', fontWeight: 800, color: '#111827' }}>{item.priceLabel}</span>
                     </div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: '#111827', marginBottom: '6px', wordBreak: 'keep-all' }}>{item.name}</div>
@@ -922,7 +922,7 @@ export function ResultScreen({
                         borderRadius: '14px',
                         border: `1px solid ${AXIS_GREEN_THEME.border}`,
                         background: 'rgba(228,244,240,0.88)',
-                        color: '#0f766e',
+                        color: '#014725',
                         fontSize: '13px',
                         fontWeight: 800,
                         cursor: 'default',
@@ -966,7 +966,7 @@ export function ResultScreen({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>GRAPH DETAIL</div>
+                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>GRAPH DETAIL</div>
                 <h2 style={{ fontSize: '21px', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>나의 mebody 코드 : {bodyCode}</h2>
                 <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#4b5563', wordBreak: 'keep-all' }}>
                   각 축이 어느 방향에 더 가까운지 큰 그래프로 확인할 수 있습니다.
@@ -1027,11 +1027,11 @@ export function ResultScreen({
                 gap: '8px',
                 borderRadius: '16px',
                 border: 'none',
-                background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                 color: '#ffffff',
                 fontSize: '15px',
                 fontWeight: 800,
-                boxShadow: '0 14px 28px rgba(20,184,166,0.22)',
+                boxShadow: '0 14px 28px rgba(1,71,37,0.22)',
                 cursor: 'pointer',
               }}
             >
@@ -1070,7 +1070,7 @@ export function ResultScreen({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>16 BODY TYPES</div>
+                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>16 BODY TYPES</div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#111827' }}>전체 16가지 체형 분류</h2>
               </div>
               <button

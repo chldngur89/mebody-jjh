@@ -16,6 +16,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:v1-excel": "python3 scripts/verify-v1-excel-spec.py",
+    "verify:v1-excel-db": "VERIFY_DB=1 python3 scripts/verify-v1-excel-spec.py"
   }
 }

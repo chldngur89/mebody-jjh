@@ -56,7 +56,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
                 backdropFilter: 'blur(12px)',
               }}
             >
-              <Sparkles size={18} color="#059669" />
+              <Sparkles size={18} color="#014725" />
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
             </div>
             {onBack && (
@@ -99,7 +99,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
               textAlign: 'center',
             }}
           >
-            <div style={{ width: '84px', height: '84px', margin: '0 auto 18px', borderRadius: '24px', background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 14px 30px rgba(16,185,129,0.30)' }}>
+            <div style={{ width: '84px', height: '84px', margin: '0 auto 18px', borderRadius: '24px', background: 'linear-gradient(135deg, #016B38 0%, #014725 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 14px 30px rgba(1,71,37,0.30)' }}>
               <Sparkles size={34} color="#ffffff" />
             </div>
             <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginBottom: '10px' }}>코드 플랜은 로그인 후 연결됩니다</h1>
@@ -119,11 +119,11 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
                   gap: '8px',
                   borderRadius: '18px',
                   border: 'none',
-                  background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                  background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                   color: '#ffffff',
                   fontSize: '16px',
                   fontWeight: 800,
-                  boxShadow: '0 14px 28px rgba(20,184,166,0.25)',
+                  boxShadow: '0 14px 28px rgba(1,71,37,0.25)',
                   cursor: 'pointer',
                 }}
               >
@@ -277,11 +277,11 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
                 gap: '8px',
                 borderRadius: '16px',
                 border: 'none',
-                background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                 color: '#ffffff',
                 fontSize: '15px',
                 fontWeight: 800,
-                boxShadow: '0 14px 28px rgba(20,184,166,0.22)',
+                boxShadow: '0 14px 28px rgba(1,71,37,0.22)',
                 cursor: 'pointer',
               }}
             >

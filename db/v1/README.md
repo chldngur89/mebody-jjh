@@ -32,3 +32,15 @@
 - UI: `questions` → [`src/api/questionnaire.ts`](../../src/api/questionnaire.ts) `fetchQuestions()`
 - 채점: 번들 [`src/data/v1ScoreMapping.ts`](../../src/data/v1ScoreMapping.ts) (= DB `question_choice_scores`와 동일 소스)
 - UX: select → guide (수행법/해설)
+
+## 스펙 검증
+
+엑셀 ⑩ Master / ⑪ Mapping 과 앱 스냅샷 자동 대조:
+
+```bash
+# openpyxl 필요
+python3 scripts/verify-v1-excel-spec.py
+VERIFY_DB=1 python3 scripts/verify-v1-excel-spec.py   # optional Supabase
+```
+
+미구현·제품 합의 항목: [`SPEC_GAPS.md`](./SPEC_GAPS.md)

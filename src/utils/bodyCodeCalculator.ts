@@ -3,6 +3,8 @@
  * - 선택지별 Mapping(⑪)으로 축/아이덴티티 점수 누적
  * - 축 동점 시 Primary → Secondary → Supporting 앵커 비교 (가산점 없음)
  * - 아이덴티티는 raw / max * 100 정규화 후 최대 유형 선택
+ * - 아이덴티티 동률 시 Primary ① 개수 → Primary 점수 비교 (⑫·⑭)
+ * - 강화 규칙은 점수 변경 없이 scoringMeta에 반영 (⑭)
  */
 
 import { V1_CHOICE_SCORE_MAP, type V1AxisKey, type V1Choice } from '../data/v1ScoreMapping'
@@ -27,6 +29,14 @@ export const IDENTITY_MAX: Record<IdentityKey, number> = {
   balance: 9,
 }
 
+/** ⑫·⑭ Identity Anchor — 동률 해소용 (가산점 아님) */
+const IDENTITY_TIE_ANCHORS: Record<IdentityKey, { primary: string[]; secondary: string[]; supporting: string[] }> = {
+  recovery: { primary: ['A2', 'A4', 'A5'], secondary: ['A3'], supporting: [] },
+  strength: { primary: ['A10'], secondary: ['A6', 'C3'], supporting: ['A1'] },
+  mobility: { primary: ['C2', 'C5', 'D7'], secondary: ['C7'], supporting: ['A3', 'A7', 'D2', 'D5'] },
+  balance: { primary: ['A6', 'C3'], secondary: ['C4'], supporting: ['A7', 'D4'] },
+}
+
 /** @deprecated V1에서는 Mapping 테이블을 사용. 호환용 타입만 유지 */
 export interface ScoringQuestion {
   question_code?: string
@@ -46,6 +56,8 @@ export interface AxisScoreDetail {
   scoreB: number
   winner: string
   tie: boolean
+  /** 앵커까지 동점이면 true — 공식 mixed 코드 정책은 제품 합의 전 tie+low_confidence로 저장 */
+  mixed?: boolean
   confidence: 'low' | 'mid' | 'high'
   maxWeight: number
 }
@@ -61,6 +73,11 @@ export interface BodyCodeResult {
   tieFlags?: Partial<Record<AxisKey | 'identity', boolean>>
   auxTags?: string[]
   scoringMeta?: Record<string, unknown>
+}
+
+export interface CalculateBodyCodeOptions {
+  /** 통증·어지럼 등으로 미수행한 문항 — 점수 제외 (스펙 중단 처리) */
+  stoppedQuestionCodes?: string[]
 }
 
 const AXIS_SIDES: Record<AxisKey, { a: string; b: string; max: number; low: number; mid: number }> = {
@@ -92,22 +109,108 @@ function resolveAxisWinner(
   scoreA: number,
   scoreB: number,
   anchorScores: Record<string, { a: number; b: number }>,
-): { winner: string; tie: boolean } {
+): { winner: string; tie: boolean; mixed: boolean } {
   const { a: sideA, b: sideB } = AXIS_SIDES[axis]
-  if (scoreA > scoreB) return { winner: sideA, tie: false }
-  if (scoreB > scoreA) return { winner: sideB, tie: false }
+  if (scoreA > scoreB) return { winner: sideA, tie: false, mixed: false }
+  if (scoreB > scoreA) return { winner: sideB, tie: false, mixed: false }
 
   for (const level of ['Primary', 'Secondary', 'Supporting']) {
     const bucket = anchorScores[level]
     if (!bucket) continue
-    if (bucket.a > bucket.b) return { winner: sideA, tie: false }
-    if (bucket.b > bucket.a) return { winner: sideB, tie: false }
+    if (bucket.a > bucket.b) return { winner: sideA, tie: false, mixed: false }
+    if (bucket.b > bucket.a) return { winner: sideB, tie: false, mixed: false }
   }
 
-  return { winner: sideA, tie: true }
+  // 완전동점: 16코드 문자열은 fallback 유지, mixed+tie 태그로 원자료 보존
+  return { winner: sideA, tie: true, mixed: true }
 }
 
-export function calculateBodyCode(answers: AnswerMap, _scoringQuestions?: ScoringQuestion[]): BodyCodeResult {
+function identityPointsForChoice(identity: IdentityKey, row: (typeof V1_CHOICE_SCORE_MAP)[string]): number {
+  if (identity === 'recovery') return row.score_recovery
+  if (identity === 'strength') return row.score_strength
+  if (identity === 'mobility') return row.score_mobility
+  return row.score_balance
+}
+
+function countChoiceOne(answers: AnswerMap, codes: string[], stopped: Set<string>): number {
+  let n = 0
+  for (const code of codes) {
+    if (stopped.has(code)) continue
+    if (normalizeChoice(answers[code]) === '①') n += 1
+  }
+  return n
+}
+
+function sumIdentityOnCodes(
+  answers: AnswerMap,
+  identity: IdentityKey,
+  codes: string[],
+  stopped: Set<string>,
+): number {
+  let sum = 0
+  for (const code of codes) {
+    if (stopped.has(code)) continue
+    const choice = normalizeChoice(answers[code])
+    if (!choice) continue
+    const row = V1_CHOICE_SCORE_MAP[`${code}_${choice}`]
+    if (!row) continue
+    sum += identityPointsForChoice(identity, row)
+  }
+  return sum
+}
+
+/**
+ * 동률 아이덴티티 해소: Primary ① 개수 → Primary 점수 → Secondary … → 그래도 같으면 unresolved
+ */
+function resolveIdentityTie(
+  tied: IdentityKey[],
+  answers: AnswerMap,
+  stopped: Set<string>,
+): { winner: IdentityKey; unresolved: boolean } {
+  let candidates = [...tied]
+
+  for (const level of ['primary', 'secondary', 'supporting'] as const) {
+    if (candidates.length <= 1) break
+
+    const oneCounts = candidates.map((id) => ({
+      id,
+      count: countChoiceOne(answers, IDENTITY_TIE_ANCHORS[id][level], stopped),
+    }))
+    const maxOne = Math.max(...oneCounts.map((x) => x.count))
+    const byOne = oneCounts.filter((x) => x.count === maxOne).map((x) => x.id)
+    if (byOne.length === 1) return { winner: byOne[0], unresolved: false }
+    candidates = byOne
+
+    const scoreCounts = candidates.map((id) => ({
+      id,
+      score: sumIdentityOnCodes(answers, id, IDENTITY_TIE_ANCHORS[id][level], stopped),
+    }))
+    const maxScore = Math.max(...scoreCounts.map((x) => x.score))
+    const byScore = scoreCounts.filter((x) => x.score === maxScore).map((x) => x.id)
+    if (byScore.length === 1) return { winner: byScore[0], unresolved: false }
+    candidates = byScore
+  }
+
+  return { winner: candidates[0], unresolved: candidates.length > 1 }
+}
+
+/** ⑭ 강화 규칙 — 점수 변경 없음, 결과 설명/확신도용 플래그 */
+function computeIdentityBoosts(answers: AnswerMap, stopped: Set<string>): Record<IdentityKey, boolean> {
+  const isOne = (code: string) => !stopped.has(code) && normalizeChoice(answers[code]) === '①'
+  return {
+    recovery: [isOne('A2'), isOne('A4'), isOne('A5')].filter(Boolean).length >= 2,
+    strength: isOne('A10'),
+    mobility: [isOne('C2'), isOne('C5'), isOne('D7')].filter(Boolean).length >= 2,
+    balance: isOne('A6') && isOne('C3'),
+  }
+}
+
+export function calculateBodyCode(
+  answers: AnswerMap,
+  _scoringQuestions?: ScoringQuestion[],
+  options?: CalculateBodyCodeOptions,
+): BodyCodeResult {
+  const stopped = new Set(options?.stoppedQuestionCodes ?? [])
   const axisRaw: Record<AxisKey, { a: number; b: number }> = {
     neck: { a: 0, b: 0 },
     shoulder: { a: 0, b: 0 },
@@ -127,8 +230,10 @@ export function calculateBodyCode(answers: AnswerMap, _scoringQuestions?: Scorin
     balance: 0,
   }
   const auxTags: string[] = []
+  const stopTags: string[] = [...stopped]
 
   for (const [questionCode, rawValue] of Object.entries(answers)) {
+    if (stopped.has(questionCode)) continue
     const choice = normalizeChoice(rawValue)
     if (!choice) continue
     const row = V1_CHOICE_SCORE_MAP[`${questionCode}_${choice}`]
@@ -168,11 +273,11 @@ export function calculateBodyCode(answers: AnswerMap, _scoringQuestions?: Scorin
     const { a: sideA, b: sideB, max } = AXIS_SIDES[axis]
     const scoreA = axisRaw[axis].a
     const scoreB = axisRaw[axis].b
-    const { winner, tie } = resolveAxisWinner(axis, scoreA, scoreB, anchorByAxis[axis])
+    const { winner, tie, mixed } = resolveAxisWinner(axis, scoreA, scoreB, anchorByAxis[axis])
     const total = scoreA + scoreB
     const conf = confidenceFor(axis, total)
-    if (conf === 'low' || tie) lowConfidence[axis] = true
-    if (tie) tieFlags[axis] = true
+    if (conf === 'low' || tie || mixed) lowConfidence[axis] = true
+    if (tie || mixed) tieFlags[axis] = true
 
     const ratioA = total > 0 ? scoreA / total : 0.5
     if (ratioA >= 0.45 && ratioA <= 0.55) borderline[axis] = true
@@ -184,6 +289,7 @@ export function calculateBodyCode(answers: AnswerMap, _scoringQuestions?: Scorin
       scoreB,
       winner,
       tie,
+      mixed: mixed || undefined,
       confidence: conf,
       maxWeight: max,
     }
@@ -191,24 +297,30 @@ export function calculateBodyCode(answers: AnswerMap, _scoringQuestions?: Scorin
   }
 
   const identityScores = {} as Record<IdentityKey, { raw: number; pct: number }>
-  let best: IdentityKey = 'recovery'
   let bestPct = -1
   for (const key of Object.keys(IDENTITY_MAX) as IdentityKey[]) {
     const raw = identityRaw[key]
     const pct = IDENTITY_MAX[key] > 0 ? (raw / IDENTITY_MAX[key]) * 100 : 0
     identityScores[key] = { raw, pct }
-    if (pct > bestPct) {
-      bestPct = pct
-      best = key
+    if (pct > bestPct) bestPct = pct
+  }
+
+  let tiedIdentities = (Object.keys(identityScores) as IdentityKey[]).filter(
+    (k) => Math.abs(identityScores[k].pct - bestPct) < 0.0001,
+  )
+
+  let best: IdentityKey = tiedIdentities[0] ?? 'recovery'
+  let identityComposite = false
+  if (tiedIdentities.length > 1) {
+    const resolved = resolveIdentityTie(tiedIdentities, answers, stopped)
+    best = resolved.winner
+    if (resolved.unresolved) {
+      tieFlags.identity = true
+      identityComposite = true
     }
   }
 
-  const tiedIdentities = (Object.keys(identityScores) as IdentityKey[]).filter(
-    (k) => Math.abs(identityScores[k].pct - bestPct) < 0.0001,
-  )
-  if (tiedIdentities.length > 1) {
-    tieFlags.identity = true
-  }
+  const identityBoosts = computeIdentityBoosts(answers, stopped)
 
   const scoringMeta = {
     question_version: 'mebody_v1_32',
@@ -217,12 +329,19 @@ export function calculateBodyCode(answers: AnswerMap, _scoringQuestions?: Scorin
     primary_identity: best,
     tie_flags: tieFlags,
     aux_tags: [...new Set(auxTags)],
+    identity_boosts: identityBoosts,
+    identity_composite: identityComposite || undefined,
+    stop_tags: stopTags.length ? stopTags : undefined,
+    /** mixed 축: 공식 16코드 문자열은 fallback 유지. 별도 mixed 코드 출력은 제품 합의 후 */
+    axis_mixed: AXIS_ORDER.filter((a) => axisDetails[a].mixed),
   }
 
   return {
     code,
     primaryIdentity: best,
-    primaryIdentityLabel: IDENTITY_LABELS[best],
+    primaryIdentityLabel: identityComposite
+      ? `${IDENTITY_LABELS[best]} (복합 가능성·확신도 낮음)`
+      : IDENTITY_LABELS[best],
     identityScores,
     axisDetails,
     lowConfidence: Object.keys(lowConfidence).length ? lowConfidence : undefined,

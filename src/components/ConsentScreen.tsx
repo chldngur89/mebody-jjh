@@ -85,7 +85,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#059669" />
+            <Sparkles size={18} color="#014725" />
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
           </div>
           {onBack && (
@@ -130,7 +130,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
           }}
         >
           <div style={{ marginBottom: '18px', textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '10px' }}>CONSENT</div>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>CONSENT</div>
             <h1 style={{ fontSize: '27px', lineHeight: 1.34, fontWeight: 850, color: '#111827', marginBottom: '12px', wordBreak: 'keep-all', letterSpacing: '-0.045em' }}>
               Mebody 체형 분석 전
               <br />
@@ -163,23 +163,23 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
             >
               <ul style={{ display: 'grid', gap: '10px', fontSize: '14px', lineHeight: 1.6, color: '#374151' }}>
                 <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                   <span>본 서비스는 웰니스 가이드를 위한 체형(자세) 분석입니다.</span>
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                   <span>32문항 응답을 바탕으로 현재의 mebody 코드와 아이덴티티를 추정합니다.</span>
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                   <span>개인차, 생활 습관, 환경, 컨디션에 따라 결과는 달라질 수 있습니다.</span>
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                   <span>의료행위(진단·치료·교정·재활)가 아니며 의학적 판단을 대체하지 않습니다.</span>
                 </li>
                 <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                   <span>통증이나 이상 증상이 있다면 전문가 상담을 우선해주세요.</span>
                 </li>
               </ul>
@@ -263,8 +263,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                     width: '24px',
                     height: '24px',
                     borderRadius: '7px',
-                    border: agreeContent ? '2px solid #10b981' : '2px solid #9ca3af',
-                    background: agreeContent ? '#10b981' : '#ffffff',
+                    border: agreeContent ? '2px solid #016B38' : '2px solid #9ca3af',
+                    background: agreeContent ? '#016B38' : '#ffffff',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -304,8 +304,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                     width: '24px',
                     height: '24px',
                     borderRadius: '7px',
-                    border: agreePrivacy ? '2px solid #10b981' : '2px solid #9ca3af',
-                    background: agreePrivacy ? '#10b981' : '#ffffff',
+                    border: agreePrivacy ? '2px solid #016B38' : '2px solid #9ca3af',
+                    background: agreePrivacy ? '#016B38' : '#ffffff',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -339,11 +339,11 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               gap: '8px',
               borderRadius: '18px',
               border: 'none',
-              background: canProceed ? 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)' : '#e5e7eb',
+              background: canProceed ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#e5e7eb',
               color: canProceed ? '#ffffff' : '#9ca3af',
               fontSize: '16px',
               fontWeight: 800,
-              boxShadow: canProceed ? '0 14px 28px rgba(20,184,166,0.25)' : 'none',
+              boxShadow: canProceed ? '0 14px 28px rgba(1,71,37,0.25)' : 'none',
               cursor: canProceed ? 'pointer' : 'not-allowed',
             }}
           >

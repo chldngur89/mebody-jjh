@@ -113,7 +113,7 @@ export function LandingScreen({
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#059669" />
+            <Sparkles size={18} color="#014725" />
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
           </div>
 
@@ -160,8 +160,8 @@ export function LandingScreen({
                   width: '94px',
                   height: '94px',
                   borderRadius: '24px',
-                  background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)',
-                  boxShadow: '0 14px 30px rgba(16,185,129,0.34)',
+                  background: 'linear-gradient(135deg, #016B38 0%, #014725 100%)',
+                  boxShadow: '0 14px 30px rgba(1,71,37,0.34)',
                 }}
               >
                 <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
@@ -173,7 +173,7 @@ export function LandingScreen({
                     inset: 0,
                     zIndex: -1,
                     borderRadius: '24px',
-                    background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)',
+                    background: 'linear-gradient(135deg, #016B38 0%, #014725 100%)',
                     opacity: 0.55,
                     filter: 'blur(18px)',
                   }}
@@ -187,7 +187,7 @@ export function LandingScreen({
                   lineHeight: 0.96,
                   fontWeight: 800,
                   letterSpacing: '-0.04em',
-                  background: 'linear-gradient(90deg, #059669 0%, #0d9488 100%)',
+                  background: 'linear-gradient(90deg, #014725 0%, #014725 100%)',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   color: 'transparent',
@@ -235,11 +235,11 @@ export function LandingScreen({
                   gap: '8px',
                   borderRadius: '18px',
                   border: 'none',
-                  background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                  background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                   color: '#ffffff',
                   fontSize: '17px',
                   fontWeight: 800,
-                  boxShadow: '0 14px 28px rgba(20,184,166,0.30)',
+                  boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
                   cursor: 'pointer',
                 }}
               >
@@ -281,7 +281,7 @@ export function LandingScreen({
                 }}
               >
                 <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <UserRound size={16} color="#059669" />
+                  <UserRound size={16} color="#014725" />
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#374151' }}>{accountTitle}</h3>
                 </div>
                 <p style={{ marginBottom: '14px', fontSize: '12px', lineHeight: 1.6, color: '#4b5563', wordBreak: 'keep-all' }}>{accountDescription}</p>
@@ -340,7 +340,7 @@ export function LandingScreen({
                       background: 'transparent',
                       fontSize: '12px',
                       fontWeight: 700,
-                      color: '#0f766e',
+                      color: '#014725',
                       textDecoration: 'underline',
                       textUnderlineOffset: '3px',
                       cursor: 'pointer',

@@ -58,10 +58,10 @@ export function ScrollIndicator({ containerRef, bottomOffset = '24px', threshold
         borderRadius: '999px',
         background: 'rgba(255, 255, 255, 0.95)',
         boxShadow: '0 8px 16px rgba(5, 150, 105, 0.15)',
-        border: '1px solid rgba(16, 185, 129, 0.2)',
+        border: '1px solid rgba(1, 71, 37, 0.2)',
       }}
     >
-      <ChevronDown size={24} color="#059669" strokeWidth={3} />
+      <ChevronDown size={24} color="#014725" strokeWidth={3} />
     </div>
   );
 }

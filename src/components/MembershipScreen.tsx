@@ -125,7 +125,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#059669" />
+            <Sparkles size={18} color="#014725" />
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
           </div>
           {onBack && (
@@ -167,7 +167,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
           }}
         >
           <div style={{ marginBottom: '18px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '8px' }}>CODE PLAN</div>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '8px' }}>CODE PLAN</div>
             <h1 style={{ fontSize: '28px', lineHeight: 1.3, fontWeight: 800, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>
               mebody 코드 플랜과
               <br />
@@ -204,11 +204,11 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                     justifyContent: 'center',
                     borderRadius: '16px',
                     border: 'none',
-                    background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                     color: '#ffffff',
                     fontSize: '15px',
                     fontWeight: 800,
-                    boxShadow: '0 14px 28px rgba(20,184,166,0.20)',
+                    boxShadow: '0 14px 28px rgba(1,71,37,0.20)',
                     cursor: 'pointer',
                   }}
                 >
@@ -226,7 +226,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                   padding: '18px',
                 }}
               >
-                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '6px' }}>ACCOUNT</div>
+                <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>ACCOUNT</div>
                 <p style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '8px', wordBreak: 'break-all' }}>{user.email}</p>
                 {mySubscription ? (
                   <div
@@ -260,20 +260,20 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                 }}
               >
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px', color: '#111827', fontSize: '15px', fontWeight: 800 }}>
-                  <ShieldCheck size={18} color="#059669" />
+                  <ShieldCheck size={18} color="#014725" />
                   코드 플랜 혜택
                 </div>
                 <div style={{ display: 'grid', gap: '8px', fontSize: '14px', lineHeight: 1.65, color: '#4b5563' }}>
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                     <span>결과 히스토리와 재방문 자동 연결</span>
                   </div>
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                     <span>체형별 심화 리포트와 코드 가이드 확장</span>
                   </div>
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#10b981', fontWeight: 800 }}>•</span>
+                    <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
                     <span>맞춤 10~15분 루틴과 추후 비교 기능 우선 적용</span>
                   </div>
                 </div>
@@ -301,7 +301,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                             ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(255,255,255,0.95) 100%)'
                             : '#ffffff',
                           padding: '18px',
-                          boxShadow: isRecommended ? '0 16px 28px rgba(16,185,129,0.10)' : 'none',
+                          boxShadow: isRecommended ? '0 16px 28px rgba(1,71,37,0.10)' : 'none',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
@@ -327,7 +327,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                             <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', marginBottom: '6px' }}>{plan.name}</h3>
                             <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#4b5563', wordBreak: 'keep-all' }}>{plan.description}</p>
                           </div>
-                          <Crown size={20} color={isCurrent ? '#059669' : '#9ca3af'} />
+                          <Crown size={20} color={isCurrent ? '#014725' : '#9ca3af'} />
                         </div>
 
                         <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '12px' }}>
@@ -349,12 +349,12 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                             background: isCurrent
                               ? '#ffffff'
                               : isRecommended
-                                ? 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)'
+                                ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)'
                                 : 'rgba(243,244,246,0.95)',
                             color: isCurrent ? '#047857' : isRecommended ? '#ffffff' : '#374151',
                             fontSize: '15px',
                             fontWeight: 800,
-                            boxShadow: isRecommended ? '0 14px 28px rgba(20,184,166,0.18)' : 'none',
+                            boxShadow: isRecommended ? '0 14px 28px rgba(1,71,37,0.18)' : 'none',
                             cursor: 'pointer',
                           }}
                         >

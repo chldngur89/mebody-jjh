@@ -852,7 +852,7 @@ function ActionDetailOverlay({
         >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', marginBottom: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#059669', marginBottom: '6px' }}>ACTION DETAIL</div>
+            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>ACTION DETAIL</div>
             <h2 style={{ fontSize: '24px', lineHeight: 1.18, letterSpacing: '-0.045em', fontWeight: 900, color: '#111827' }}>
               {title}
             </h2>
@@ -1011,7 +1011,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
           padding: '18px',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#059669', marginBottom: '12px' }}>코드 상태 창</div>
+        <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '12px' }}>코드 상태 창</div>
         <div style={{ display: 'grid', gridTemplateColumns: '96px 1fr', gap: '15px', alignItems: 'center' }}>
           <div style={{ minWidth: 0 }}>
             <div
@@ -1037,7 +1037,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
                   onError={() => data.handleImageError(data.characterImage)}
                 />
               ) : (
-                <div style={{ fontSize: '28px', fontWeight: 900, color: '#059669' }}>{data.bodyCode}</div>
+                <div style={{ fontSize: '28px', fontWeight: 900, color: '#014725' }}>{data.bodyCode}</div>
               )}
             </div>
             <div style={{ textAlign: 'center' }}>
@@ -1075,7 +1075,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
             padding: '16px 18px',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 900, color: '#059669', marginBottom: '7px' }}>한 줄 이해</div>
+          <div style={{ fontSize: '12px', fontWeight: 900, color: '#014725', marginBottom: '7px' }}>한 줄 이해</div>
           <div style={{ fontSize: '15px', lineHeight: 1.65, fontWeight: 800, color: '#111827', wordBreak: 'keep-all' }}>{data.summaryLine}</div>
         </div>
       </section>
@@ -1099,7 +1099,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
           cursor: data.actionPlan.detailContents.length > 0 ? 'pointer' : 'default',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '8px' }}>MISSION</div>
+        <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '8px' }}>MISSION</div>
         <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#111827', marginBottom: '14px' }}>오늘의 미션 수행률</h2>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
           <div style={{ fontSize: '40px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>{missionProgress}%</div>
@@ -1110,7 +1110,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
             style={{
               width: `${missionProgress}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+              background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
               transition: 'width 260ms ease',
             }}
           />
@@ -1127,7 +1127,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#059669', marginBottom: '6px' }}>ACTION</div>
+            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>ACTION</div>
             <h2 style={{ fontSize: '20px', lineHeight: 1.2, fontWeight: 900, color: '#111827' }}>지금 해야 할 액션</h2>
           </div>
 
@@ -1175,7 +1175,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
                         height: '28px',
                         borderRadius: '10px',
                         border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#cbd5e1'}`,
-                        background: isCompleted ? 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)' : '#ffffff',
+                        background: isCompleted ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
                         boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.85)',
                       }}
                     />
@@ -1187,13 +1187,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
                         <div
                           style={{
                             borderRadius: '999px',
-                            background: isCompleted ? 'rgba(16,185,129,0.12)' : '#ffffff',
+                            background: isCompleted ? 'rgba(1,71,37,0.12)' : '#ffffff',
                             border: `1px solid ${isCompleted ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                             padding: '4px 8px',
                             fontSize: '10px',
                             lineHeight: 1,
                             fontWeight: 900,
-                            color: isCompleted ? '#059669' : '#7c8794',
+                            color: isCompleted ? '#014725' : '#7c8794',
                           }}
                         >
                           {statusLabel}
@@ -1257,7 +1257,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
             }}
           >
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#059669', marginBottom: '4px' }}>GUIDE</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>GUIDE</div>
               <div style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>나의 mebody 코드 가이드 보기</div>
             </div>
             {guideOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
@@ -1275,7 +1275,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
                       padding: '18px',
                     }}
                   >
-                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', color: '#059669', marginBottom: '6px' }}>{block.caption}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>{block.caption}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>{block.title}</div>
                     {renderReadableText(block.content)}
                   </div>
@@ -1313,7 +1313,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
           }}
         >
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#059669', marginBottom: '7px' }}>ROUTINE</div>
+            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '7px' }}>ROUTINE</div>
             <div style={{ fontSize: '20px', fontWeight: 900, color: '#111827', marginBottom: '6px' }}>맞춤 15분 케어 루틴</div>
             <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b7280' }}>총 15분 · {routineItems.length}단계 구성</div>
           </div>
@@ -1339,7 +1339,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
                       </div>
                       <div style={{ fontSize: '19px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>{exercise.title}</div>
                     </div>
-                    <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '13px', fontWeight: 900, color: '#059669' }}>
+                    <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '13px', fontWeight: 900, color: '#014725' }}>
                       {exercise.durationMinutes}분
                     </div>
                   </div>

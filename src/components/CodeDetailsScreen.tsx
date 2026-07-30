@@ -198,7 +198,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
             </button>
           )}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#059669', marginBottom: '4px' }}>BODY DETAILS</div>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '4px' }}>BODY DETAILS</div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               내 코드 더 알아보기
             </h1>
@@ -215,7 +215,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
             paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
             }}
           >
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#059669', marginBottom: '6px' }}>내 코드 상세</div>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#014725', marginBottom: '6px' }}>내 코드 상세</div>
             <div style={{ fontSize: '16px', lineHeight: 1.7, fontWeight: 700, color: '#111827', wordBreak: 'keep-all' }}>
               {resolvedCode ? `${resolvedCode} ${characterNames[resolvedCode] ? `· ${characterNames[resolvedCode]}` : ''}` : '내 체형 코드 해설'}
             </div>
@@ -267,7 +267,7 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
                             justifyContent: 'center',
                             fontSize: '12px',
                             fontWeight: 800,
-                            color: '#0f766e',
+                            color: '#014725',
                           }}
                         >
                           {index + 1}
@@ -302,11 +302,11 @@ export function CodeDetailsScreen({ questionnaireId, bodyCode, onBack, onDone }:
                 gap: '8px',
                 borderRadius: '16px',
                 border: 'none',
-                background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)',
+                background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                 color: '#ffffff',
                 fontSize: '15px',
                 fontWeight: 800,
-                boxShadow: '0 14px 28px rgba(20,184,166,0.22)',
+                boxShadow: '0 14px 28px rgba(1,71,37,0.22)',
                 cursor: 'pointer',
               }}
             >
