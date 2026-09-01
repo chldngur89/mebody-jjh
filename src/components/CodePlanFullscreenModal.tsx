@@ -1,14 +1,16 @@
 import { useRef } from 'react';
 import { X } from 'lucide-react';
-import { CodePlanDetailContent, useCodePlanData } from './codePlanShared';
+import { CodePlanDetailContent, useCodePlanData, type CodePlanJourneyProgress } from './codePlanShared';
 import { ScrollIndicator } from './ScrollIndicator';
 
 interface CodePlanFullscreenModalProps {
   questionnaireId?: string;
   onClose: () => void;
+  /** Journey 가 진행 중일 때만 전달합니다. */
+  journeyProgress?: CodePlanJourneyProgress;
 }
 
-export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFullscreenModalProps) {
+export function CodePlanFullscreenModal({ questionnaireId, onClose, journeyProgress }: CodePlanFullscreenModalProps) {
   const data = useCodePlanData(questionnaireId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +122,7 @@ export function CodePlanFullscreenModal({ questionnaireId, onClose }: CodePlanFu
             ) : !data.result ? (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}>연결된 결과가 없습니다.</div>
             ) : (
-              <CodePlanDetailContent data={data} />
+              <CodePlanDetailContent data={data} journeyProgress={journeyProgress} />
             )}
           </div>
           <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />

@@ -22,6 +22,9 @@ interface MyPageScreenProps {
   onLatestResultResolved?: (resultId: string) => void;
   onLogout?: () => void | Promise<void>;
   previewMode?: boolean;
+  /** Journey 가 진행 중일 때만 전달합니다. 없으면 카드가 렌더되지 않습니다. */
+  journeyProgress?: { progress: number; dayNo: number; totalDays: number; completed: number; total: number };
+  onOpenJourney?: () => void;
 }
 
 type ResultWithContent = QuestionnaireResponse & { body_code_content?: BodyCodeContent | null };
@@ -126,6 +129,8 @@ export function MyPageScreen({
   onLatestResultResolved,
   onLogout,
   previewMode = false,
+  journeyProgress,
+  onOpenJourney,
 }: MyPageScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const [latestResult, setLatestResult] = useState<ResultWithContent | null>(null);
@@ -860,6 +865,53 @@ export function MyPageScreen({
               </div>
             )}
           </div>
+
+          {journeyProgress && !isPreviewMode && (
+            <button
+              type="button"
+              onClick={onOpenJourney}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                borderRadius: '22px',
+                border: '1px solid rgba(1, 71, 37, 0.38)',
+                background: 'linear-gradient(135deg, rgba(232,245,238,0.96) 0%, rgba(255,255,255,0.98) 100%)',
+                padding: '18px',
+                marginBottom: '16px',
+                cursor: onOpenJourney ? 'pointer' : 'default',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725' }}>
+                  JOURNEY · DAY {journeyProgress.dayNo} / {journeyProgress.totalDays}
+                </div>
+                <ChevronRight size={18} color="#014725" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
+                <div style={{ fontSize: '30px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>
+                  {journeyProgress.progress}%
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#014725' }}>
+                  {journeyProgress.total > 0
+                    ? `${journeyProgress.completed} / ${journeyProgress.total} 완료`
+                    : '오늘 미션 없음'}
+                </div>
+              </div>
+              <div style={{ height: '12px', borderRadius: '999px', background: '#D4EBE0', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${journeyProgress.progress}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                  }}
+                />
+              </div>
+              <div style={{ marginTop: '10px', fontSize: '12px', fontWeight: 700, color: '#4b5563', wordBreak: 'keep-all' }}>
+                진행 중인 14일 저니가 있습니다. 오늘의 미션을 이어서 확인하세요.
+              </div>
+            </button>
+          )}
 
           <div
             style={{

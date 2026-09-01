@@ -21,7 +21,9 @@ Server/target/
 output/
 .playwright-cli/
 .playwright-mcp/
-docs/
+# 설계 문서는 추적하고, docs 아래 생성물은 무시
+docs/*
+!docs/*.md
 supabase/
 
 # Editor

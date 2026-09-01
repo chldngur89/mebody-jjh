@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { ArrowLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { CodePlanDetailContent, useCodePlanData } from './codePlanShared';
+import { CodePlanDetailContent, useCodePlanData, type CodePlanJourneyProgress } from './codePlanShared';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
 
@@ -11,9 +11,11 @@ interface CodePlanScreenProps {
   onBack?: () => void;
   onRequireAuth?: () => void;
   onNextGuide?: () => void;
+  /** Journey 가 진행 중일 때만 전달합니다. 없으면 기존 로컬 수행률 동작 유지. */
+  journeyProgress?: CodePlanJourneyProgress;
 }
 
-export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMode = false, onBack, onRequireAuth, onNextGuide }: CodePlanScreenProps) {
+export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMode = false, onBack, onRequireAuth, onNextGuide, journeyProgress }: CodePlanScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -263,7 +265,7 @@ export function CodePlanScreen({ questionnaireId, isLoggedIn = false, previewMod
               임시 미리보기 화면입니다. 실제로는 회원가입 후 이 코드 플랜과 다음 페이지를 이어서 보게 됩니다.
             </div>
           )}
-          <CodePlanDetailContent data={data} hideGuideSection />
+          <CodePlanDetailContent data={data} hideGuideSection journeyProgress={journeyProgress} />
           {onNextGuide && (
             <button
               type="button"

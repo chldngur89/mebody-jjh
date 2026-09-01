@@ -1,15 +1,39 @@
 # MEBODY TODO
 
-현재 기준은 53문항 설문, Ver6 즉시 액션, 최신 코드 플랜 UI입니다. 과거 실험 플로우와 산출물은 정리 대상입니다.
+현재 기준은 `mebody_v1_32` 기반 32문항 설문, Ver6 즉시 액션, 최신 코드 플랜 UI입니다. 과거 실험 플로우와 산출물은 정리 대상입니다.
+
+## P0-S. 보안 (2026-08-29 점검에서 확인, 드라이런 검증 완료)
+- [ ] `db/hardening/200_dev_rls_fix.sql` 을 개발계에 적용한다. (anon 키로 콘텐츠 삭제·감사로그 조작 가능한 상태)
+- [ ] `db/hardening/210_response_read_lock.sql` 을 적용한다. (응답 380행 전체 열람 가능한 상태)
+- [ ] 적용 후 비회원 진단 저장·제출·조회를 실제 브라우저로 확인한다.
+- [ ] 비회원 응답 열거까지 막으려면 INSERT 를 RPC 로 전환한다. (진단 저장 경로 변경이라 별도 작업)
+
+## P0-M. 운영계 이전
+- [ ] 새 Supabase 프로젝트를 만들고 `db/bootstrap/` 을 순서대로 실행한다.
+- [ ] Storage `images` 버킷의 캐릭터 16 · 축 아이콘 4 · 체형 맵 1을 복사한다.
+- [ ] Vercel 환경변수와 `mebody-server/.env` 를 운영계로 전환한다.
+- [ ] 개발계는 그대로 두고 테스트 전용으로 유지한다.
 
 ## P0. 운영 전 필수
-- [ ] `questionnaire_responses` RLS를 운영 기준으로 재설계한다.
+- [x] `questionnaire_responses` RLS 재설계 — `db/hardening/210` (적용 대기)
 - [ ] 비회원 결과를 로그인 계정으로 귀속하는 서버 API를 만든다.
-- [ ] `CheckoutScreen`의 mock 구독 활성화를 서버 API 기반으로 교체한다.
+- [x] `membership_plans`·`user_subscriptions` 테이블 신설 — `db/journey/032_orders.sql` (적용 대기)
+- [ ] `CheckoutScreen`의 mock 구독 활성화를 실제 결제 기반으로 교체한다.
 - [ ] 실제 결제사 후보를 확정한다: Toss 또는 Stripe.
 - [ ] 결제 webhook 검증과 결제 원장 테이블을 추가한다.
 - [ ] 회원가입 약관/개인정보 동의 저장 시각을 DB에 남긴다.
 - [ ] Vercel 환경변수와 Supabase RLS를 production 기준으로 재점검한다.
+
+## P0-J. Journey 운영 적용 (코드 구현 완료, 미적용)
+- [ ] `db/journey/020~023` 을 Supabase SQL Editor 에서 순서대로 실행한다.
+- [ ] `npm run verify:journey-db` 로 카탈로그 조회와 사용자 테이블 anon 차단을 확인한다.
+- [ ] 실제 계정으로 Day 1 → 미션 → 피드백 → Day 2 강도 조정까지 1회 확인한다.
+- [ ] 확인 후 README의 "결과 페이지 이후 현재 상태" 표를 갱신한다.
+- [ ] 저니 진입 퍼널 이벤트(시작/완료/피드백)를 analytics 대상에 포함한다.
+- [ ] 동작 이미지 23종(이완/스트레칭)을 제작해 Storage `actions/` 에 올린다.
+- [ ] `products` 테이블에 실제 상품·가격·이미지를 등록한다.
+- [ ] 적립금 사용처(상품 할인 적용)와 정산 방식을 정한다. 현재는 적립만 되고 쓸 곳이 없다.
+- [ ] 부위별 콘텐츠 15종(등·허리·무릎·발목·발바닥)을 루틴에 추가한다. 4축 콘텐츠 정착 후.
 
 ## P1. Ver6 콘텐츠 고도화
 - [ ] 1순위/2순위 액션 상세 UI를 실제 Figma 기준으로 한 번 더 맞춘다.
@@ -36,7 +60,7 @@
 - [ ] 브라우저 자동 테스트 스크립트를 최신 플로우 기준으로 다시 만든다.
 
 ## 완료된 작업
-- [x] 53문항 구조 반영: 사전체크 4개 + 본문 49개
+- [x] 32문항 구조 반영: A 10개 + B 6개 + C 9개 + D 7개
 - [x] 4축 mebody 코드 계산 연결
 - [x] Supabase `questions` 기반 문항 로딩
 - [x] Supabase `questionnaire_responses` 결과 저장

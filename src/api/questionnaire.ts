@@ -494,26 +494,48 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
     }
   }
 
-  const { data: responseData, error: responseError } = await withTimeout(
-    supabase
-      .from('questionnaire_responses')
-      .select('*')
-      .eq('id', questionnaireId)
-      .single(),
-    8000,
-    'fetchQuestionnaireResult response',
-  )
+  // RLS 강화 후에는 남의 응답을 직접 조회할 수 없습니다.
+  // 비회원은 자기 응답의 UUID 를 알고 있으므로 RPC 로 한 행만 받아옵니다.
+  // RPC 가 아직 없는 환경에서는 기존 select 로 폴백합니다.
+  let responseData: Record<string, unknown> | null = null
 
-  if (responseError) {
-    console.error('Error fetching questionnaire result:', responseError)
-    throw responseError
+  try {
+    const rpcResult = await withTimeout(
+      supabase.rpc('get_questionnaire_response', { p_id: questionnaireId }),
+      8000,
+      'fetchQuestionnaireResult rpc',
+    )
+    if (!rpcResult.error) {
+      const rows = rpcResult.data as Record<string, unknown>[] | Record<string, unknown> | null
+      responseData = Array.isArray(rows) ? (rows[0] ?? null) : (rows ?? null)
+    }
+  } catch (rpcError) {
+    console.debug('get_questionnaire_response rpc unavailable, falling back:', rpcError)
+  }
+
+  if (!responseData) {
+    const { data: fallbackData, error: responseError } = await withTimeout(
+      supabase
+        .from('questionnaire_responses')
+        .select('*')
+        .eq('id', questionnaireId)
+        .single(),
+      8000,
+      'fetchQuestionnaireResult response',
+    )
+
+    if (responseError) {
+      console.error('Error fetching questionnaire result:', responseError)
+      throw responseError
+    }
+    responseData = fallbackData as Record<string, unknown>
   }
 
   const { data: contentData, error: contentError } = await withTimeout(
     supabase
       .from('body_code_content')
       .select('*')
-      .eq('body_code', responseData.calculated_code)
+      .eq('body_code', String(responseData.calculated_code))
       .single(),
     5000,
     'fetchQuestionnaireResult content',
@@ -523,7 +545,7 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
     console.error('Error fetching body code content:', contentError)
     return {
       ...responseData,
-      body_code_content: getFallbackBodyCodeContent(responseData.calculated_code),
+      body_code_content: getFallbackBodyCodeContent(String(responseData.calculated_code)),
     }
   }
 

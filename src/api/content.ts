@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
 
 let appImagesCache: Record<string, string> | null = null;
 let immediateActionDataCache: ImmediateActionData | null = null;
@@ -214,12 +214,24 @@ export interface ImmediateActionContent {
   sets: number | null;
   caution: string;
   sort_order: number;
+  /** 동작 이미지. 비어 있으면 화면은 텍스트만 보여줍니다. */
+  release_image_url: string;
+  stretch_image_url: string;
 }
 
 export interface ImmediateActionData {
   discomfortMappings: ImmediateActionDiscomfortMapping[];
   axisMappings: ImmediateActionAxisMapping[];
   contents: ImmediateActionContent[];
+}
+
+/** Storage 상대경로면 공개 URL 로, 전체 URL 이면 그대로. 비었으면 빈 문자열. */
+function resolveStorageUrl(value: unknown): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (!SUPABASE_STORAGE_PUBLIC) return '';
+  return `${SUPABASE_STORAGE_PUBLIC}/${raw.replace(/^\/+/, '').replace(/^images\/+/, '')}`;
 }
 
 function toBool(value: unknown): boolean {
@@ -305,7 +317,45 @@ export async function fetchImmediateActionData(): Promise<ImmediateActionData> {
       sets: toNullableNumber(row.sets),
       caution: String(row.caution ?? ''),
       sort_order: Number(row.sort_order ?? 999),
+      release_image_url: resolveStorageUrl(row.release_image_url),
+      stretch_image_url: resolveStorageUrl(row.stretch_image_url),
     })),
   };
   return immediateActionDataCache;
+}
+
+export interface StoreProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number | null;
+  imageUrl: string;
+  status: string;
+}
+
+/**
+ * 결과 페이지 스토어용 상품.
+ * products 테이블(status=ACTIVE)을 조회하므로 서버에 올리면 앱에 바로 반영됩니다.
+ * 조회 실패하거나 비어 있으면 빈 배열을 돌려주고 화면은 기존 안내로 폴백합니다.
+ */
+export async function fetchStoreProducts(): Promise<StoreProduct[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, description, price, image_url, status, created_at')
+    .eq('status', 'ACTIVE')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('fetchStoreProducts failed:', error);
+    return [];
+  }
+
+  return (data || []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name ?? ''),
+    description: String(row.description ?? ''),
+    price: row.price === null || row.price === undefined ? null : Number(row.price),
+    imageUrl: resolveStorageUrl(row.image_url),
+    status: String(row.status ?? ''),
+  }));
 }

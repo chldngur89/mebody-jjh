@@ -11,6 +11,7 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@vitejs/plugin-react-swc": "^3.10.2",
+    "pg": "^8.23.0",
     "vite": "6.3.5"
   },
   "scripts": {
@@ -18,6 +19,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "verify:v1-excel": "python3 scripts/verify-v1-excel-spec.py",
-    "verify:v1-excel-db": "VERIFY_DB=1 python3 scripts/verify-v1-excel-spec.py"
+    "verify:v1-excel-db": "VERIFY_DB=1 python3 scripts/verify-v1-excel-spec.py",
+    "verify:journey-rules": "node scripts/verify-journey-rules.mjs",
+    "verify:journey-db": "node scripts/verify-journey-db.mjs",
+    "verify:hardening": "node scripts/verify-hardening.mjs",
+    "db:extract": "node scripts/extract-bootstrap.mjs",
+    "verify:e2e": "node scripts/verify-e2e.mjs"
   }
 }

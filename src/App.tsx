@@ -16,6 +16,11 @@ const MembershipScreen = lazy(() => import('./components/MembershipScreen').then
 const CheckoutScreen = lazy(() => import('./components/CheckoutScreen').then(m => ({ default: m.CheckoutScreen })));
 const MyPageScreen = lazy(() => import('./components/MyPageScreen').then(m => ({ default: m.MyPageScreen })));
 const CodePlanFullscreenModal = lazy(() => import('./components/CodePlanFullscreenModal').then(m => ({ default: m.CodePlanFullscreenModal })));
+const JourneyIntroScreen = lazy(() => import('./components/journey/JourneyIntroScreen').then(m => ({ default: m.JourneyIntroScreen })));
+const JourneyTodayScreen = lazy(() => import('./components/journey/JourneyTodayScreen').then(m => ({ default: m.JourneyTodayScreen })));
+const JourneyMissionScreen = lazy(() => import('./components/journey/JourneyMissionScreen').then(m => ({ default: m.JourneyMissionScreen })));
+const JourneyReportScreen = lazy(() => import('./components/journey/JourneyReportScreen').then(m => ({ default: m.JourneyReportScreen })));
+const JourneyNextScreen = lazy(() => import('./components/journey/JourneyNextScreen').then(m => ({ default: m.JourneyNextScreen })));
 import { preloadQuestions, saveDraft, submitQuestionnaire, createLocalQuestionnaireResult, readLocalQuestionnaireResult, type Question } from './api/questionnaire';
 import {
   attachQuestionnaireResultToUser,
@@ -24,6 +29,8 @@ import {
   signOutAccount,
   upsertProfileFromUser,
 } from './api/account';
+import type { UserMission } from './api/journey';
+import type { CodePlanJourneyProgress } from './components/codePlanShared';
 import { getSessionWithFallback, getStoredSupabaseSession } from './lib/authSession';
 import { supabase } from './lib/supabase';
 import type { AnswerMap } from './utils/bodyCodeCalculator';
@@ -43,7 +50,12 @@ type Screen =
   | 'auth'
   | 'membership'
   | 'checkout'
-  | 'myPage';
+  | 'myPage'
+  | 'journeyIntro'
+  | 'journeyToday'
+  | 'journeyMission'
+  | 'journeyReport'
+  | 'journeyNext';
 
 type ResultEntrySource = 'questionnaire' | 'quick' | 'shared';
 type ResultSaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
@@ -62,7 +74,7 @@ function wait(ms: number) {
 export default function App() {
   const bootSearchParams = new URLSearchParams(window.location.search);
   const previewScreenParam = bootSearchParams.get('ui');
-  const previewScreen = (['landing', 'auth', 'myPage', 'codePlan'] as const).find((screen) => screen === previewScreenParam);
+  const previewScreen = (['landing', 'auth', 'myPage', 'codePlan', 'journeyIntro', 'journeyToday'] as const).find((screen) => screen === previewScreenParam);
   const bootAuthMode = bootSearchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [currentScreen, setCurrentScreen] = useState<Screen>(previewScreen ?? 'landing');
   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>();
@@ -83,6 +95,9 @@ export default function App() {
   const [landingCodePlanModalOpen, setLandingCodePlanModalOpen] = useState(false);
   const [codePlanPreviewMode, setCodePlanPreviewMode] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis>(null);
+  const [activeMission, setActiveMission] = useState<UserMission | null>(null);
+  const [journeySummary, setJourneySummary] = useState<CodePlanJourneyProgress | null>(null);
+  const [journeyReportTarget, setJourneyReportTarget] = useState<{ type: 'weekly' | 'progress_check'; dayNo: number }>({ type: 'weekly', dayNo: 7 });
   const mountedRef = useRef(true);
   const questionnaireIdRef = useRef<string | undefined>();
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
@@ -108,6 +123,8 @@ export default function App() {
     setCodePlanPreviewMode(false);
     setMyPagePreviewMode(false);
     setPendingAnalysis(null);
+    setActiveMission(null);
+    setJourneySummary(null);
     if (clearSession) {
       sessionStorage.removeItem(SESSION_LAST_RESULT_KEY);
     }
@@ -440,6 +457,40 @@ export default function App() {
   }, [previewScreen]);
 
   useEffect(() => {
+    const needsSummary =
+      Boolean(currentUser) && (currentScreen === 'codePlan' || landingCodePlanModalOpen || currentScreen === 'myPage');
+
+    if (!needsSummary) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { fetchTodayProgressSummary } = await import('./api/journey');
+        const summary = await fetchTodayProgressSummary(currentUser!.id);
+        if (cancelled) return;
+        setJourneySummary(
+          summary
+            ? {
+                progress: summary.progress,
+                dayNo: summary.dayNo,
+                totalDays: summary.totalDays,
+                completed: summary.completed,
+                total: summary.total,
+                onOpen: () => setCurrentScreen('journeyToday'),
+              }
+            : null,
+        );
+      } catch (error) {
+        console.warn('journey summary load failed:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.id, currentScreen, landingCodePlanModalOpen]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (questionnaireId) {
       params.set('result', questionnaireId);
@@ -466,6 +517,18 @@ export default function App() {
   const openQuickResult = () => {
     if (!latestResultId) return;
     openResultScreen(latestResultId, 'quick');
+  };
+
+  const openJourneyIntro = () => {
+    setMyPagePreviewMode(false);
+    setLandingCodePlanModalOpen(false);
+    setCodePlanPreviewMode(false);
+    setPendingAnalysis(null);
+    if (!currentUser) {
+      openAuth('journeyIntro', 'signup');
+      return;
+    }
+    setCurrentScreen('journeyIntro');
   };
 
   const openMyPage = () => {
@@ -584,6 +647,7 @@ export default function App() {
                 setCodePlanPreviewMode(true);
                 setCurrentScreen('codePlan');
               }}
+              onStartJourney={openJourneyIntro}
             />
           )}
 
@@ -595,6 +659,7 @@ export default function App() {
               onBack={() => setCurrentScreen('result')}
               onRequireAuth={() => openAuth('codePlan')}
               onNextGuide={() => setCurrentScreen('guideCommon')}
+              journeyProgress={journeySummary ?? undefined}
             />
           )}
 
@@ -627,6 +692,8 @@ export default function App() {
               onRequireAuth={() => openAuth('myPage')}
               onLatestResultResolved={(resultId) => setLatestResultId(resultId)}
               onLogout={handleLogout}
+              journeyProgress={journeySummary ?? undefined}
+              onOpenJourney={() => setCurrentScreen('journeyToday')}
             />
           )}
 
@@ -662,8 +729,69 @@ export default function App() {
             />
           )}
 
+          {currentScreen === 'journeyIntro' && (
+            <JourneyIntroScreen
+              user={currentUser}
+              questionnaireId={questionnaireId ?? latestResultId}
+              onBack={() => setCurrentScreen(questionnaireId ? 'result' : 'landing')}
+              onRequireAuth={() => openAuth('journeyIntro', 'signup')}
+              onStarted={() => setCurrentScreen('journeyToday')}
+              onStartDiagnosis={startNewDiagnosis}
+            />
+          )}
+
+          {currentScreen === 'journeyToday' && (
+            <JourneyTodayScreen
+              user={currentUser}
+              onBack={() => setCurrentScreen('landing')}
+              onStartJourney={openJourneyIntro}
+              onOpenMission={(mission) => {
+                setActiveMission(mission);
+                setCurrentScreen('journeyMission');
+              }}
+              onOpenReport={(dayNo, kind) => {
+                setJourneyReportTarget({ type: kind, dayNo });
+                setCurrentScreen('journeyReport');
+              }}
+            />
+          )}
+
+          {currentScreen === 'journeyMission' && (
+            <JourneyMissionScreen
+              user={currentUser}
+              mission={activeMission}
+              onBack={() => {
+                setActiveMission(null);
+                setCurrentScreen('journeyToday');
+              }}
+              onDone={() => {
+                setActiveMission(null);
+                setCurrentScreen('journeyToday');
+              }}
+            />
+          )}
+
+          {currentScreen === 'journeyReport' && (
+            <JourneyReportScreen
+              user={currentUser}
+              reportType={journeyReportTarget.type}
+              dayNo={journeyReportTarget.dayNo}
+              onBack={() => setCurrentScreen('journeyToday')}
+              onNext={() => setCurrentScreen('journeyNext')}
+            />
+          )}
+
+          {currentScreen === 'journeyNext' && (
+            <JourneyNextScreen
+              user={currentUser}
+              onBack={() => setCurrentScreen('journeyToday')}
+              onRemeasure={startNewDiagnosis}
+              onStartedNext={() => setCurrentScreen('journeyToday')}
+            />
+          )}
+
           {currentScreen === 'landing' && landingCodePlanModalOpen && currentUser && latestResultId && (
-            <CodePlanFullscreenModal questionnaireId={latestResultId} onClose={() => setLandingCodePlanModalOpen(false)} />
+            <CodePlanFullscreenModal questionnaireId={latestResultId} onClose={() => setLandingCodePlanModalOpen(false)} journeyProgress={journeySummary ?? undefined} />
           )}
         </Suspense>
       </div>

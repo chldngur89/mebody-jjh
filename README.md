@@ -13,7 +13,7 @@ MEBODY의 결과는 의료 진단, 통증 판독, 치료, 교정 또는 재활 �
 이 README는 다음 내용을 한곳에서 확인하기 위한 내부 기준 문서입니다.
 
 1. 지금까지 실제로 구현된 사용자 플로우
-2. 홈페이지, 12문항 간이 설문, 53문항 모바일 앱, Spring 서버와 Supabase의 연결 구조
+2. 홈페이지, 12문항 간이 설문, 32문항 모바일 앱, Spring 서버와 Supabase의 연결 구조
 3. 결과 페이지 이후 기능과 비즈니스 모델의 현재 상태
 
 기능과 아이디어는 아래 상태로 구분합니다.
@@ -32,7 +32,7 @@ MEBODY의 결과는 의료 진단, 통증 판독, 치료, 교정 또는 재활 �
 |---|---|---|
 | 홈페이지·서버 | [MebodyServer](https://github.com/MebodyCTO/MebodyServer) / [Railway 설정 주소](https://mebody-server-production.up.railway.app/) | 홈페이지, `/sample`, `/admin`, Spring API |
 | 12문항 간이 설문 | [sample-questionnaire](https://github.com/MebodyCTO/MebodyServer/tree/main/sample-questionnaire) | 홈페이지에서 연결되는 간이 체크 React 앱 |
-| 53문항 모바일 앱 | [mebody-jjh](https://github.com/chldngur89/mebody-jjh) / [Vercel](https://mebody-jjh.vercel.app/) | 정밀 설문, 결과, 코드 플랜, 회원 기능 |
+| 32문항 모바일 앱 | [mebody-jjh](https://github.com/chldngur89/mebody-jjh) / [Vercel](https://mebody-jjh.vercel.app/) | 본 설문, 결과, 코드 플랜, 회원 기능 |
 | 인증·데이터 | Supabase | Auth, Postgres, Storage |
 | 후속 외부 설문 | [Google Forms](https://docs.google.com/forms/d/e/1FAIpQLSfQyJ5UwkOYICfq-HPGR0f6CqbaDjmmu6nPgWsfz6XFb_0Vsg/viewform) | 현재 12문항 결과 CTA가 연결되는 설문 |
 
@@ -65,12 +65,12 @@ MEBODY의 결과는 의료 진단, 통증 판독, 치료, 교정 또는 재활 �
 - 결과 하단의 홈페이지 버튼은 같은 오리진 `/`로 돌아갑니다.
 - Supabase 문항 조회·응답 제출은 환경변수로 활성화할 수 있지만, 기본 간이 체크와 결과 표시는 DB 없이 동작합니다.
 
-### 53문항 모바일 앱
+### 32문항 모바일 앱
 
 ```text
 Vercel 모바일 앱
 → 랜딩·안내·동의
-→ 사전체크 4개 + 본문 49개, 총 53문항
+→ A~D 파트, 총 32문항
 → 클라이언트에서 4축 및 16개 코드 계산
 → Supabase에 결과 저장 시도
 → 무료 결과 페이지
@@ -78,13 +78,13 @@ Vercel 모바일 앱
 → 회원가입·로그인·마이페이지
 ```
 
-- 첫 문항은 번들된 53문항 스냅샷으로 즉시 표시하고 Supabase `questions`를 백그라운드에서 갱신합니다.
-- 53문항 완료 후 클라이언트에서 결과 코드를 즉시 계산합니다.
+- 첫 문항은 번들된 `mebody_v1_32` 스냅샷으로 즉시 표시하고 같은 문항 세트의 Supabase `questions`를 백그라운드에서 갱신합니다.
+- 현재 구성은 A 10개, B 6개, C 9개, D 7개로 총 32문항이며 별도 사전체크 문항은 없습니다.
+- 32문항 완료 후 클라이언트에서 4축 코드와 아이덴티티를 즉시 계산합니다.
 - Supabase 저장이 실패해도 현재 탭에서는 로컬 결과 화면을 계속 표시합니다.
 - 로그인 회원의 최신 코드 정본은 `questionnaire_responses`의 최근 `completed` 결과입니다.
 - `user_profiles.body_bti_code`는 빠른 표시용 캐시이며 제출 성공 시 갱신합니다.
 - 비회원 결과 ID는 현재 탭의 `sessionStorage`에만 유지됩니다.
-- 현재 동의 화면 일부에 `32문항` 표현이 남아 있으며 53문항 기준으로 정리가 필요합니다.
 
 ## 홈페이지·앱·서버 연결 아키텍처
 
@@ -101,7 +101,7 @@ flowchart LR
     end
 
     subgraph VERCEL[Vercel · mebody-jjh]
-        APP[53문항 모바일 앱]
+        APP[32문항 모바일 앱]
     end
 
     subgraph SUPABASE[Supabase]
@@ -131,7 +131,7 @@ flowchart LR
     SAMPLE -.->|URL 상수만 정의·UI 미사용| APP
 ```
 
-정상적인 53문항 진단, 문항 로딩, 결과 계산과 결과 표시는 모바일 앱과 Supabase가 담당합니다. Spring 서버가 중단되어도 고객 진단 흐름이 막히지 않는 구조가 기본 원칙입니다.
+정상적인 32문항 진단, 문항 로딩, 결과 계산과 결과 표시는 모바일 앱과 Supabase가 담당합니다. Spring 서버가 중단되어도 고객 진단 흐름이 막히지 않는 구조가 기본 원칙입니다.
 
 ### 연결 상태
 
@@ -155,9 +155,9 @@ flowchart LR
 | `VITE_APP_URL` | 12문항 간이 설문 | `APP_SIGNUP_URL` 생성에 사용되지만 현재 결과 UI에서는 해당 URL을 사용하지 않음 |
 | `VITE_HOMEPAGE_URL` | 12문항 간이 설문 | 결과의 홈페이지 버튼 목적지. 기본값은 `/` |
 | `VITE_SAMPLE_RESULT_FORM_URL` | 12문항 간이 설문 | 결과 페이지의 Google Forms CTA를 배포 환경에서 덮어씀 |
-| `VITE_API_BASE_URL` | 53문항 모바일 앱 | 마이페이지의 관리자 콘솔 상태 확인·열기. 없어도 진단과 결과는 동작함 |
-| `VITE_SUPABASE_URL` | 53문항 모바일 앱 | Supabase 프로젝트 URL |
-| `VITE_SUPABASE_ANON_KEY` | 53문항 모바일 앱 | 브라우저용 Supabase anon key |
+| `VITE_API_BASE_URL` | 32문항 모바일 앱 | 마이페이지의 관리자 콘솔 상태 확인·열기. 없어도 진단과 결과는 동작함 |
+| `VITE_SUPABASE_URL` | 32문항 모바일 앱 | Supabase 프로젝트 URL |
+| `VITE_SUPABASE_ANON_KEY` | 32문항 모바일 앱 | 브라우저용 Supabase anon key |
 
 ## 현재 구현 현황
 
@@ -168,7 +168,7 @@ flowchart LR
 - 문항별 메인·선택 이미지 최적화와 선로딩
 - 간이 결과 캐릭터와 축별 결과 표시
 - Google Forms URL과 설문 참여 CTA
-- 총 53문항 구조: 사전체크 4개 + 본문 49개
+- `mebody_v1_32` 기반 총 32문항 구조: A 10개 + B 6개 + C 9개 + D 7개
 - 4축 기반 16개 mebody 코드 계산
 - Supabase `questions` 기반 문항 로딩
 - Supabase `questionnaire_responses` 결과 저장
@@ -194,7 +194,6 @@ flowchart LR
 - 설정된 Railway 배포 주소가 현재 HTTP 404를 반환하므로 서비스·도메인 연결 상태를 확인해야 합니다.
 - 간이 결과 JSON 원문에 `2차 정밀 체크`가 남아 있고 실행 시 `정밀 체크`로 치환됩니다.
 - 간이 설문 README의 과거 GIF·Lottie 파일 규칙이 현재 WebP 질문 미디어 매핑과 다릅니다.
-- 모바일 앱 동의 화면 일부의 `32문항` 표현을 현재 53문항 기준으로 정리해야 합니다.
 - 비회원 결과를 로그인 계정에 귀속하는 서버 API가 없습니다.
 - `questionnaire_responses` RLS와 운영 환경의 권한 정책을 재점검해야 합니다.
 - 회원가입 약관·개인정보 동의 저장 시각과 버전 이력이 없습니다.
@@ -329,18 +328,18 @@ Supabase Storage bucket: `images`
 ## 주요 파일
 
 - `src/App.tsx`: 화면 전환, 결과 저장 상태, 로그인 후 분기
-- `src/api/questionnaire.ts`: 문항 조회, 53문항 검증, 응답 저장, 결과 조회
+- `src/api/questionnaire.ts`: `mebody_v1_32` 문항 조회·검증, 응답 저장, 결과 조회
 - `src/api/account.ts`: 프로필, 최신 결과, 멤버십 조회
 - `src/api/content.ts`: 콘텐츠, 이미지, Ver6 액션 데이터 조회
-- `src/utils/bodyCodeCalculator.ts`: 53문항 기반 4축 mebody 코드 계산
-- `src/data/ver3QuestionsSnapshot.ts`: 즉시 렌더링용 53문항 스냅샷
+- `src/utils/bodyCodeCalculator.ts`: 32문항 기반 4축 mebody 코드와 아이덴티티 계산
+- `src/data/v1QuestionsSnapshot.ts`: 즉시 렌더링용 32문항 스냅샷
 - `src/utils/characterImages.ts`: Supabase Storage 우선 캐릭터 이미지 해석
 
 ## 변경 시 검증 체크리스트
 
 - 서버를 끄고도 모바일 앱 첫 문항과 결과 흐름이 동작하는지 확인합니다.
-- Supabase active questions가 `total=53`, `precheck=4`, `scored=49`인지 확인합니다.
-- 53문항 완료 후 바로 분석 화면으로 이동하는지 확인합니다.
+- Supabase active questions가 `question_set=mebody_v1_32`, `total=32`, `precheck=0`, `scored=32`인지 확인합니다.
+- 32문항 완료 후 바로 분석 화면으로 이동하는지 확인합니다.
 - 저장 실패 상황에서도 결과 화면이 막히지 않는지 확인합니다.
 - 같은 회원이 다시 진단하면 랜딩, 마이페이지, 코드 플랜과 관리자 화면이 최신 완료 코드 기준으로 표시되는지 확인합니다.
 - 홈페이지 `/` → `/sample` → Google Forms 흐름이 유지되는지 확인합니다.

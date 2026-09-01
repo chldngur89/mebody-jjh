@@ -21,6 +21,7 @@ import {
 } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { characterNames, getAxisScoreBreakdown, type AnswerMap } from '../utils/bodyCodeCalculator';
+import { buildCareRoutine, formatRoutineDuration, type CareRoutine } from '../utils/careRoutine';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
@@ -98,6 +99,8 @@ export interface CodePlanDataState {
   axisRows: AxisRow[];
   guideBlocks: GuideBlock[];
   actionPlan: ImmediateActionPlan;
+  /** 4축 기반 15분 루틴. 데이터가 없으면 steps 가 비고 기존 exercises 폴백을 씁니다. */
+  careRoutine: CareRoutine;
   handleImageError: (url: string) => void;
 }
 
@@ -679,6 +682,13 @@ export function useCodePlanData(questionnaireId?: string): CodePlanDataState {
     [axisRows, immediateActionData, result?.answers],
   );
 
+  // 15분 루틴: 순서는 목→어깨→골반→하체 고정, 우선순위는 세트 수로 반영
+  const careRoutine = useMemo(() => {
+    if (axisRows.length === 0) return { steps: [], totalSec: 0, coversAllAxes: false };
+    const priorityOrder = getSortedAxisCandidates(axisRows).map((row) => row.axisLookupKey);
+    return buildCareRoutine(axisRows, immediateActionData.axisMappings, immediateActionData.contents, priorityOrder);
+  }, [axisRows, immediateActionData]);
+
   return {
     result,
     isLoading,
@@ -691,13 +701,25 @@ export function useCodePlanData(questionnaireId?: string): CodePlanDataState {
     axisRows,
     guideBlocks,
     actionPlan,
+    careRoutine,
     handleImageError,
   };
 }
 
+/** Journey 가 연결된 경우에만 전달합니다. 없으면 기존 로컬 수행률 동작을 그대로 유지합니다. */
+export interface CodePlanJourneyProgress {
+  progress: number;
+  dayNo: number;
+  totalDays: number;
+  completed: number;
+  total: number;
+  onOpen?: () => void;
+}
+
 interface CodePlanDetailContentProps {
-  data: Pick<CodePlanDataState, 'bodyCode' | 'content' | 'summaryLine' | 'characterName' | 'characterImage' | 'axisRows' | 'guideBlocks' | 'actionPlan' | 'handleImageError'>;
+  data: Pick<CodePlanDataState, 'bodyCode' | 'content' | 'summaryLine' | 'characterName' | 'characterImage' | 'axisRows' | 'guideBlocks' | 'actionPlan' | 'careRoutine' | 'handleImageError'>;
   hideGuideSection?: boolean;
+  journeyProgress?: CodePlanJourneyProgress;
 }
 
 function splitInstructionSteps(text: string): string[] {
@@ -760,6 +782,32 @@ function buildFifteenMinuteRoutine(exercises: BodyCodeContent['exercises'] | und
   }
 
   return routine;
+}
+
+/** 동작 이미지. URL 이 없거나 로딩 실패하면 아무것도 그리지 않는다(텍스트만 남음). */
+function ActionImage({ url, alt }: { url?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!url || failed) return null;
+
+  return (
+    <div
+      style={{
+        borderRadius: '14px',
+        overflow: 'hidden',
+        border: `1px solid ${AXIS_GREEN_THEME.border}`,
+        background: '#ffffff',
+        marginBottom: '10px',
+      }}
+    >
+      <img
+        src={url}
+        alt={alt}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        style={{ width: '100%', display: 'block' }}
+      />
+    </div>
+  );
 }
 
 function InstructionBlock({ title, meta, text }: { title: string; meta: string; text: string }) {
@@ -970,7 +1018,7 @@ function ActionDetailOverlay({
   );
 }
 
-export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePlanDetailContentProps) {
+export function CodePlanDetailContent({ data, hideGuideSection = false, journeyProgress }: CodePlanDetailContentProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
 
   const [guideOpen, setGuideOpen] = useState(false);
@@ -978,9 +1026,24 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
   const [actionDetailOpen, setActionDetailOpen] = useState(false);
   const [actionDetailMode, setActionDetailMode] = useState<ActionDetailMode>(1);
   const [missionProgress, setMissionProgress] = useState<MissionProgress>(0);
-  const routineItems = useMemo(() => buildFifteenMinuteRoutine(data.content?.exercises), [data.content?.exercises]);
-  const missionStatus =
-    missionProgress === 100 ? '액션 확인 완료' : missionProgress === 50 ? '1순위 확인 완료' : '오늘 시작 전';
+  // 4축 루틴이 조합되면 그것을 쓰고, 데이터가 없을 때만 기존 exercises 폴백을 쓴다
+  const useAxisRoutine = data.careRoutine.steps.length > 0;
+  const routineItems = useMemo(
+    () => (useAxisRoutine ? [] : buildFifteenMinuteRoutine(data.content?.exercises)),
+    [useAxisRoutine, data.content?.exercises],
+  );
+  const routineStepCount = useAxisRoutine ? data.careRoutine.steps.length : routineItems.length;
+  const routineTotalLabel = useAxisRoutine ? formatRoutineDuration(data.careRoutine.totalSec) : '15분';
+  const displayProgress = journeyProgress ? journeyProgress.progress : missionProgress;
+  const missionStatus = journeyProgress
+    ? journeyProgress.total === 0
+      ? '오늘 미션 없음'
+      : `${journeyProgress.completed} / ${journeyProgress.total} 완료`
+    : missionProgress === 100
+      ? '액션 확인 완료'
+      : missionProgress === 50
+        ? '1순위 확인 완료'
+        : '오늘 시작 전';
   const nextActionLabel =
     missionProgress === 100 ? '완료한 액션 전체 보기' : missionProgress === 50 ? '남은 2순위 액션 보기' : '1순위 액션 먼저 보기';
 
@@ -1083,12 +1146,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
       <section
         role="button"
         tabIndex={0}
-        aria-label={nextActionLabel}
-        onClick={openActionDetailByProgress}
+        aria-label={journeyProgress ? '오늘의 저니 미션 보기' : nextActionLabel}
+        onClick={journeyProgress?.onOpen ?? openActionDetailByProgress}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            openActionDetailByProgress();
+            (journeyProgress?.onOpen ?? openActionDetailByProgress)();
           }
         }}
         style={{
@@ -1099,16 +1162,18 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
           cursor: data.actionPlan.detailContents.length > 0 ? 'pointer' : 'default',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '8px' }}>MISSION</div>
+        <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '8px' }}>
+          {journeyProgress ? `MISSION · DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}` : 'MISSION'}
+        </div>
         <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#111827', marginBottom: '14px' }}>오늘의 미션 수행률</h2>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '40px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>{missionProgress}%</div>
-          <div style={{ fontSize: '13px', fontWeight: 800, color: missionProgress > 0 ? AXIS_GREEN_THEME.text : '#6b7280' }}>{missionStatus}</div>
+          <div style={{ fontSize: '40px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>{displayProgress}%</div>
+          <div style={{ fontSize: '13px', fontWeight: 800, color: displayProgress > 0 ? AXIS_GREEN_THEME.text : '#6b7280' }}>{missionStatus}</div>
         </div>
         <div style={{ height: '14px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden' }}>
           <div
             style={{
-              width: `${missionProgress}%`,
+              width: `${displayProgress}%`,
               height: '100%',
               background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
               transition: 'width 260ms ease',
@@ -1315,13 +1380,138 @@ export function CodePlanDetailContent({ data, hideGuideSection = false }: CodePl
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '7px' }}>ROUTINE</div>
             <div style={{ fontSize: '20px', fontWeight: 900, color: '#111827', marginBottom: '6px' }}>맞춤 15분 케어 루틴</div>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b7280' }}>총 15분 · {routineItems.length}단계 구성</div>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b7280' }}>
+              총 {routineTotalLabel} · {routineStepCount}단계
+              {useAxisRoutine ? ' · 목에서 하체 순서' : ' 구성'}
+            </div>
           </div>
           {routineOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
         </button>
         {routineOpen && (
           <div style={{ borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '18px 20px 22px', display: 'grid', gap: '18px' }}>
-            {routineItems.length > 0 ? (
+            {useAxisRoutine ? (
+              <>
+                <div
+                  style={{
+                    borderRadius: '16px',
+                    background: 'rgba(228,244,240,0.86)',
+                    border: `1px solid ${AXIS_GREEN_THEME.border}`,
+                    padding: '13px 15px',
+                    fontSize: '12px',
+                    lineHeight: 1.65,
+                    fontWeight: 700,
+                    color: '#014725',
+                    wordBreak: 'keep-all',
+                  }}
+                >
+                  목 → 어깨 → 골반 → 하체 순서로 진행합니다. 관리 우선순위가 높은 축은 세트 수를 늘려 시간을 더 씁니다.
+                </div>
+                {data.careRoutine.steps.map((step) => (
+                  <div
+                    key={`${step.kind}-${step.order}`}
+                    style={{
+                      borderRadius: '24px',
+                      background: step.kind === 'finish' ? 'rgba(248,252,248,0.95)' : 'rgba(244,251,249,0.95)',
+                      border: `1px solid ${step.priorityRank ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
+                      padding: '22px 20px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '7px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 900, color: AXIS_GREEN_THEME.text }}>
+                            STEP {step.order}
+                            {step.axisLabel ? ` · ${step.axisLabel}` : ''}
+                          </span>
+                          {step.priorityRank && (
+                            <span
+                              style={{
+                                borderRadius: '999px',
+                                background: 'rgba(1,71,37,0.10)',
+                                border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                                padding: '3px 8px',
+                                fontSize: '10px',
+                                lineHeight: 1,
+                                fontWeight: 900,
+                                color: '#014725',
+                              }}
+                            >
+                              {step.priorityRank}순위 집중
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '19px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                          {step.title}
+                        </div>
+                      </div>
+                      <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '13px', fontWeight: 900, color: '#014725' }}>
+                        {formatRoutineDuration(step.durationSec)}
+                      </div>
+                    </div>
+
+                    {step.kind === 'finish' ? (
+                      <div style={{ fontSize: '15px', lineHeight: 1.75, color: '#4b5563', wordBreak: 'keep-all' }}>{step.desc}</div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                          {step.targetMuscle && (
+                            <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '11px', fontWeight: 800, color: '#4b5563' }}>
+                              타겟: {step.targetMuscle}
+                            </span>
+                          )}
+                          {step.tool && (
+                            <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '11px', fontWeight: 800, color: '#4b5563' }}>
+                              도구: {step.tool}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                          <div>
+                            <div style={{ fontSize: '12px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '6px' }}>
+                              이완 {step.releaseSec}초
+                            </div>
+                            <ActionImage url={step.releaseImageUrl} alt={`${step.title} 이완 동작`} />
+                            <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '14px', lineHeight: 1.7, color: '#4b5563', wordBreak: 'keep-all' }}>
+                              {(step.releaseSteps ?? []).map((line, index) => (
+                                <li key={index}>{line}</li>
+                              ))}
+                            </ol>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '12px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '6px' }}>
+                              스트레칭 {step.stretchSec}초 × {step.sets}세트
+                            </div>
+                            <ActionImage url={step.stretchImageUrl} alt={`${step.title} 스트레칭 동작`} />
+                            <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '14px', lineHeight: 1.7, color: '#4b5563', wordBreak: 'keep-all' }}>
+                              {(step.stretchSteps ?? []).map((line, index) => (
+                                <li key={index}>{line}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        </div>
+                        {step.caution && (
+                          <div
+                            style={{
+                              marginTop: '12px',
+                              borderRadius: '14px',
+                              background: 'rgba(255,251,235,0.88)',
+                              border: '1px solid rgba(245,158,11,0.22)',
+                              padding: '11px 12px',
+                              fontSize: '12px',
+                              lineHeight: 1.6,
+                              color: '#92400e',
+                              wordBreak: 'keep-all',
+                            }}
+                          >
+                            주의: {step.caution}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </>
+            ) : routineItems.length > 0 ? (
               routineItems.map((exercise, index) => (
                 <div
                   key={`${exercise.title}-${index}`}

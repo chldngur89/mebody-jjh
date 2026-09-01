@@ -4,9 +4,13 @@ import { fetchQuestionnaireResult, fetchQuestions, type BodyCodeContent, type Qu
 import {
   fetchAppContent,
   fetchAppImages,
+  fetchStoreProducts,
+  type StoreProduct,
 } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
-import { SUPABASE_STORAGE_PUBLIC } from '../lib/supabase';
+import { fetchRewardBalance } from '../api/journey';
+import { previewRewardUse } from '../api/orders';
+import { SUPABASE_STORAGE_PUBLIC, supabase } from '../lib/supabase';
 import { ScrollIndicator } from './ScrollIndicator';
 import { characterNames, getAxisScoreBreakdown } from '../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
@@ -42,6 +46,8 @@ type StoreItem = {
   priceLabel: string;
   badge: string;
   ctaLabel: string;
+  imageUrl?: string;
+  priceKrw?: number | null;
 };
 
 type ResultSaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
@@ -56,6 +62,8 @@ interface ResultScreenProps {
   onGoAuth?: () => void;
   onContinue?: () => void;
   onPreviewContinue?: () => void;
+  /** 옵셔널: 전달하지 않으면 14일 저니 CTA 를 렌더하지 않습니다(기존 화면과 동일). */
+  onStartJourney?: () => void;
   resultSaveStatus?: ResultSaveStatus;
 }
 
@@ -125,28 +133,28 @@ const DEFAULT_STORE_ITEMS: StoreItem[] = [
   {
     name: 'MEBODY 리커버리 폼롤러',
     desc: '전신 근막 이완과 루틴 전후 워밍업에 쓰기 좋은 기본형 폼롤러입니다.',
-    priceLabel: '39,000원',
+    priceLabel: '가격 준비 중',
     badge: 'BEST',
     ctaLabel: '구매하기 준비 중',
   },
   {
     name: 'MEBODY 딥 마사지볼 세트',
     desc: '어깨, 둔근, 발바닥처럼 국소 자극이 필요한 부위에 쓰는 더블볼 세트입니다.',
-    priceLabel: '18,000원',
+    priceLabel: '가격 준비 중',
     badge: 'RECOVERY',
     ctaLabel: '구매하기 준비 중',
   },
   {
     name: 'MEBODY 스트레칭 밴드',
     desc: '하체 유연성과 골반 정렬 루틴에 맞춰 가볍게 당길 수 있는 저항 밴드입니다.',
-    priceLabel: '24,000원',
+    priceLabel: '가격 준비 중',
     badge: 'ROUTINE',
     ctaLabel: '구매하기 준비 중',
   },
   {
     name: 'MEBODY 밸런스 서포트 쿠션',
     desc: '앉는 자세에서 체중 분산을 도와 장시간 한 자세에 머무는 시간을 줄여줍니다.',
-    priceLabel: '32,000원',
+    priceLabel: '가격 준비 중',
     badge: 'POSTURE',
     ctaLabel: '구매하기 준비 중',
   },
@@ -275,15 +283,40 @@ function parseYoutubeVideos(raw: unknown): YoutubeVideo[] {
   return normalized.slice(0, 2);
 }
 
-function buildStoreItems(products: BodyCodeContent['health_products'] | undefined, bodyCode: string): StoreItem[] {
-  const productList = Array.isArray(products) ? products : [];
+function formatPrice(price: number | null): string {
+  if (price === null || !Number.isFinite(price)) return '가격 준비 중';
+  return `${new Intl.NumberFormat('ko-KR').format(price)}원`;
+}
+
+/**
+ * 스토어 상품.
+ * products 테이블(ACTIVE)이 있으면 그것을 쓰고 — 서버에 올리면 앱에 바로 반영된다 —
+ * 없을 때만 기존 body_code_content.health_products 로 폴백한다.
+ */
+function buildStoreItems(
+  serverProducts: StoreProduct[],
+  fallbackProducts: BodyCodeContent['health_products'] | undefined,
+  bodyCode: string,
+): StoreItem[] {
+  if (serverProducts.length > 0) {
+    return serverProducts.slice(0, 6).map((product, index) => ({
+      name: product.name || `상품 ${index + 1}`,
+      desc: product.description || '결과 코드에 맞춰 사용할 수 있는 회복/자세 보조 용품입니다.',
+      priceLabel: formatPrice(product.price),
+      badge: index === 0 ? `${bodyCode} PICK` : 'MEBODY STORE',
+      ctaLabel: '구매하기 준비 중',
+      imageUrl: product.imageUrl,
+      priceKrw: product.price,
+    }));
+  }
+
+  const productList = Array.isArray(fallbackProducts) ? fallbackProducts : [];
   if (productList.length === 0) return DEFAULT_STORE_ITEMS;
 
-  const fallbackPrices = ['39,000원', '18,000원', '24,000원', '32,000원'];
   return productList.slice(0, 4).map((item, index) => ({
     name: item?.name?.trim() || `${bodyCode} 추천 용품 ${index + 1}`,
     desc: item?.desc?.trim() || '결과 코드에 맞춰 사용할 수 있는 회복/자세 보조 용품입니다.',
-    priceLabel: fallbackPrices[index % fallbackPrices.length],
+    priceLabel: '가격 준비 중',
     badge: index === 0 ? `${bodyCode} PICK` : 'MEBODY STORE',
     ctaLabel: '구매하기 준비 중',
   }));
@@ -299,6 +332,7 @@ export function ResultScreen({
   onGoAuth,
   onContinue,
   onPreviewContinue,
+  onStartJourney,
   resultSaveStatus = 'idle',
 }: ResultScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
@@ -309,6 +343,8 @@ export function ResultScreen({
   const [appContent, setAppContent] = useState<Record<string, string | unknown>>({});
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
   const [scoringQuestions, setScoringQuestions] = useState<Question[]>([]);
+  const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
+  const [rewardBalance, setRewardBalance] = useState(0);
   const [axisModalOpen, setAxisModalOpen] = useState(false);
   const [bodyTypesModalOpen, setBodyTypesModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -320,6 +356,7 @@ export function ResultScreen({
     fetchAppImages().then(setAppImages).catch(() => setAppImages({}));
     fetchAppContent(['result_youtube_videos']).then(setAppContent).catch(() => setAppContent({}));
     fetchQuestions().then(setScoringQuestions).catch(() => setScoringQuestions([]));
+    fetchStoreProducts().then(setStoreProducts).catch(() => setStoreProducts([]));
   }, []);
 
   useEffect(() => {
@@ -352,6 +389,26 @@ export function ResultScreen({
       cancelled = true;
     };
   }, [questionnaireId, onResultLoad]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isLoggedIn) {
+      setRewardBalance(0);
+      return;
+    }
+    supabase.auth.getUser().then(({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+      fetchRewardBalance(userId)
+        .then((balance) => {
+          if (!cancelled) setRewardBalance(balance);
+        })
+        .catch(() => undefined);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn]);
 
   const handleImageError = useCallback((url: string) => {
     setFailedImageUrls((prev) => new Set(prev).add(url));
@@ -430,7 +487,10 @@ export function ResultScreen({
     return parsed.length ? parsed : DEFAULT_YOUTUBE_VIDEOS;
   }, [appContent]);
 
-  const storeItems = useMemo(() => buildStoreItems(content?.health_products, bodyCode), [content?.health_products, bodyCode]);
+  const storeItems = useMemo(
+    () => buildStoreItems(storeProducts, content?.health_products, bodyCode),
+    [storeProducts, content?.health_products, bodyCode],
+  );
 
   const handleContinue = () => {
     if (isLoggedIn) {
@@ -766,6 +826,31 @@ export function ResultScreen({
                 {ctaButtonLabel}
                 <ChevronRight size={18} />
               </button>
+              {onStartJourney && (
+                <button
+                  type="button"
+                  onClick={onStartJourney}
+                  style={{
+                    marginTop: '10px',
+                    display: 'inline-flex',
+                    width: '100%',
+                    height: '54px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    borderRadius: '16px',
+                    border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                    background: '#ffffff',
+                    color: '#014725',
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  14일 관리 시작하기
+                  <ChevronRight size={18} />
+                </button>
+              )}
               {!isLoggedIn && onPreviewContinue && (
                 <button
                   type="button"
@@ -894,8 +979,33 @@ export function ResultScreen({
               <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>MEBODY STORE</div>
               <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>건강/헬스 용품 스토어</h2>
               <p style={{ fontSize: '13px', lineHeight: 1.65, color: '#4b5563', marginBottom: '14px', wordBreak: 'keep-all' }}>
-                결과 코드에 맞춰 같이 쓰면 좋은 회복/자세 보조 용품을 가상 스토어 형태로 구성했습니다.
+                결과 코드에 맞춰 같이 쓰면 좋은 회복/자세 보조 용품입니다.
               </p>
+              {rewardBalance > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    borderRadius: '16px',
+                    background: 'rgba(228,244,240,0.86)',
+                    border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                    padding: '13px 15px',
+                    marginBottom: '14px',
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '11px', fontWeight: 900, color: '#014725', marginBottom: '4px' }}>내 적립금</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#4b5563', wordBreak: 'keep-all' }}>
+                      결제 시 적립금만큼 차감됩니다
+                    </div>
+                  </div>
+                  <div style={{ flexShrink: 0, fontSize: '20px', fontWeight: 900, color: '#014725' }}>
+                    {new Intl.NumberFormat('ko-KR').format(rewardBalance)}원
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'grid', gap: '12px' }}>
                 {storeItems.map((item) => (
                   <div
@@ -911,8 +1021,35 @@ export function ResultScreen({
                       <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725' }}>{item.badge}</span>
                       <span style={{ fontSize: '14px', fontWeight: 800, color: '#111827' }}>{item.priceLabel}</span>
                     </div>
+                    {item.imageUrl && (
+                      <div style={{ borderRadius: '14px', overflow: 'hidden', border: `1px solid ${AXIS_GREEN_THEME.border}`, background: '#f8fafc', marginBottom: '10px' }}>
+                        <img src={item.imageUrl} alt={item.name} loading="lazy" style={{ width: '100%', display: 'block' }} />
+                      </div>
+                    )}
                     <div style={{ fontSize: '16px', fontWeight: 800, color: '#111827', marginBottom: '6px', wordBreak: 'keep-all' }}>{item.name}</div>
                     <div style={{ fontSize: '13px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all', marginBottom: '12px' }}>{item.desc}</div>
+                    {(() => {
+                      const use = previewRewardUse(item.priceKrw ?? null, rewardBalance);
+                      if (use <= 0 || item.priceKrw == null) return null;
+                      return (
+                        <div
+                          style={{
+                            borderRadius: '12px',
+                            background: 'rgba(236,253,245,0.9)',
+                            border: `1px solid ${AXIS_GREEN_THEME.border}`,
+                            padding: '10px 12px',
+                            marginBottom: '12px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', fontSize: '12px', fontWeight: 800, color: '#4b5563' }}>
+                            <span>적립금 {new Intl.NumberFormat('ko-KR').format(use)}원 적용</span>
+                            <span style={{ color: '#014725' }}>
+                              {new Intl.NumberFormat('ko-KR').format(item.priceKrw - use)}원
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <button
                       type="button"
                       disabled
