@@ -4,19 +4,20 @@ import type { User } from '@supabase/supabase-js';
 import { useMediaQuery } from './utils/useMediaQuery';
 import { LandingScreen } from './components/LandingScreen';
 import { AnalyzingScreen } from './components/AnalyzingScreen';
+import { lazyImportWithReload } from './lib/chunkLoadRecovery';
 
-const ConsentScreen = lazy(() => import('./components/ConsentScreen').then(m => ({ default: m.ConsentScreen })));
-const DiagnosisIntroScreen = lazy(() => import('./components/DiagnosisIntroScreen').then(m => ({ default: m.DiagnosisIntroScreen })));
-const QuestionnaireScreen = lazy(() => import('./components/QuestionnaireScreen').then(m => ({ default: m.QuestionnaireScreen })));
-const AuthScreen = lazy(() => import('./components/AuthScreen').then(m => ({ default: m.AuthScreen })));
-const MembershipScreen = lazy(() => import('./components/MembershipScreen').then(m => ({ default: m.MembershipScreen })));
-const CheckoutScreen = lazy(() => import('./components/CheckoutScreen').then(m => ({ default: m.CheckoutScreen })));
-const CartScreen = lazy(() => import('./components/market/CartScreen').then(m => ({ default: m.CartScreen })));
-const JourneyIntroScreen = lazy(() => import('./components/journey/JourneyIntroScreen').then(m => ({ default: m.JourneyIntroScreen })));
-const JourneyTodayScreen = lazy(() => import('./components/journey/JourneyTodayScreen').then(m => ({ default: m.JourneyTodayScreen })));
-const JourneyMissionScreen = lazy(() => import('./components/journey/JourneyMissionScreen').then(m => ({ default: m.JourneyMissionScreen })));
-const JourneyReportScreen = lazy(() => import('./components/journey/JourneyReportScreen').then(m => ({ default: m.JourneyReportScreen })));
-const JourneyNextScreen = lazy(() => import('./components/journey/JourneyNextScreen').then(m => ({ default: m.JourneyNextScreen })));
+const ConsentScreen = lazy(() => lazyImportWithReload(() => import('./components/ConsentScreen').then(m => ({ default: m.ConsentScreen }))));
+const DiagnosisIntroScreen = lazy(() => lazyImportWithReload(() => import('./components/DiagnosisIntroScreen').then(m => ({ default: m.DiagnosisIntroScreen }))));
+const QuestionnaireScreen = lazy(() => lazyImportWithReload(() => import('./components/QuestionnaireScreen').then(m => ({ default: m.QuestionnaireScreen }))));
+const AuthScreen = lazy(() => lazyImportWithReload(() => import('./components/AuthScreen').then(m => ({ default: m.AuthScreen }))));
+const MembershipScreen = lazy(() => lazyImportWithReload(() => import('./components/MembershipScreen').then(m => ({ default: m.MembershipScreen }))));
+const CheckoutScreen = lazy(() => lazyImportWithReload(() => import('./components/CheckoutScreen').then(m => ({ default: m.CheckoutScreen }))));
+const CartScreen = lazy(() => lazyImportWithReload(() => import('./components/market/CartScreen').then(m => ({ default: m.CartScreen }))));
+const JourneyIntroScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyIntroScreen').then(m => ({ default: m.JourneyIntroScreen }))));
+const JourneyTodayScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyTodayScreen').then(m => ({ default: m.JourneyTodayScreen }))));
+const JourneyMissionScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyMissionScreen').then(m => ({ default: m.JourneyMissionScreen }))));
+const JourneyReportScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyReportScreen').then(m => ({ default: m.JourneyReportScreen }))));
+const JourneyNextScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyNextScreen').then(m => ({ default: m.JourneyNextScreen }))));
 import { preloadQuestions, saveDraft, submitQuestionnaire, createLocalQuestionnaireResult, readLocalQuestionnaireResult, type Question } from './api/questionnaire';
 import {
   attachQuestionnaireResultToUser,

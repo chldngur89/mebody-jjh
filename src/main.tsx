@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { recoverAuthSession } from "./lib/authSession";
+import { installChunkLoadRecovery } from "./lib/chunkLoadRecovery";
 
 function retireLegacyPwaCache() {
   if (typeof window === 'undefined') return;
@@ -25,6 +26,7 @@ function retireLegacyPwaCache() {
   void clearCaches().catch(() => undefined);
 }
 
+installChunkLoadRecovery();
 retireLegacyPwaCache();
 void recoverAuthSession().catch(() => undefined);
 
