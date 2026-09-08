@@ -36,7 +36,12 @@ import { RoutineTab } from './components/routine/RoutineTab';
 import { MarketScreen } from './components/market/MarketScreen';
 import type { UserMission } from './api/journey';
 import type { CodePlanJourneyProgress } from './components/codePlanShared';
-import { getSessionWithFallback, getStoredSupabaseSession } from './lib/authSession';
+import {
+  clearInvalidAuthSession,
+  getStoredSupabaseSession,
+  isInvalidRefreshTokenError,
+  recoverAuthSession,
+} from './lib/authSession';
 import { supabase } from './lib/supabase';
 import type { AnswerMap } from './utils/bodyCodeCalculator';
 import { readFlowEntry, type Screen, type FlowRoute } from './lib/flowNavigation';
@@ -402,10 +407,10 @@ export default function App() {
         const sharedResultId = params.get('result');
         const sessionResultId = sessionStorage.getItem(SESSION_LAST_RESULT_KEY) ?? undefined;
 
-        const { data } = await getSessionWithFallback();
+        const session = await recoverAuthSession();
         if (!mountedRef.current) return;
 
-        const user = data.session?.user ?? null;
+        const user = session?.user ?? null;
         setCurrentUser(user);
 
         if (!user) {
@@ -472,8 +477,14 @@ export default function App() {
           setCurrentScreen('consent');
         }
       } catch (error) {
-        console.warn('bootstrap failed:', error);
-        setCurrentScreen('landing');
+        if (isInvalidRefreshTokenError(error)) {
+          await clearInvalidAuthSession();
+          setCurrentUser(null);
+          resetAnonymousState();
+        } else {
+          console.warn('bootstrap failed:', error);
+          setCurrentScreen('landing');
+        }
       } finally {
         if (mountedRef.current) {
           setIsBootstrapping(false);

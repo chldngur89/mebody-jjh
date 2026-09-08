@@ -15,6 +15,30 @@ function getSupabaseStorageKey() {
   }
 }
 
+export function isInvalidRefreshTokenError(error: unknown): boolean {
+  const message =
+    error && typeof error === 'object' && 'message' in error
+      ? String((error as { message?: unknown }).message ?? '')
+      : String(error ?? '');
+  return /invalid refresh token|refresh token not found/i.test(message);
+}
+
+export async function clearInvalidAuthSession(): Promise<void> {
+  const storageKey = getSupabaseStorageKey();
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    // ignore — we still clear storage below
+  }
+  if (storageKey) {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // ignore storage failures in private mode
+    }
+  }
+}
+
 export function getStoredSupabaseSession(): Session | null {
   const storageKey = getSupabaseStorageKey();
   if (!storageKey) return null;
@@ -35,17 +59,70 @@ export function getStoredSupabaseSession(): Session | null {
 
 export async function getSessionWithFallback(): Promise<SessionResponse> {
   try {
-    return await Promise.race([
+    const result = await Promise.race([
       supabase.auth.getSession(),
       new Promise<never>((_, reject) => {
         window.setTimeout(() => reject(new Error('Supabase session lookup timed out')), SESSION_TIMEOUT_MS);
       }),
     ]);
+
+    if (result.error && isInvalidRefreshTokenError(result.error)) {
+      await clearInvalidAuthSession();
+      return { data: { session: null }, error: null };
+    }
+
+    return result;
   } catch (error) {
+    if (isInvalidRefreshTokenError(error)) {
+      await clearInvalidAuthSession();
+      return { data: { session: null }, error: null };
+    }
+
     console.debug('Supabase session lookup fallback:', error);
     return {
       data: { session: getStoredSupabaseSession() },
       error: null,
     };
+  }
+}
+
+/**
+ * After a hard refresh / partial cache clear, localStorage can keep a session
+ * whose refresh token no longer exists on the server. Supabase auto-refresh
+ * then throws AuthApiError. Validate once and clear local auth if needed.
+ */
+export async function recoverAuthSession(): Promise<Session | null> {
+  const { data, error } = await getSessionWithFallback();
+  if (error && isInvalidRefreshTokenError(error)) {
+    await clearInvalidAuthSession();
+    return null;
+  }
+
+  const session = data.session;
+  if (!session?.refresh_token) return session ?? null;
+
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError && isInvalidRefreshTokenError(userError)) {
+      await clearInvalidAuthSession();
+      return null;
+    }
+    if (userError || !userData.user) {
+      // Access token may already be unusable; treat as logged out without throwing.
+      if (userError) {
+        console.debug('Supabase getUser recovery:', userError.message);
+        await clearInvalidAuthSession();
+        return null;
+      }
+      return null;
+    }
+    return session;
+  } catch (error) {
+    if (isInvalidRefreshTokenError(error)) {
+      await clearInvalidAuthSession();
+      return null;
+    }
+    console.debug('Supabase auth recovery fallback:', error);
+    return session;
   }
 }

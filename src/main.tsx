@@ -2,6 +2,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { recoverAuthSession } from "./lib/authSession";
 
 function retireLegacyPwaCache() {
   if (typeof window === 'undefined') return;
@@ -25,5 +26,6 @@ function retireLegacyPwaCache() {
 }
 
 retireLegacyPwaCache();
+void recoverAuthSession().catch(() => undefined);
 
 createRoot(document.getElementById("root")!).render(<App />);
