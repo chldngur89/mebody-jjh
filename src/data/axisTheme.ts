@@ -1,20 +1,26 @@
-/** Brand-aligned green axis theme. ROLLBACK: restore previous teal mint values. */
+/**
+ * 축 표시용 테마.
+ * 값은 Pilot V1 시안 토큰(src/theme/brand.ts)을 따릅니다.
+ * ROLLBACK: 이전 민트 계열로 되돌리려면 git checkout main -- src/data/axisTheme.ts
+ */
+import { BRAND } from '../theme/brand'
+
 export const AXIS_GREEN_THEME = {
-  deep: '#014725',
-  primary: '#016B38',
+  deep: BRAND.green,
+  primary: BRAND.greenMid,
   mid: '#2D8A5C',
   soft: '#A8D5C0',
-  surface: '#E8F5EE',
-  border: 'rgba(1, 71, 37, 0.22)',
-  borderStrong: 'rgba(1, 71, 37, 0.38)',
-  track: '#D4EBE0',
-  text: '#014725',
-  textSoft: '#2D8A5C',
+  surface: BRAND.mint,
+  border: 'rgba(0, 70, 40, 0.14)',
+  borderStrong: 'rgba(0, 70, 40, 0.30)',
+  track: '#E5EBE5',
+  text: BRAND.green,
+  textSoft: BRAND.muted,
   introSurfaces: [
-    'linear-gradient(135deg, rgba(255, 255, 243, 0.98) 0%, rgba(232, 245, 238, 0.98) 100%)',
-    'linear-gradient(135deg, rgba(255, 255, 243, 0.98) 0%, rgba(232, 245, 238, 0.98) 100%)',
-    'linear-gradient(135deg, rgba(248, 252, 248, 0.98) 0%, rgba(232, 245, 238, 0.98) 100%)',
-    'linear-gradient(135deg, rgba(240, 248, 243, 0.98) 0%, rgba(232, 245, 238, 0.98) 100%)',
+    `linear-gradient(135deg, ${BRAND.card} 0%, ${BRAND.mint} 100%)`,
+    `linear-gradient(135deg, ${BRAND.card} 0%, ${BRAND.mint} 100%)`,
+    `linear-gradient(135deg, #F3F6F1 0%, ${BRAND.mint} 100%)`,
+    `linear-gradient(135deg, #EEF2ED 0%, ${BRAND.mint} 100%)`,
   ],
-  cardSurfaces: ['#FFFFF3', '#F5FAF6', '#E8F5EE', '#D4EBE0'],
-} as const;
+  cardSurfaces: [BRAND.card, '#F3F6F1', BRAND.mint, '#E5EBE5'],
+} as const

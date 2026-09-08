@@ -18,6 +18,7 @@ import {
   fetchJourneyComparison,
   fetchReport,
   startJourney,
+  NEEDS_SUBSCRIPTION,
   type JourneyComparison,
   type UserJourney,
 } from '../../api/journey'
@@ -35,9 +36,11 @@ interface JourneyNextScreenProps {
   onBack?: () => void
   onRemeasure?: () => void
   onStartedNext?: () => void
+  /** 무료 체험(첫 저니)을 이미 써서 구독이 필요할 때 */
+  onRequireSubscription?: () => void
 }
 
-export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext }: JourneyNextScreenProps) {
+export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, onRequireSubscription }: JourneyNextScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)')
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -105,13 +108,18 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext }: 
             }))
           : journey.axis_priority
 
-      await startJourney({
+      const next = await startJourney({
         userId: user.id,
         questionnaireResponseId: journey.questionnaire_response_id ?? undefined,
         bodyCode: journey.body_code ?? undefined,
         axisPriority: rotated,
         templateCode: journey.template_code,
       })
+      if (next === NEEDS_SUBSCRIPTION) {
+        // 무료 체험(첫 저니)을 이미 썼다. 여기가 주 결제 지점이다.
+        onRequireSubscription?.()
+        return
+      }
       onStartedNext?.()
     } catch (error) {
       console.warn('handleStartNext failed:', error)

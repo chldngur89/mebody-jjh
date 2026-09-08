@@ -7,9 +7,13 @@ import { QuestionCard } from './questionnaire/QuestionCard'
 import { QuestionMediaLayout } from './questionnaire/QuestionMediaLayout'
 import { QuestionNavBar } from './questionnaire/QuestionNavBar'
 import type { QuestionPhase } from './questionnaire/types'
+import type { QuestionnaireProgress } from '../lib/questionnaireProgress'
 
 interface QuestionnaireScreenProps {
+  progress: QuestionnaireProgress
+  onProgressChange: (progress: QuestionnaireProgress) => void
   onBack?: () => void
+  onPreviousQuestion: (index: number) => void
   onComplete: (answers: AnswerMap, questions: Question[], questionnaireId?: string) => void
   isLoggedIn?: boolean
   userEmail?: string
@@ -40,17 +44,21 @@ function getGuideText(question: Question) {
 }
 
 export function QuestionnaireScreen({
+  progress: savedProgress,
+  onProgressChange,
   onBack,
+  onPreviousQuestion,
   onComplete,
   isLoggedIn = false,
   onOpenMyPage,
   onRequireAuth,
 }: QuestionnaireScreenProps) {
   const [questions, setQuestions] = useState<Question[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [phase, setPhase] = useState<QuestionPhase>('select')
-  const [answers, setAnswers] = useState<AnswerMap>({})
-  const [questionnaireId, setQuestionnaireId] = useState<string | undefined>()
+  const { index: currentIndex, answers, draftId: questionnaireId } = savedProgress
+  const progressRef = useRef(savedProgress)
+  progressRef.current = savedProgress
+  const updateProgress = (patch: Partial<QuestionnaireProgress>) => onProgressChange({ ...progressRef.current, ...patch })
+  const phase: QuestionPhase = questions[currentIndex] && answers[questions[currentIndex].question_code] ? 'guide' : 'select'
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -59,6 +67,8 @@ export function QuestionnaireScreen({
     ? ((currentIndex + (phase === 'guide' ? 0.5 : 0)) / totalQuestions) * 100
     : 0
 
+  const completionStarted = useRef(false)
+  const alive = useRef(true)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
   const loadQuestions = useCallback(async () => {
@@ -80,20 +90,21 @@ export function QuestionnaireScreen({
   }, [])
 
   useEffect(() => {
+    alive.current = true
     loadQuestions()
     return () => {
+      alive.current = false
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
   }, [loadQuestions])
 
-  useEffect(() => {
-    setPhase('select')
-  }, [currentIndex])
-
   const currentQuestion = questions[currentIndex]
   const nextQuestion = questions[currentIndex + 1]
   const nextNextQuestion = questions[currentIndex + 2]
-  const selectedAnswer = currentQuestion ? answers[currentQuestion.question_code] : undefined
+  // AnswerMap 은 레거시 다중선택 때문에 string[] 도 허용한다.
+  // 이 화면은 단일 선택이므로 문자열만 카드에 넘긴다.
+  const rawAnswer = currentQuestion ? answers[currentQuestion.question_code] : undefined
+  const selectedAnswer = Array.isArray(rawAnswer) ? rawAnswer[0] : rawAnswer
 
   const saveDraftDebounced = useCallback(
     async (newAnswers: AnswerMap) => {
@@ -101,7 +112,7 @@ export function QuestionnaireScreen({
       saveTimeoutRef.current = setTimeout(async () => {
         try {
           const result = await saveDraft(newAnswers, questionnaireId)
-          if (!questionnaireId) setQuestionnaireId(result.id)
+          if (alive.current && !questionnaireId) updateProgress({ draftId: result.id })
         } catch (error) {
           console.error('Failed to save draft:', error)
         }
@@ -112,52 +123,52 @@ export function QuestionnaireScreen({
 
   const finish = useCallback(
     (nextAnswers: AnswerMap) => {
+      if (completionStarted.current) return
+      completionStarted.current = true
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       onComplete(nextAnswers, questions, questionnaireId)
     },
     [onComplete, questionnaireId, questions],
   )
 
-  /** TEMP: 진행바↔미디어 사이 — 미응답 문항을 ②로 채우고 결과로 이동 */
-  const handleTempSkipToResult = useCallback(() => {
-    if (!questions.length) return
-    const filled: AnswerMap = { ...answers }
-    for (const q of questions) {
-      if (!filled[q.question_code]) filled[q.question_code] = '②'
-    }
-    setAnswers(filled)
-    finish(filled)
-  }, [answers, finish, questions])
-
   const handleAnswer = useCallback(
     (value: string) => {
       if (!currentQuestion) return
       const nextAnswers = { ...answers, [currentQuestion.question_code]: value }
-      setAnswers(nextAnswers)
+      updateProgress({ answers: nextAnswers })
       saveDraftDebounced(nextAnswers)
 
-      if (phase === 'guide') return
-      setPhase('guide')
     },
     [answers, currentQuestion, phase, saveDraftDebounced],
   )
 
   const handleGuidePrev = useCallback(() => {
+    // 가이드 단계에서 이전이면 선택만 지우고 같은 문항의 미선택 select 로 돌아갑니다.
+    if (phase === 'guide' && currentQuestion) {
+      const nextAnswers = { ...answers }
+      delete nextAnswers[currentQuestion.question_code]
+      updateProgress({ answers: nextAnswers })
+      return
+    }
+
     if (currentIndex <= 0) {
       onBack?.()
       return
     }
+
+    // 이전 문항으로 갈 때 그 문항 답을 지워서 선택된 채로 복원하지 않습니다.
     const prevIndex = currentIndex - 1
-    const prev = questions[prevIndex]
-    setCurrentIndex(prevIndex)
-    setPhase(prev && answers[prev.question_code] ? 'guide' : 'select')
-  }, [answers, currentIndex, onBack, questions])
+    const prevCode = questions[prevIndex]?.question_code
+    const nextAnswers = { ...answers }
+    if (prevCode) delete nextAnswers[prevCode]
+    updateProgress({ answers: nextAnswers, index: prevIndex })
+    onPreviousQuestion(prevIndex)
+  }, [answers, currentIndex, currentQuestion, onBack, onPreviousQuestion, phase, questions])
 
   const handleGuideNext = useCallback(() => {
-    if (!currentQuestion) return
+    if (!currentQuestion || !answers[currentQuestion.question_code]) return
     if (currentIndex < totalQuestions - 1) {
-      setPhase('select')
-      setCurrentIndex((index) => index + 1)
+      updateProgress({ index: currentIndex + 1 })
       return
     }
     finish(answers)
@@ -250,21 +261,12 @@ export function QuestionnaireScreen({
           </div>
         </div>
 
-        <div className="px-6 pb-2">
-          <button
-            type="button"
-            onClick={handleTempSkipToResult}
-            className="w-full rounded-2xl border border-dashed border-orange-300 bg-orange-50 px-4 py-2.5 text-xs font-bold text-orange-700 transition-all hover:bg-orange-100 active:scale-[0.98]"
-          >
-            [임시] 32문항 채우고 결과 보기
-          </button>
-        </div>
-
         <QuestionMediaLayout
           stepKey={currentQuestion.question_code}
           phase={phase}
           guideText={guideText}
           question={currentQuestion}
+          selectedAnswer={selectedAnswer}
           nextQuestion={nextQuestion}
           nextNextQuestion={nextNextQuestion}
         >
@@ -277,14 +279,13 @@ export function QuestionnaireScreen({
           />
         </QuestionMediaLayout>
 
-        {isGuidePhase ? (
-          <QuestionNavBar
+        <QuestionNavBar
             onPrev={handleGuidePrev}
             onNext={handleGuideNext}
             isLastQuestion={currentIndex === totalQuestions - 1}
             canGoPrev={currentIndex > 0 || Boolean(onBack)}
+            canGoNext={Boolean(selectedAnswer)}
           />
-        ) : null}
       </div>
     </div>
   )

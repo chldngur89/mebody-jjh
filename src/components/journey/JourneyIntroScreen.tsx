@@ -21,6 +21,7 @@ import {
   fetchLastCompletedJourney,
   isPersistedResultId,
   startJourney,
+  NEEDS_SUBSCRIPTION,
   type JourneyComparison,
   type UserJourney,
 } from '../../api/journey'
@@ -39,11 +40,17 @@ interface JourneyIntroScreenProps {
   onRequireAuth?: () => void
   onStarted?: () => void
   onStartDiagnosis?: () => void
+  /** 무료 체험(첫 저니)을 이미 써서 구독이 필요할 때 */
+  onRequireSubscription?: () => void
+  /** 이번 저니가 무료 체험인지 (지금까지 시작한 저니가 0건) */
+  isFirstJourneyFree?: boolean
 }
 
 export function JourneyIntroScreen({
   user,
   questionnaireId,
+  onRequireSubscription,
+  isFirstJourneyFree = false,
   onBack,
   onRequireAuth,
   onStarted,
@@ -130,6 +137,10 @@ export function JourneyIntroScreen({
         bodyCode: data.bodyCode,
         axisPriority,
       })
+      if (journey === NEEDS_SUBSCRIPTION) {
+        onRequireSubscription?.()
+        return
+      }
       if (!journey) {
         setError('아직 저니를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.')
         return
@@ -187,6 +198,23 @@ export function JourneyIntroScreen({
           </button>
         )}
         <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827' }}>14일 스타터 저니</h1>
+        {isFirstJourneyFree && (
+          <span
+            style={{
+              marginLeft: 'auto',
+              flexShrink: 0,
+              borderRadius: '999px',
+              background: 'rgba(1,71,37,0.10)',
+              border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+              padding: '5px 11px',
+              fontSize: '11px',
+              fontWeight: 900,
+              color: '#014725',
+            }}
+          >
+            첫 14일 무료
+          </span>
+        )}
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>

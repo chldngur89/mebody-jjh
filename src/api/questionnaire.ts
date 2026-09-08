@@ -48,7 +48,7 @@ const OPTIONAL_RESPONSE_COLUMNS = [
 
 const MIN_ACTIVE_QUESTION_COUNT = 32
 const REQUIRED_QUESTION_CODES = ['A1', 'B1', 'C1', 'D7'] as const
-const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:mebody_v1_32'
+const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:mebody_v1_32:v3'
 const LOCAL_RESULT_PREFIX = 'local-result-'
 const LOCAL_RESULT_STORAGE_PREFIX = 'mebody:local-result:'
 const QUESTION_QUERY_TIMEOUT_MS = 2500
@@ -83,17 +83,18 @@ function stripUnsupportedColumns(payload: Record<string, unknown>, error: unknow
   return removed ? nextPayload : null
 }
 
-async function mutateQuestionnaireResponse(questionnaireId: string | undefined, payload: Record<string, unknown>) {
+async function mutateQuestionnaireResponse(questionnaireId: string | undefined, payload: Record<string, unknown>, signal?: AbortSignal) {
   let nextPayload = { ...payload }
 
   while (true) {
-    const { data, error } = await (
+    signal?.throwIfAborted()
+    const request = (
       questionnaireId
         ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
         : supabase.from('questionnaire_responses').insert(nextPayload)
     )
       .select()
-      .single()
+    const { data, error } = await (signal ? request.abortSignal(signal) : request).single()
 
     if (!error) return data
 
@@ -189,6 +190,7 @@ async function fetchBodyCodeContentWithFallback(bodyCode: string): Promise<BodyC
 export function createLocalQuestionnaireResult(
   answers: AnswerMap,
   scoringQuestions?: ScoringQuestion[],
+  signal?: AbortSignal,
 ): QuestionnaireResponse {
   const bodyCodeResult = calculateBodyCode(answers, scoringQuestions)
   const now = new Date().toISOString()
@@ -301,6 +303,9 @@ function mapQuestionRow(q: Record<string, unknown>): Question {
     question_set: String(q.question_set ?? V1_QUESTION_SET),
     media_type: q.media_type == null || q.media_type === '' ? null : String(q.media_type),
     media_url: q.media_url == null || q.media_url === '' ? null : String(q.media_url),
+    media_url_option_1: q.media_url_option_1 == null || q.media_url_option_1 === '' ? null : String(q.media_url_option_1),
+    media_url_option_2: q.media_url_option_2 == null || q.media_url_option_2 === '' ? null : String(q.media_url_option_2),
+    media_url_option_3: q.media_url_option_3 == null || q.media_url_option_3 === '' ? null : String(q.media_url_option_3),
   }
 }
 
@@ -356,7 +361,7 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
       // question_choice_scores is scoring-only and does not replace questions.
       supabase
         .from('questions')
-        .select('id, question_code, question_number, sort_order, axis, question_text, option_1, option_2, option_3, weight_a, weight_b, is_precheck, is_scored, answer_type, max_select, title, part, instruction, guide_text, axis_anchor, axis_priority, question_set, media_type, media_url')
+        .select('id, question_code, question_number, sort_order, axis, question_text, option_1, option_2, option_3, weight_a, weight_b, is_precheck, is_scored, answer_type, max_select, title, part, instruction, guide_text, axis_anchor, axis_priority, question_set, media_type, media_url, media_url_option_1, media_url_option_2, media_url_option_3')
         .eq('is_active', true)
         .eq('question_set', V1_QUESTION_SET)
         .order('sort_order', { ascending: true }),
@@ -445,7 +450,7 @@ export function preloadQuestions(): void {
   })
 }
 
-export async function saveDraft(answers: AnswerMap, questionnaireId?: string) {
+export async function saveDraft(answers: AnswerMap, questionnaireId?: string, signal?: AbortSignal) {
   const now = new Date().toISOString()
   const user = await getCurrentAuthUser()
   const payload = {
@@ -455,13 +460,14 @@ export async function saveDraft(answers: AnswerMap, questionnaireId?: string) {
     user_id: user?.id ?? null,
     question_version: V1_QUESTION_SET,
   }
-  return mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
+  return mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>, signal)
 }
 
 export async function submitQuestionnaire(
   answers: AnswerMap,
   questionnaireId?: string,
   scoringQuestions?: ScoringQuestion[],
+  signal?: AbortSignal,
 ) {
   const result = calculateBodyCode(answers, scoringQuestions)
   const code = result.code
@@ -479,7 +485,7 @@ export async function submitQuestionnaire(
     primary_identity: result.primaryIdentityLabel ?? null,
     scoring_meta: result.scoringMeta ?? {},
   }
-  const data = await mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>)
+  const data = await mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>, signal)
   await syncLatestBodyCodeToProfile(user, code)
 
   return { ...data, body_code_meta: result }
@@ -497,7 +503,9 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
   // RLS 강화 후에는 남의 응답을 직접 조회할 수 없습니다.
   // 비회원은 자기 응답의 UUID 를 알고 있으므로 RPC 로 한 행만 받아옵니다.
   // RPC 가 아직 없는 환경에서는 기존 select 로 폴백합니다.
-  let responseData: Record<string, unknown> | null = null
+  // Record<string, unknown> 으로 두면 spread 결과에서 calculated_code 같은
+  // 알려진 필드가 타입에서 사라져, 호출부가 존재 여부를 확인할 수 없다.
+  let responseData: QuestionnaireResponse | null = null
 
   try {
     const rpcResult = await withTimeout(
@@ -506,7 +514,7 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
       'fetchQuestionnaireResult rpc',
     )
     if (!rpcResult.error) {
-      const rows = rpcResult.data as Record<string, unknown>[] | Record<string, unknown> | null
+      const rows = rpcResult.data as QuestionnaireResponse[] | QuestionnaireResponse | null
       responseData = Array.isArray(rows) ? (rows[0] ?? null) : (rows ?? null)
     }
   } catch (rpcError) {
@@ -528,14 +536,14 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
       console.error('Error fetching questionnaire result:', responseError)
       throw responseError
     }
-    responseData = fallbackData as Record<string, unknown>
+    responseData = fallbackData as QuestionnaireResponse
   }
 
   const { data: contentData, error: contentError } = await withTimeout(
     supabase
       .from('body_code_content')
       .select('*')
-      .eq('body_code', String(responseData.calculated_code))
+      .eq('body_code', String(responseData.calculated_code ?? ''))
       .single(),
     5000,
     'fetchQuestionnaireResult content',
@@ -545,7 +553,7 @@ export async function fetchQuestionnaireResult(questionnaireId: string) {
     console.error('Error fetching body code content:', contentError)
     return {
       ...responseData,
-      body_code_content: getFallbackBodyCodeContent(String(responseData.calculated_code)),
+      body_code_content: getFallbackBodyCodeContent(String(responseData.calculated_code ?? '')),
     }
   }
 

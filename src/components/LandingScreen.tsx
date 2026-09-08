@@ -1,10 +1,13 @@
 import { ChevronRight, Clock3, LayoutDashboard, Sparkles, UserRound } from 'lucide-react';
+import { BRAND_PAGE_BG } from '../theme/brand';
 import { useRef } from 'react';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
 
 interface LandingScreenProps {
   onStart: () => void;
+  /** 이미 코드가 있으면 문항을 건너뛰고 결과로 갑니다. 버튼 문구도 바뀝니다. */
+  hasExistingCode?: boolean;
   onQuickResult?: () => void;
   hasQuickResult?: boolean;
   isLoggedIn?: boolean;
@@ -17,6 +20,7 @@ interface LandingScreenProps {
 
 export function LandingScreen({
   onStart,
+  hasExistingCode = false,
   onQuickResult,
   hasQuickResult = false,
   isLoggedIn = false,
@@ -28,7 +32,10 @@ export function LandingScreen({
 }: LandingScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const showQuickResult = isLoggedIn && hasQuickResult && !!onQuickResult;
+  // 로그인 상태에서 "분석 시작하기" 와 "지난 결과 보기" 가 사실상 같은 곳으로 가서
+  // 버튼이 두 개 보이면 혼란스럽다. 코드가 있으면 주 버튼 하나로 합친다.
+  const unifiedForMember = isLoggedIn && hasExistingCode;
+  const showQuickResult = !unifiedForMember && isLoggedIn && hasQuickResult && !!onQuickResult;
   const memberName = (userDisplayName?.trim() || userEmail?.split('@')[0]?.trim() || '회원').replace(/\s*회원님$/, '');
   const memberGreeting = `${memberName} 회원님`;
   const normalizedBodyCode = latestBodyCode?.trim().toUpperCase();
@@ -54,7 +61,7 @@ export function LandingScreen({
         height: isDesktopMockup ? '100%' : undefined,
         minHeight: landingHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
-        background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
+        background: BRAND_PAGE_BG,
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
       }}
     >
@@ -67,7 +74,7 @@ export function LandingScreen({
             width: '300px',
             height: '300px',
             borderRadius: '999px',
-            background: 'rgba(52, 211, 153, 0.18)',
+            background: 'rgba(0, 70, 40, 0.035)',
             filter: 'blur(58px)',
           }}
         />
@@ -79,7 +86,7 @@ export function LandingScreen({
             width: '320px',
             height: '320px',
             borderRadius: '999px',
-            background: 'rgba(45, 212, 191, 0.16)',
+            background: 'rgba(0, 70, 40, 0.03)',
             filter: 'blur(72px)',
           }}
         />
@@ -95,7 +102,6 @@ export function LandingScreen({
           minHeight: landingHeight,
           flexDirection: 'column',
           padding: '22px 24px 20px',
-          fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
           overflowY: 'auto',
         }}
       >
@@ -243,7 +249,13 @@ export function LandingScreen({
                   cursor: 'pointer',
                 }}
               >
-                <span>내 체형 코드 분석 시작하기</span>
+                <span>
+                  {unifiedForMember
+                    ? '내 코드 · 오늘의 관리 이어서 하기'
+                    : hasExistingCode
+                      ? '내 체형 코드 결과 보기'
+                      : '내 체형 코드 분석 시작하기'}
+                </span>
                 <ChevronRight size={20} />
               </button>
 
@@ -329,7 +341,7 @@ export function LandingScreen({
                     {accountActionLabel}
                   </button>
                 )}
-                {!isLoggedIn && onPreviewSignedIn && (
+                {import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn && (
                   <button
                     type="button"
                     onClick={onPreviewSignedIn}

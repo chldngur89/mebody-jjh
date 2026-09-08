@@ -1,3 +1,4 @@
+import { readTimerProgress, saveTimerProgress } from '../../lib/timerProgress'
 /**
  * Journey Mission — 미션 실행 화면
  *
@@ -43,7 +44,10 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
 
   const [content, setContent] = useState<ImmediateActionContent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [stepIndex, setStepIndex] = useState(0)
+  const savedStep = useRef((() => {
+    try { const step = Number(sessionStorage.getItem(`mebody:mission-step:${mission?.id}`)); return Number.isInteger(step) && step >= 0 && step < 30 ? step : 0 } catch { return 0 }
+  })()).current
+  const [stepIndex, setStepIndex] = useState(savedStep)
   const [remaining, setRemaining] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
@@ -52,6 +56,10 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
   const [reward, setReward] = useState<RewardClaim | null>(null)
   const [rewardDisclosure, setRewardDisclosure] = useState<string>('')
   const [isSaving, setIsSaving] = useState(false)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const savingRef = useRef(false)
+  const aliveRef = useRef(true)
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false } }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -77,6 +85,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
     [content, mission],
   )
 
+  useEffect(() => { if (steps.length && stepIndex >= steps.length) setStepIndex(0) }, [steps.length, stepIndex])
   const currentStep = steps[stepIndex] ?? null
   const stepImageUrl =
     currentStep?.kind === 'release' ? content?.release_image_url : content?.stretch_image_url
@@ -91,9 +100,19 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
       : 0
 
   useEffect(() => {
-    if (currentStep) setRemaining(currentStep.seconds)
+    if (currentStep) {
+      const key = `mebody:mission-timer:${mission?.id}:${currentStep.key}`
+      setRemaining(readTimerProgress(key, currentStep.seconds).remaining)
+      try { sessionStorage.setItem(`mebody:mission-step:${mission?.id}`, String(stepIndex)) } catch { /* memory only */ }
+    }
     setImageFailed(false)
   }, [currentStep?.key])
+
+  useEffect(() => {
+    if (currentStep && (hasStarted || remaining > 0)) {
+      saveTimerProgress(`mebody:mission-timer:${mission?.id}:${currentStep.key}`, { remaining, started: hasStarted })
+    }
+  }, [remaining, hasStarted, mission?.id])
 
   const finishMission = useCallback(async () => {
     setIsRunning(false)
@@ -147,12 +166,18 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
       onDone?.()
       return
     }
+    if (savingRef.current) return
+    savingRef.current = true
     setIsSaving(true)
+    setFeedbackError(null)
     try {
       await saveMissionFeedback({ missionId: mission.id, userId: user.id, feeling, difficulty })
+      if (aliveRef.current) onDone?.()
+    } catch {
+      setFeedbackError('저장하지 못했습니다. 선택한 답변은 유지됩니다. 다시 시도해 주세요.')
     } finally {
+      savingRef.current = false
       setIsSaving(false)
-      onDone?.()
     }
   }
 
@@ -160,7 +185,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
     return (
       <JourneyScreenShell isDesktopMockup={isDesktopMockup}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontSize: '14px' }}>
-          연결된 미션이 없습니다.
+          <div>연결된 미션이 없습니다.<button type="button" onClick={onBack} style={{ display: 'block', marginTop: 16 }}>오늘의 미션으로 돌아가기</button></div>
         </div>
       </JourneyScreenShell>
     )
@@ -417,6 +442,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
         <MissionFeedbackSheet
           missionTitle={content?.display_name ?? mission.content_key}
           isSaving={isSaving}
+          errorMessage={feedbackError}
           reward={reward}
           rewardDisclosure={rewardDisclosure}
           onSubmit={(feeling, difficulty) => void handleSubmitFeedback(feeling, difficulty)}

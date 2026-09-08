@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">mebody</string>
+    <string name="title_activity_main">mebody</string>
+    <string name="package_name">net.mebody.app</string>
+    <string name="custom_url_scheme">net.mebody.app</string>
+</resources>

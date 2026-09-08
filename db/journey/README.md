@@ -81,11 +81,99 @@ UPDATE public.immediate_action_content
 
 ## 상품 올리기
 
-결과 페이지 스토어는 `products` 테이블의 `status='ACTIVE'` 행을 읽습니다.
+마켓 탭과 홈 추천은 `products` 테이블의 `status='ACTIVE'` 행을 읽습니다.
+
+**정상 경로는 SQL 이 아니라 서버 관리자 콘솔입니다** — `/admin` → 상품 관리.
+사진을 고르지 않으면 등록 버튼이 열리지 않고, 서버가 사진 없는 요청을 400 으로 거절하며,
+`039` 의 `products_image_required` 제약이 DB 에서도 막습니다(세 겹).
+콘솔이 사진을 Storage `images/products/` 에 먼저 올리고, 그 공개 URL 을 `image_url` 에 넣습니다.
+
+SQL 로 직접 넣어야 한다면 `image_url` 을 반드시 채워야 합니다. 안 채우면 거절됩니다:
 
 ```sql
-INSERT INTO public.products (name, description, price, image_url, status)
-VALUES ('MEBODY 폼롤러', '전신 근막 이완용', 29000, 'products/foam-roller.png', 'ACTIVE');
+INSERT INTO public.products (seller_id, name, description, price, category, image_url, status)
+VALUES ((SELECT id FROM public.user_profiles WHERE role='SELLER' LIMIT 1),
+        'MEBODY 폼롤러', '전신 근막 이완용', 29000, 'release',
+        'https://<project>.supabase.co/storage/v1/object/public/images/products/foam-roller.png',
+        'ACTIVE');
 ```
 
+`category` 는 `release / strength / stretch / support / food` 중 하나여야 마켓 탭 필터에 잡힙니다.
 `price` 가 NULL 이면 "가격 준비 중"으로 표시됩니다.
+
+## 결제 (040)
+
+앱은 `user_subscriptions` 와 `orders.status` 를 **바꿀 수 없습니다**(SELECT 권한만).
+040 의 `*_admin` 함수도 `authenticated` 에서 EXECUTE 를 회수했습니다 —
+앱이 부를 수 있으면 누구나 공짜로 멤버십을 켜고 주문을 결제 완료로 만들 수 있기 때문입니다.
+
+**결제 UI 는 앱, 상태 변경은 서버**입니다:
+
+```
+앱 → 스토어/PG 결제 → 영수증  → Spring /api/billing/* → record_payment_admin
+                                                      → activate_subscription_admin
+                                                      → mark_order_paid_admin
+```
+
+`payments` 의 `UNIQUE(provider, provider_txn_id)` 가 같은 결제의 중복 반영을 막습니다.
+구독 만료는 `has_active_subscription` 이 `current_period_end > now()` 를 보므로 **자동**입니다(크론 불필요).
+
+## 주문 이후 흐름 (042)
+
+주문에는 축이 둘입니다:
+
+| 축 | 값 | 누가 바꾸나 |
+|---|---|---|
+| `status` (결제) | PENDING → PAID → CANCELED | 서버(결제 승인/환불) |
+| `fulfillment_status` (배송) | NONE → PREPARING → SHIPPED → DELIVERED | 서버(판매자·관리자 콘솔) |
+
+- 배송은 **앞으로만** 갑니다. 발송(SHIPPED) 이상은 **송장번호가 있어야** 합니다.
+- **발송 뒤에는 취소가 막힙니다** — 그건 반품이고 다른 절차입니다.
+- 취소하면 적립금 정산을 한 번에 합니다: 쓴 적립금은 `refund_order` 로 돌려주고,
+  지급된 구매 적립(5%)은 `expire` 로 회수합니다.
+  (음수 `earn_purchase` 는 제약이 막으므로 `expire` 를 씁니다)
+- 결제사 환불이 **먼저**입니다. 돈을 못 돌려주는데 주문만 취소하면 장부가 어긋납니다.
+
+배송 상태는 콘솔 `/admin` → **주문 · 배송** 에서 바꿉니다. 판매자는 자기 상품이 든 주문만 봅니다.
+
+## 보상형 광고 서버 검증 (042)
+
+지금까지는 앱이 "광고 다 봤다"고 하면 그대로 지급했습니다. AdMob 은 광고를 실제로
+끝까지 본 경우에만 서버로 콜백을 보내고 거기에 ECDSA 서명을 붙입니다.
+
+```
+앱(보상형 광고, ssv.userId = auth user id)
+  → AdMob → GET /api/ads/admob/ssv?...&signature=...
+  → 서명 검증 → grant_routine_bonus_admin → 앱이 결과를 읽음
+```
+
+켜는 법:
+1. AdMob 콘솔 → 해당 광고 단위 → 서버 측 확인(SSV) → 콜백 URL
+   `https://<배포주소>/api/ads/admob/ssv`
+2. 서버에 `MEBODY_ADS_SSV_ENABLED=true`
+3. 콜백이 실제로 들어오는 걸 `ad_reward_callbacks` 에서 확인
+4. 그 다음에 042 파일 끝의 REVOKE 한 줄을 실행하면 앱이 직접 청구하는 경로가 닫힙니다
+
+꺼져 있으면(기본값) 콜백은 503 을 돌려주고, 앱이 직접 청구하는 기존 방식이 그대로 동작합니다.
+
+### 사업자등록 전 전 구간 확인
+
+서버를 개발 어댑터로 띄우면 실제 결제 없이 담기→주문→결제→적립까지 돌려볼 수 있습니다.
+**운영에서는 반드시 꺼야 합니다**(기본값 false, 켜면 시작 로그에 경고가 찍힙니다):
+
+```bash
+MEBODY_BILLING_DEV_MODE=true ./mvnw spring-boot:run
+```
+
+계약이 끝나면 `TOSS_SECRET_KEY`(실물 상품) 와 `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`(멤버십)을
+설정하면 됩니다. 실결제 어댑터가 우선이라 개발 어댑터는 자동으로 밀려납니다.
+
+### 사진 없는 기존 상품 15개
+
+`038` 이 시드한 상품들은 사진이 없습니다. `039` 를 적용하면 콘솔 상품 목록에서 "사진 없음"
+배지와 함께 뜨고, 카드를 눌러 사진을 채울 수 있습니다. 전부 채운 뒤에는 제약을 완전 검증
+상태로 올릴 수 있습니다:
+
+```sql
+ALTER TABLE public.products VALIDATE CONSTRAINT products_image_required;
+```

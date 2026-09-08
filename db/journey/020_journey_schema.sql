@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS public.user_missions (
 );
 
 COMMENT ON COLUMN public.user_missions.source_rule IS
-  '이 미션이 나온 이유: axis_p1 | axis_p2 | substitute | restart. 추천 결과 추적용.';
+  '이 미션이 나온 이유: axis_p1 | axis_p2 | substitute | restart | extra_time. 추천 결과 추적용.';
 COMMENT ON COLUMN public.user_missions.user_id IS
   'RLS 단순화를 위한 비정규화. user_journeys.user_id 와 항상 같아야 한다.';
 

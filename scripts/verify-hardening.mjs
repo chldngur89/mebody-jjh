@@ -106,13 +106,25 @@ if (newId) {
   check('조회 RPC 로 자기 결과 확인', rpc.ok && Array.isArray(rpcBody) && rpcBody.length === 1,
     `status=${rpc.status} ${JSON.stringify(rpcBody)?.slice(0, 80)}`)
 
-  // 검증용 행 정리
-  const del = await req('DELETE', `questionnaire_responses?id=eq.${newId}`)
-  if (del.status < 300) {
+  // 검증용 행 정리.
+  // anon 에 DELETE 권한이 없는 게 정상이므로(하드닝) 정리는 서비스 롤 키로 한다.
+  // 검증 자체는 위까지 전부 anon 키로 끝났고, 여기서는 뒷정리만 한다.
+  const service = env.SUPABASE_SERVICE_ROLE_KEY
+  let cleaned = false
+  if (service) {
+    const res = await fetch(`${url}/rest/v1/questionnaire_responses?id=eq.${newId}`, {
+      method: 'DELETE',
+      headers: { apikey: service, Authorization: `Bearer ${service}` },
+    })
+    cleaned = res.status < 300
+  }
+  if (cleaned) {
     console.log('     정리: 검증용 행 삭제 완료')
   } else {
-    console.log('\n  ※ 검증용 행이 남았습니다. anon 에 DELETE 권한이 없어 정상입니다.')
-    console.log('     아래를 SQL Editor 에서 실행해 지워주세요:')
+    console.log('\n  ※ 검증용 행이 남았습니다.')
+    console.log(service
+      ? '     서비스 롤로도 지우지 못했습니다. 아래를 SQL Editor 에서 실행하세요:'
+      : '     .env.local 에 SUPABASE_SERVICE_ROLE_KEY 가 없어 자동 정리를 못 했습니다. 아래를 실행하세요:')
     console.log(`     DELETE FROM public.questionnaire_responses WHERE id = '${newId}';`)
   }
 } else if (created.status < 300) {

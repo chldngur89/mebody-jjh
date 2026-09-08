@@ -5,13 +5,15 @@
  * 미션 본문은 immediate_action_content 를 그대로 조회합니다.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { BRAND_PAGE_BG } from '../../theme/brand'
 import type { User } from '@supabase/supabase-js'
 import { fetchImmediateActionData, type ImmediateActionContent } from '../../api/content'
 import {
   calculateDayProgress,
   fetchRewardBalance,
   ensureDayMissions,
+  replanDayMissions,
   fetchActiveJourney,
   fetchJourneyTemplate,
   type JourneyTemplate,
@@ -21,11 +23,10 @@ import {
 import type { JourneyDayKind } from '../../utils/journeyRules'
 import { AXIS_GREEN_THEME } from '../../data/axisTheme'
 
-export const JOURNEY_FONT_STACK =
-  '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif'
+/** 폰트는 index.css 의 --mebody-font 한 곳에서 정합니다(시안과 동일). */
+export const JOURNEY_FONT_STACK = 'inherit'
 
-export const JOURNEY_BACKGROUND =
-  'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)'
+export const JOURNEY_BACKGROUND = BRAND_PAGE_BG
 
 export const AXIS_LABEL: Record<string, string> = {
   neck: '목 위치',
@@ -66,6 +67,8 @@ export interface JourneyTodayState {
   /** 스키마 미적용 등으로 Journey 를 쓸 수 없는 상태 */
   unavailable: boolean
   rewardBalance: number
+  /** 가용 시간을 바꾼 결과. 첫 로드에서는 null 입니다. */
+  replanNotice: 'changed' | 'in_progress' | 'special_day' | null
 }
 
 /**
@@ -83,6 +86,10 @@ export function useJourneyToday(user: User | null, availableMinutes = 5): Journe
   const [isRestart, setIsRestart] = useState(false)
   const [unavailable, setUnavailable] = useState(false)
   const [rewardBalance, setRewardBalance] = useState(0)
+  /** 가용 시간을 바꾼 결과. null 이면 안내하지 않습니다. */
+  const [replanNotice, setReplanNotice] = useState<'changed' | 'in_progress' | 'special_day' | null>(null)
+  /** 첫 로드인지 구분 — 첫 로드는 미션을 다시 짜지 않습니다. */
+  const loadedOnceRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -115,11 +122,34 @@ export function useJourneyToday(user: User | null, availableMinutes = 5): Journe
         }
 
         setJourney(activeJourney)
-        const [today, loadedTemplate] = await Promise.all([
-          ensureDayMissions(activeJourney, { availableMinutes }),
+
+        // 첫 진입은 멱등하게 보장만 하고, 사용자가 시간을 바꾼 뒤에는 오늘 미션을 다시 짭니다.
+        const isUserChange = loadedOnceRef.current
+        const [todayResult, loadedTemplate] = await Promise.all([
+          isUserChange
+            ? replanDayMissions(activeJourney, { availableMinutes })
+            : ensureDayMissions(activeJourney, { availableMinutes }).then((result) => ({
+                result,
+                replanned: false,
+                reason: undefined as 'in_progress' | 'special_day' | undefined,
+              })),
           fetchJourneyTemplate(activeJourney.template_code),
         ])
         if (cancelled) return
+
+        const today = todayResult.result
+        setReplanNotice(
+          !isUserChange
+            ? null
+            : todayResult.replanned
+              ? 'changed'
+              : todayResult.reason === 'in_progress'
+                ? 'in_progress'
+                : todayResult.reason === 'special_day'
+                  ? 'special_day'
+                  : null,
+        )
+        loadedOnceRef.current = true
 
         setTemplate(loadedTemplate)
         if (!today) {
@@ -166,6 +196,7 @@ export function useJourneyToday(user: User | null, availableMinutes = 5): Journe
     isRestart,
     unavailable,
     rewardBalance,
+    replanNotice,
   }
 }
 
@@ -198,7 +229,7 @@ export function JourneyScreenShell({
             width: '300px',
             height: '300px',
             borderRadius: '999px',
-            background: 'rgba(52, 211, 153, 0.18)',
+            background: 'rgba(0, 70, 40, 0.035)',
             filter: 'blur(58px)',
           }}
         />
@@ -210,7 +241,7 @@ export function JourneyScreenShell({
             width: '320px',
             height: '320px',
             borderRadius: '999px',
-            background: 'rgba(45, 212, 191, 0.16)',
+            background: 'rgba(0, 70, 40, 0.03)',
             filter: 'blur(72px)',
           }}
         />

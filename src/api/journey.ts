@@ -276,7 +276,12 @@ export interface StartJourneyInput {
 }
 
 /** 이미 진행 중인 Journey 가 있으면 그것을 반환합니다(중복 생성 방지). */
-export async function startJourney(input: StartJourneyInput): Promise<UserJourney | null> {
+/** 저니를 시작하지 못한 이유. null 은 알 수 없는 실패입니다. */
+export const NEEDS_SUBSCRIPTION = 'needs_subscription' as const
+
+export type StartJourneyResult = UserJourney | typeof NEEDS_SUBSCRIPTION | null
+
+export async function startJourney(input: StartJourneyInput): Promise<StartJourneyResult> {
   const { userId } = input
   if (!userId) return null
 
@@ -306,6 +311,11 @@ export async function startJourney(input: StartJourneyInput): Promise<UserJourne
     // 동시 시작으로 unique 인덱스에 걸리면 기존 것을 돌려줍니다.
     if (String((error as { code?: string }).code) === '23505') {
       return fetchActiveJourney(userId)
+    }
+    // RLS(can_start_journey)가 막은 경우 — 무료 체험을 이미 썼고 구독이 없다.
+    // 화면이 "실패" 가 아니라 "결제 안내" 를 띄워야 하므로 구분해서 알린다.
+    if (String((error as { code?: string }).code) === '42501') {
+      return NEEDS_SUBSCRIPTION
     }
     warn('startJourney', error)
     return null
@@ -423,12 +433,15 @@ export async function ensureDayMissions(
   const dayKind = getDaySpec(template.day_plan, dayNo)?.kind ?? 'normal'
 
   if (existing.length > 0) {
-    return {
-      journey,
-      dayNo,
-      dayKind,
-      missions: existing,
-      isRestart: existing.some((mission) => mission.source_rule === 'restart'),
+    const visible = existing.filter((mission) => mission.status !== 'skipped')
+    if (visible.length > 0) {
+      return {
+        journey,
+        dayNo,
+        dayKind,
+        missions: visible,
+        isRestart: visible.some((mission) => mission.source_rule === 'restart'),
+      }
     }
   }
 
@@ -462,6 +475,123 @@ export async function ensureDayMissions(
     dayKind,
     missions: inserted,
     isRestart: planned.some((mission) => mission.source_rule === 'restart'),
+  }
+}
+
+/**
+ * 가용 시간을 바꿨을 때 오늘 미션을 다시 배정합니다.
+ *
+ * ensureDayMissions 는 멱등이라 오늘 미션이 이미 있으면 가용 시간을 무시합니다.
+ * 사용자가 직접 시간을 바꾼 경우에만 이 함수로 다시 짭니다.
+ * 이미 시작했거나 완료한 미션이 하나라도 있으면 진행 기록이 사라지므로 다시 짜지 않고
+ * reason 을 돌려줘 화면이 이유를 안내하게 합니다.
+ */
+export async function replanDayMissions(
+  journey: UserJourney,
+  options: { availableMinutes: number; now?: Date } = { availableMinutes: 5 },
+): Promise<{ result: TodayMissionsResult | null; replanned: boolean; reason?: 'in_progress' | 'special_day' }> {
+  const now = options.now ?? new Date()
+
+  const [template, contentTags, allMissions, feedback] = await Promise.all([
+    fetchJourneyTemplate(journey.template_code),
+    fetchJourneyContentTags(),
+    fetchMissionsForJourney(journey.id),
+    fetchRecentFeedback(journey.user_id),
+  ])
+  if (!template || contentTags.length === 0) return { result: null, replanned: false }
+
+  const dayNo = computeCurrentDay(journey.started_at, now, template.duration_days)
+  const daySpec = getDaySpec(template.day_plan, dayNo)
+  const dayKind = daySpec?.kind ?? 'normal'
+  const existing = allMissions.filter((mission) => mission.day_no === dayNo)
+
+  const asIs = (reason?: 'in_progress' | 'special_day') => ({
+    result: {
+      journey,
+      dayNo,
+      dayKind,
+      missions: existing.filter((mission) => mission.status !== 'skipped'),
+      isRestart: existing.some((mission) => mission.source_rule === 'restart'),
+    },
+    replanned: false,
+    reason,
+  })
+
+  // 리포트·재측정 날은 구성이 정해져 있어 시간으로 바꾸지 않습니다.
+  if (dayKind !== 'normal') return asIs('special_day')
+
+  // 손대면 안 되는 상태가 하나라도 있으면 그대로 둡니다.
+  if (existing.some((mission) => mission.status === 'started' || mission.status === 'completed')) {
+    return asIs('in_progress')
+  }
+
+  const recentContentKeys = allMissions
+    .filter((mission) => mission.day_no < dayNo)
+    .sort((left, right) => right.day_no - left.day_no)
+    .map((mission) => mission.content_key)
+
+  const planned = selectDailyMissions({
+    dayNo,
+    dayPlan: template.day_plan,
+    axisPriority: journey.axis_priority,
+    contentTags,
+    feedback,
+    recentContentKeys,
+    availableMinutes: options.availableMinutes,
+    lastActiveAt: journey.last_active_at,
+    now,
+  })
+  if (planned.length === 0) return asIs()
+
+  // DELETE 권한은 회수돼 있으므로 슬롯을 덮어쓰는 방식으로 다시 짭니다.
+  // 계획한 만큼 slot_no 1..N 을 upsert 하고, 남는 슬롯은 skipped 로 내립니다.
+  const rows = planned.map((mission, index) => ({
+    user_journey_id: journey.id,
+    user_id: journey.user_id,
+    day_no: dayNo,
+    slot_no: index + 1,
+    content_key: mission.content_key,
+    mission_type: mission.mission_type,
+    planned_duration_sec: mission.planned_duration_sec,
+    difficulty: mission.difficulty,
+    source_rule: mission.source_rule,
+    status: 'scheduled' as const,
+    started_at: null,
+    completed_at: null,
+  }))
+
+  const { error: upsertError } = await supabase
+    .from('user_missions')
+    .upsert(rows, { onConflict: 'user_journey_id,day_no,slot_no' })
+  if (upsertError) {
+    warn('replanDayMissions.upsert', upsertError)
+    return asIs()
+  }
+
+  const leftover = existing.filter((mission) => mission.slot_no > planned.length)
+  if (leftover.length > 0) {
+    const { error: skipError } = await supabase
+      .from('user_missions')
+      .update({ status: 'skipped' })
+      .in('id', leftover.map((mission) => mission.id))
+    if (skipError) warn('replanDayMissions.skip', skipError)
+  }
+
+  await touchJourney(journey.id, dayNo)
+
+  const refreshed = (await fetchMissionsForJourney(journey.id))
+    .filter((mission) => mission.day_no === dayNo && mission.status !== 'skipped')
+    .sort((left, right) => left.slot_no - right.slot_no)
+
+  return {
+    result: {
+      journey,
+      dayNo,
+      dayKind,
+      missions: refreshed,
+      isRestart: planned.some((mission) => mission.source_rule === 'restart'),
+    },
+    replanned: true,
   }
 }
 

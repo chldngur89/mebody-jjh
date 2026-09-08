@@ -3,6 +3,7 @@ interface QuestionNavBarProps {
   onNext: () => void
   isLastQuestion?: boolean
   canGoPrev?: boolean
+  canGoNext?: boolean
 }
 
 export function QuestionNavBar({
@@ -10,6 +11,7 @@ export function QuestionNavBar({
   onNext,
   isLastQuestion = false,
   canGoPrev = true,
+  canGoNext = true,
 }: QuestionNavBarProps) {
   return (
     <div className="animate-slide-up-in shrink-0 border-t border-gray-100 bg-white px-6 py-4">
@@ -28,7 +30,8 @@ export function QuestionNavBar({
         <button
           type="button"
           onClick={onNext}
-          className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all hover:brightness-105 active:scale-[0.98]"
+          disabled={!canGoNext}
+          className="disabled:opacity-40 disabled:cursor-not-allowed flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all hover:brightness-105 active:scale-[0.98]"
         >
           {isLastQuestion ? '결과 보기' : '다음'}
         </button>

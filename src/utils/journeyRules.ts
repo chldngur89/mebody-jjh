@@ -15,7 +15,7 @@ export type JourneyAxisKey = 'neck' | 'shoulder' | 'pelvis' | 'lower'
 export type MissionType = 'release' | 'stretch' | 'combo'
 export type MissionFeeling = 'BETTER' | 'SAME' | 'UNCOMFORTABLE'
 export type MissionDifficultyRating = 'EASY' | 'GOOD' | 'HARD'
-export type MissionSourceRule = 'axis_p1' | 'axis_p2' | 'substitute' | 'restart'
+export type MissionSourceRule = 'axis_p1' | 'axis_p2' | 'substitute' | 'restart' | 'extra_time'
 export type JourneyDayKind = 'normal' | 'weekly_report' | 'progress_check'
 
 /** 관리 우선순위 1건. user_journeys.axis_priority 에 스냅샷으로 저장됩니다. */
@@ -118,6 +118,8 @@ const AXIS_TO_BODY_PARTS: Record<JourneyAxisKey, string[]> = {
 }
 
 const DEFAULT_AVAILABLE_MINUTES = 5
+/** 남는 시간이 이보다 짧으면 미션을 더 붙이지 않습니다(이완 90초 + 스트레칭 최소 구성). */
+const MIN_EXTRA_MISSION_SEC = 150
 const RESTART_THRESHOLD_DAYS = 3
 const FEEDBACK_WINDOW = 3
 const RECENT_CONTENT_WINDOW = 3
@@ -403,6 +405,53 @@ export function selectDailyMissions(input: SelectDailyMissionsInput): PlannedMis
     })
     usedKeys.add(picked.content_key)
     remainingSec -= duration
+  }
+
+  // 가용 시간을 넉넉히 고른 경우, 남는 시간만큼 다음 우선순위 축을 더 배정합니다.
+  // day_plan 의 슬롯은 하루 1개뿐이라 이 단계가 없으면 "15분"을 골라도 미션이 늘지 않습니다.
+  // 특별한 날(리포트/재측정)과 Restart 는 구성이 정해져 있으므로 늘리지 않습니다.
+  if (daySpec.kind === 'normal' && planned.length > 0) {
+    for (const axis of axisPriority) {
+      if (remainingSec < MIN_EXTRA_MISSION_SEC) break
+
+      let pool = activeTags.filter(
+        (tag) =>
+          tag.axis_key === axis.axis &&
+          matchesDirection(tag, axis.direction) &&
+          !summary.excludedContentKeys.has(tag.content_key) &&
+          !usedKeys.has(tag.content_key),
+      )
+      if (pool.length === 0) {
+        const bodyParts = AXIS_TO_BODY_PARTS[axis.axis] ?? []
+        pool = activeTags.filter(
+          (tag) =>
+            bodyParts.includes(tag.body_part_key) &&
+            !summary.excludedContentKeys.has(tag.content_key) &&
+            !usedKeys.has(tag.content_key),
+        )
+      }
+
+      const picked = pickBestTag(pool, targetDifficulty, recentWindow, summary.preferredContentKeys)
+      if (!picked) continue
+
+      const duration = scaleDuration(
+        durationForMissionType(picked, daySpec.slots[0].mission_type),
+        summary.difficultyTrend,
+      )
+      if (duration > remainingSec) continue
+
+      planned.push({
+        slot_no: planned.length + 1,
+        content_key: picked.content_key,
+        mission_type: daySpec.slots[0].mission_type,
+        planned_duration_sec: duration,
+        difficulty: targetDifficulty,
+        source_rule: 'extra_time',
+        axis_rank: axisPriority.indexOf(axis) + 1,
+      })
+      usedKeys.add(picked.content_key)
+      remainingSec -= duration
+    }
   }
 
   return planned

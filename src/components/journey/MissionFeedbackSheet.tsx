@@ -1,3 +1,4 @@
+import { useOverlayBack } from '../../utils/useOverlayBack'
 /**
  * Mission Feedback — 미션 완료 후 느낌·난이도를 받는 바텀 시트
  *
@@ -13,6 +14,7 @@ import type { MissionDifficultyRating, MissionFeeling } from '../../utils/journe
 interface MissionFeedbackSheetProps {
   missionTitle: string
   isSaving?: boolean
+  errorMessage?: string | null
   /** 서버가 정한 적립 금액. 클라이언트가 계산하지 않습니다. */
   reward?: { amount: number; alreadyClaimed: boolean; balance: number } | null
   rewardDisclosure?: string
@@ -101,9 +103,10 @@ function OptionGroup<T extends string>({
   )
 }
 
-export function MissionFeedbackSheet({ missionTitle, isSaving = false, reward, rewardDisclosure, onSubmit, onSkip }: MissionFeedbackSheetProps) {
+export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMessage, reward, rewardDisclosure, onSubmit, onSkip }: MissionFeedbackSheetProps) {
   const [feeling, setFeeling] = useState<MissionFeeling | null>(null)
   const [difficulty, setDifficulty] = useState<MissionDifficultyRating | null>(null)
+  const closeSheet = useOverlayBack(true, () => { if (!isSaving) onSkip() })
   const canSubmit = Boolean(feeling && difficulty) && !isSaving
 
   return (
@@ -147,7 +150,8 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, reward, r
           </div>
           <button
             type="button"
-            onClick={onSkip}
+            onClick={closeSheet}
+          disabled={isSaving}
             style={{
               width: '36px',
               height: '36px',
@@ -200,8 +204,9 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, reward, r
         )}
 
         <div style={{ display: 'grid', gap: '18px', marginBottom: '20px' }}>
-          <OptionGroup title="몸 상태" options={FEELING_OPTIONS} value={feeling} onChange={setFeeling} />
-          <OptionGroup title="난이도" options={DIFFICULTY_OPTIONS} value={difficulty} onChange={setDifficulty} />
+          {/* 세터를 그대로 넘기면 SetStateAction 때문에 T 가 string 으로 넓어진다. 화살표로 감싸 옵션 타입에서만 추론시킨다. */}
+          <OptionGroup title="몸 상태" options={FEELING_OPTIONS} value={feeling} onChange={(v) => setFeeling(v)} />
+          <OptionGroup title="난이도" options={DIFFICULTY_OPTIONS} value={difficulty} onChange={(v) => setDifficulty(v)} />
         </div>
 
         <div
@@ -220,6 +225,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, reward, r
           남겨주신 답변에 따라 다음 미션의 시간과 강도가 조정됩니다. 불편했던 동작은 남은 기간 동안 다른 동작으로 바뀝니다.
         </div>
 
+        {errorMessage && <p role="alert" style={{ color: '#b42318' }}>{errorMessage}</p>}
         <button
           type="button"
           onClick={() => feeling && difficulty && onSubmit(feeling, difficulty)}
@@ -244,7 +250,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, reward, r
         </button>
         <button
           type="button"
-          onClick={onSkip}
+          onClick={closeSheet}
           disabled={isSaving}
           style={{
             marginTop: '10px',

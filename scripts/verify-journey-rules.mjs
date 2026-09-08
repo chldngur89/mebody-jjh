@@ -110,13 +110,41 @@ check('동점이면 하체 우선 (codePlanShared 규칙과 동일)', tied[0].ax
 
 section('2. Day 슬롯 배정 (selectDailyMissions)')
 
-const base = { dayPlan, axisPriority: priority, contentTags, availableMinutes: 15 }
+const base = { dayPlan, axisPriority: priority, contentTags, availableMinutes: 5 }
 const now = new Date('2026-08-27T10:00:00+09:00')
 
 const day1 = selectDailyMissions({ ...base, dayNo: 1, now })
 check('Day 1 미션 1개', day1.length === 1, `len=${day1.length}`)
 check('Day 1 = P1축(pelvis)', day1[0]?.source_rule === 'axis_p1')
 check('Day 1 콘텐츠가 pelvis 축', contentTags.find((t) => t.content_key === day1[0]?.content_key)?.axis_key === 'pelvis')
+
+// 가용 시간 — 5분이면 슬롯대로 1개, 15분이면 남는 시간만큼 다음 축까지 더 배정된다
+const day1Short = selectDailyMissions({ ...base, dayNo: 1, availableMinutes: 5, now })
+const day1Long = selectDailyMissions({ ...base, dayNo: 1, availableMinutes: 15, now })
+check('5분 → 미션 1개', day1Short.length === 1, `len=${day1Short.length}`)
+check('15분 → 미션이 더 늘어남', day1Long.length > day1Short.length,
+  `5분 ${day1Short.length}개 → 15분 ${day1Long.length}개`)
+check('15분 추가분은 extra_time 으로 표시',
+  day1Long.slice(1).every((m) => m.source_rule === 'extra_time'),
+  day1Long.map((m) => m.source_rule).join(','))
+check('15분에도 첫 미션은 그대로(슬롯 규칙 유지)',
+  day1Long[0]?.content_key === day1Short[0]?.content_key)
+check('15분 미션 콘텐츠가 중복되지 않음',
+  new Set(day1Long.map((m) => m.content_key)).size === day1Long.length)
+check('15분 총 시간이 15분(900초)을 넘지 않음',
+  day1Long.reduce((sum, m) => sum + m.planned_duration_sec, 0) <= 900,
+  `${day1Long.reduce((sum, m) => sum + m.planned_duration_sec, 0)}초`)
+check('15분 총 시간이 5분보다 김',
+  day1Long.reduce((s2, m) => s2 + m.planned_duration_sec, 0) >
+  day1Short.reduce((s2, m) => s2 + m.planned_duration_sec, 0))
+
+// 특별한 날(주간 리포트/재측정)은 가용 시간으로 늘리지 않는다
+const day7Long = selectDailyMissions({ ...base, dayNo: 7, availableMinutes: 15, now })
+const day7Short = selectDailyMissions({ ...base, dayNo: 7, availableMinutes: 5, now })
+check('Day 7 은 15분이어도 슬롯 수를 넘지 않음', day7Long.length <= 2, `len=${day7Long.length}`)
+check('Day 7 에는 extra_time 이 없음', day7Long.every((m) => m.source_rule !== 'extra_time'),
+  day7Long.map((m) => m.source_rule).join(','))
+void day7Short
 
 const day2 = selectDailyMissions({ ...base, dayNo: 2, now })
 check('Day 2 = P2축(neck)', day2[0]?.source_rule === 'axis_p2')

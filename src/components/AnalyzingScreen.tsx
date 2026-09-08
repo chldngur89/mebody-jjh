@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { BRAND_PAGE_BG } from '../theme/brand';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { useMediaQuery } from '../utils/useMediaQuery';
@@ -52,7 +53,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
         overflow: 'hidden',
         minHeight: '100dvh',
         borderRadius: isDesktopMockup ? '32px' : 0,
-        background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
+        background: BRAND_PAGE_BG,
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
         display: 'flex',
         flexDirection: 'column',

@@ -55,21 +55,12 @@ function resolveBodyCodeFromProfileRow(row: Record<string, unknown> | null | und
 const FALLBACK_PLANS: MembershipPlan[] = [
   {
     code: 'basic_monthly',
-    name: 'Basic Monthly',
-    description: '결과 저장, 히스토리 조회, 재방문 빠른 결과',
+    name: 'mebody 멤버십',
+    description: '14일 관리 무제한 · 광고 없이 이용 · 적립 2배 · 상품 구매 5% 적립',
     billing_cycle: 'monthly',
     price_krw: 5900,
     is_active: true,
     sort_order: 1,
-  },
-  {
-    code: 'pro_monthly',
-    name: 'Pro Monthly',
-    description: 'Basic + 심화 리포트 + 루틴 우선순위',
-    billing_cycle: 'monthly',
-    price_krw: 12900,
-    is_active: true,
-    sort_order: 2,
   },
 ];
 
@@ -388,41 +379,12 @@ export async function fetchMySubscription(userId: string): Promise<UserSubscript
   };
 }
 
-export async function activateSubscription(userId: string, planCode: string): Promise<UserSubscription | null> {
-  const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setDate(periodEnd.getDate() + 30);
-
-  const payload = {
-    user_id: userId,
-    plan_code: planCode,
-    status: 'active',
-    started_at: now.toISOString(),
-    current_period_end: periodEnd.toISOString(),
-    cancel_at_period_end: false,
-    updated_at: now.toISOString(),
-  };
-
-  const { data, error } = await supabase
-    .from('user_subscriptions')
-    .upsert(payload, { onConflict: 'user_id' })
-    .select('id, user_id, plan_code, status, started_at, current_period_end, cancel_at_period_end')
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data) return null;
-  return {
-    id: String(data.id),
-    user_id: String(data.user_id),
-    plan_code: String(data.plan_code),
-    status: data.status === 'trialing' || data.status === 'active' || data.status === 'past_due' || data.status === 'canceled'
-      ? data.status
-      : 'active',
-    started_at: String(data.started_at),
-    current_period_end: data.current_period_end ? String(data.current_period_end) : null,
-    cancel_at_period_end: Boolean(data.cancel_at_period_end),
-  };
-}
+/**
+ * 구독 활성화는 **여기 없습니다.**
+ *
+ * user_subscriptions 는 authenticated 에 SELECT 권한만 있고, 040 의
+ * activate_subscription_admin 도 앱에서 EXECUTE 를 회수했습니다.
+ * 앱이 직접 켤 수 있으면 누구나 공짜로 멤버십을 갖게 되기 때문입니다.
+ *
+ * 결제 승인을 확인한 서버만 켤 수 있습니다 → src/api/billing.ts 의 verifySubscription()
+ */

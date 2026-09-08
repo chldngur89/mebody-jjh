@@ -368,8 +368,23 @@ export function JourneyTodayScreen({
                   )
                 })}
               </div>
-              <div style={{ marginTop: '8px', fontSize: '11px', lineHeight: 1.5, color: '#9ca3af', wordBreak: 'keep-all' }}>
-                가용 시간은 다음 날 미션부터 반영됩니다. 오늘 배정된 미션은 그대로 유지됩니다.
+              <div
+                style={{
+                  marginTop: '8px',
+                  fontSize: '11px',
+                  lineHeight: 1.5,
+                  fontWeight: state.replanNotice ? 800 : 400,
+                  color: state.replanNotice === 'changed' ? '#014725' : '#9ca3af',
+                  wordBreak: 'keep-all',
+                }}
+              >
+                {state.replanNotice === 'changed'
+                  ? `${availableMinutes}분에 맞춰 오늘 미션을 다시 배정했습니다.`
+                  : state.replanNotice === 'in_progress'
+                    ? '이미 시작한 미션이 있어 오늘 미션은 그대로 둡니다. 내일 미션부터 반영됩니다.'
+                    : state.replanNotice === 'special_day'
+                      ? '오늘은 리포트가 있는 날이라 구성이 정해져 있습니다. 내일 미션부터 반영됩니다.'
+                      : '고른 시간에 맞춰 오늘 미션이 다시 배정됩니다. 이미 시작한 미션이 있으면 그대로 둡니다.'}
               </div>
 
               <div

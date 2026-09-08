@@ -331,6 +331,8 @@ export interface StoreProduct {
   price: number | null;
   imageUrl: string;
   status: string;
+  /** 마켓 카테고리. 037_redesign.sql 에서 추가했습니다. 없으면 빈 문자열. */
+  category: string;
 }
 
 /**
@@ -338,15 +340,16 @@ export interface StoreProduct {
  * products 테이블(status=ACTIVE)을 조회하므로 서버에 올리면 앱에 바로 반영됩니다.
  * 조회 실패하거나 비어 있으면 빈 배열을 돌려주고 화면은 기존 안내로 폴백합니다.
  */
-export async function fetchStoreProducts(): Promise<StoreProduct[]> {
+export async function fetchStoreProducts(options: { throwOnError?: boolean } = {}): Promise<StoreProduct[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, price, image_url, status, created_at')
+    .select('id, name, description, price, image_url, status, category, created_at')
     .eq('status', 'ACTIVE')
     .order('created_at', { ascending: true });
 
   if (error) {
     console.warn('fetchStoreProducts failed:', error);
+    if (options.throwOnError) throw error;
     return [];
   }
 
@@ -357,5 +360,6 @@ export async function fetchStoreProducts(): Promise<StoreProduct[]> {
     price: row.price === null || row.price === undefined ? null : Number(row.price),
     imageUrl: resolveStorageUrl(row.image_url),
     status: String(row.status ?? ''),
+    category: String((row as { category?: string }).category ?? ''),
   }));
 }

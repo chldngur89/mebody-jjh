@@ -62,6 +62,20 @@ try{
   // ══ 회원: 진단 ══
   console.log('\n■ 회원 — 진단')
   await auth(uid)
+  // 이 계정에 이미 저니가 있으면 can_start_journey(첫 저니 1회 무료)가 false 가 되어
+  // "저니 생성" 부터 막힌다. 계정 상태를 가정하지 않도록 트랜잭션 안에서 비우고 시작한다.
+  // (BEGIN ~ ROLLBACK 안이라 실제 데이터는 그대로다)
+  await svc()
+  await c.query('DELETE FROM public.journey_mission_feedback')
+  await c.query('DELETE FROM public.journey_reports')
+  await c.query('DELETE FROM public.user_missions')
+  await c.query('DELETE FROM public.user_journeys')
+  await c.query('DELETE FROM public.user_subscriptions WHERE user_id=$1',[uid])
+  await auth(uid)
+
+  // 테스트 계정에 기존 응답이 있을 수 있다(로그인 시 비회원 결과가 계정에 연결되는 정상 동작).
+  // 절대값이 아니라 "정확히 1건 늘었는가" 로 본다.
+  const ownBefore=(await c.query(`SELECT count(*)::int n FROM public.questionnaire_responses WHERE user_id=$1`,[uid])).rows[0].n
   const mine=await T(()=>c.query(`INSERT INTO public.questionnaire_responses
     (user_id,answers,status,calculated_code,primary_identity,scoring_meta,question_version,completed_at)
     VALUES ($1,'{"A1":"③","B1":"①"}'::jsonb,'completed','FRRS','회복 우선형',
@@ -70,7 +84,8 @@ try{
   ok('회원 진단 저장', mine.ok, mine.ok?'':mine.code)
   const rid=mine.ok?mine.r.rows[0].id:null
   const own=await T(()=>c.query(`SELECT count(*)::int n FROM public.questionnaire_responses WHERE user_id=$1`,[uid]))
-  ok('본인 결과 조회', own.ok&&own.r.rows[0].n===1, own.ok?`${own.r.rows[0].n}건`:own.code)
+  ok('본인 결과 조회 — 1건 증가', own.ok&&own.r.rows[0].n===ownBefore+1,
+    own.ok?`${ownBefore} → ${own.r.rows[0].n}건`:own.code)
   const foreign=await T(()=>c.query(`SELECT count(*)::int n FROM public.questionnaire_responses
     WHERE user_id IS NOT NULL AND user_id<>$1`,[uid]))
   ok('다른 회원 결과 안 보임', foreign.ok&&foreign.r.rows[0].n===0, foreign.ok?`${foreign.r.rows[0].n}건`:foreign.code)
@@ -92,9 +107,23 @@ try{
     [uid,rid,JSON.stringify(prio)]))
   ok('저니 생성', jStart.ok, jStart.ok?'':jStart.code)
   const jid=jStart.ok?jStart.r.rows[0].id:null
+  // 034 적용 후에는 자격 RLS(can_start_journey)가 유니크 인덱스보다 먼저 막는다.
+  // 무구독 사용자는 이미 저니 1건이 있으므로 42501 이 정상이다.
   const dup=await T(()=>c.query(`INSERT INTO public.user_journeys (user_id,body_code,axis_priority)
     VALUES ($1,'FRRS','[]'::jsonb)`,[uid]))
-  ok('진행 중 저니 중복 생성 차단', !dup.ok&&dup.code==='23505', dup.ok?'중복 생성됨':dup.code)
+  ok('무구독 중복 저니 차단 (자격 RLS)', !dup.ok&&dup.code==='42501', dup.ok?'중복 생성됨':dup.code)
+
+  // 구독이 있어 RLS 를 통과해도 "활성 저니 1개" 유니크 인덱스는 살아 있어야 한다.
+  await svc()
+  await c.query(`INSERT INTO public.user_subscriptions (user_id,plan_code,status,current_period_end)
+    VALUES ($1,'basic_monthly','active', now() + interval '30 days')`,[uid])
+  await auth(uid)
+  const dupPaid=await T(()=>c.query(`INSERT INTO public.user_journeys (user_id,body_code,axis_priority)
+    VALUES ($1,'FRRS','[]'::jsonb)`,[uid]))
+  ok('구독자도 활성 저니 중복은 차단 (유니크)', !dupPaid.ok&&dupPaid.code==='23505', dupPaid.ok?'중복 생성됨':dupPaid.code)
+  await svc()
+  await c.query('DELETE FROM public.user_subscriptions WHERE user_id=$1',[uid])
+  await auth(uid)
 
   // ══ 회원: 미션 · 적립 ══
   console.log('\n■ 회원 — 미션 · 적립')

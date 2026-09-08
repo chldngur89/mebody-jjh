@@ -58,3 +58,24 @@ export function resolveCharacterImageUrl(
 
   return LOCAL_FALLBACK_CHARACTER_IMAGE;
 }
+
+
+/**
+ * 캐릭터 이미지를 미리 받아둡니다.
+ *
+ * 이미지 URL 은 bodyCode 만 있으면 만들 수 있는데(getCharacterStorageUrl),
+ * 지금은 결과 조회 2회(questionnaire_responses + body_code_content)가 모두 끝난 뒤에야
+ * 화면이 그려져서 요청 시작이 1.7초까지 밀립니다.
+ * 코드를 아는 순간(로그인 부트스트랩 등) 이걸 불러 두면 실제 표시 시점에 캐시가 채워져 있습니다.
+ */
+const preloaded = new Set<string>()
+
+export function preloadCharacterImage(bodyCode?: string | null): void {
+  if (typeof window === 'undefined') return
+  const url = getCharacterStorageUrl(bodyCode)
+  if (!url || preloaded.has(url)) return
+  preloaded.add(url)
+  const img = new Image()
+  img.decoding = 'async'
+  img.src = url
+}

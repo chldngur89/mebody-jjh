@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BRAND_PAGE_BG } from '../theme/brand';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Sparkles, UserRound } from 'lucide-react';
 import { requestPasswordReset, signInWithEmail, signOutAccount, signUpWithEmail, upsertProfileFromUser } from '../api/account';
@@ -157,7 +158,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
         height: isDesktopMockup ? '100%' : undefined,
         minHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
-        background: 'linear-gradient(145deg, #ecfdf5 0%, #f3fdfb 42%, #f0fdfa 100%)',
+        background: BRAND_PAGE_BG,
         boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
         display: 'flex',
         flexDirection: 'column',
@@ -172,7 +173,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
             width: '384px',
             height: '384px',
             borderRadius: '999px',
-            background: 'rgba(52, 211, 153, 0.20)',
+            background: 'rgba(0, 70, 40, 0.035)',
             filter: 'blur(64px)',
           }}
         />
@@ -184,7 +185,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
             width: '384px',
             height: '384px',
             borderRadius: '999px',
-            background: 'rgba(45, 212, 191, 0.20)',
+            background: 'rgba(0, 70, 40, 0.03)',
             filter: 'blur(64px)',
           }}
         />
@@ -199,7 +200,6 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
           minHeight: screenHeight,
           flexDirection: 'column',
           padding: '22px 24px 18px',
-          fontFamily: '"SUIT Variable","Pretendard Variable","Noto Sans KR",sans-serif',
           overflowY: 'auto',
         }}
       >

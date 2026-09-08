@@ -3,6 +3,10 @@
   "version": "0.2.0",
   "private": true,
   "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
     "@supabase/supabase-js": "^2.95.2",
     "lucide-react": "^0.487.0",
     "react": "^18.3.1",
@@ -10,8 +14,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.10.2",
     "pg": "^8.23.0",
+    "typescript": "^5.9.3",
     "vite": "6.3.5"
   },
   "scripts": {
@@ -24,6 +31,27 @@
     "verify:journey-db": "node scripts/verify-journey-db.mjs",
     "verify:hardening": "node scripts/verify-hardening.mjs",
     "db:extract": "node scripts/extract-bootstrap.mjs",
-    "verify:e2e": "node scripts/verify-e2e.mjs"
+    "verify:e2e": "node scripts/verify-e2e.mjs",
+    "verify:routine-reward": "node scripts/verify-routine-reward.mjs",
+    "verify:entitlement": "node scripts/verify-entitlement.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify:types": "node scripts/verify-types.mjs",
+    "verify:plan-cashback": "node scripts/verify-plan-cashback.mjs",
+    "verify:routine-bonus": "node scripts/verify-routine-bonus.mjs",
+    "ads:check": "node scripts/check-ads-config.mjs",
+    "app:build": "vite build && cap sync android",
+    "app:open": "cap open android",
+    "app:apk": "vite build && cap sync android && cd android && JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ./gradlew assembleDebug",
+    "verify:redesign": "node scripts/verify-redesign.mjs",
+    "verify:seller": "node scripts/verify-seller.mjs",
+    "verify:product-image": "node scripts/verify-product-image.mjs",
+    "verify:product-api": "node scripts/verify-product-api.mjs",
+    "verify:billing": "node scripts/verify-billing.mjs",
+    "verify:billing-api": "node scripts/verify-billing-api.mjs",
+    "verify:fulfillment": "node scripts/verify-fulfillment.mjs",
+    "verify:order-api": "node scripts/verify-order-api.mjs",
+    "verify:questions-cleanup": "node scripts/verify-questions-cleanup.mjs",
+    "export:questions": "node scripts/export-questions.mjs",
+    "verify:flow": "node scripts/verify-flow-navigation.mjs"
   }
 }

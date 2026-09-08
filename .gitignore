@@ -35,3 +35,12 @@ supabase/
 # OS
 .DS_Store
 Thumbs.db
+
+# Capacitor 네이티브 빌드 산출물
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+ios/App/Pods/
+ios/App/build/
+dist-docs/
