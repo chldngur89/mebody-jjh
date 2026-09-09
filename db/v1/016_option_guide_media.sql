@@ -210,3 +210,58 @@ set
   updated_at = now()
 where question_code = 'D2'
   and question_set = 'mebody_v1_32';
+
+update public.questions
+set
+  media_type = 'image',
+  media_url = 'questions/D3.webp',
+  media_url_option_1 = 'questions/D3-opt1.webp', -- image1.png
+  media_url_option_2 = 'questions/D3-opt2.webp', -- image2.png
+  media_url_option_3 = 'questions/D3-opt3.webp', -- image3.png
+  updated_at = now()
+where question_code = 'D3'
+  and question_set = 'mebody_v1_32';
+
+update public.questions
+set
+  media_type = 'image',
+  media_url = 'questions/D4.webp',
+  media_url_option_1 = 'questions/D4-opt1.webp', -- guide image1 (sitting, right stiff)
+  media_url_option_2 = 'questions/D4-opt2.webp', -- guide image2 (similar/unsure)
+  media_url_option_3 = 'questions/D4-opt3.webp', -- guide image3 (sitting, left stiff)
+  updated_at = now()
+where question_code = 'D4'
+  and question_set = 'mebody_v1_32';
+
+update public.questions
+set
+  media_type = 'image',
+  media_url = 'questions/D5.webp', -- MEBODY_knee_to_chest_3stage
+  media_url_option_1 = 'questions/D5-opt1.webp', -- image1.png
+  media_url_option_2 = 'questions/D5-opt2.webp', -- image2.png
+  media_url_option_3 = 'questions/D5-opt3.webp', -- image3.png
+  updated_at = now()
+where question_code = 'D5'
+  and question_set = 'mebody_v1_32';
+
+update public.questions
+set
+  media_type = 'image',
+  media_url = 'questions/D6.webp',
+  media_url_option_1 = 'questions/D6-opt1.webp', -- image1.png
+  media_url_option_2 = null,
+  media_url_option_3 = 'questions/D6-opt3.webp', -- image3.png
+  updated_at = now()
+where question_code = 'D6'
+  and question_set = 'mebody_v1_32';
+
+update public.questions
+set
+  media_type = 'image',
+  media_url = 'questions/D7.webp', -- image0.png
+  media_url_option_1 = 'questions/D7-opt1.webp', -- image1.png
+  media_url_option_2 = 'questions/D7-opt2.webp', -- image2.png
+  media_url_option_3 = 'questions/D7-opt3.webp', -- image3.png
+  updated_at = now()
+where question_code = 'D7'
+  and question_set = 'mebody_v1_32';

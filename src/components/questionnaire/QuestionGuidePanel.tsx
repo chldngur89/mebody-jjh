@@ -13,8 +13,8 @@ interface QuestionGuidePanelProps {
 /**
  * 선택지 아래: 미디어(사진이 있을 때만) + 연초록 가이드 박스 1개
  *
- * 가이드 이미지가 있을 때만 자동으로 시야를 아래로 맞춥니다.
- * (A1처럼 안내 문구만 있는 문항은 시선을 억지로 내리지 않습니다.)
+ * 답 선택 후 항상 초록 안내로 시선을 내립니다.
+ * 상단 메인 접힘/유지는 QuestionMediaLayout(옵션 가이드 미디어 유무)이 담당합니다.
  */
 export function QuestionGuidePanel({
   mediaKey,
@@ -25,10 +25,8 @@ export function QuestionGuidePanel({
   guideText,
 }: QuestionGuidePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const hasGuideMedia = Boolean(mediaSrc)
 
   useEffect(() => {
-    if (!hasGuideMedia) return
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     requestAnimationFrame(() => {
       panelRef.current?.scrollIntoView({
@@ -36,7 +34,7 @@ export function QuestionGuidePanel({
         block: 'center',
       })
     })
-  }, [hasGuideMedia, mediaKey, mediaSrc])
+  }, [mediaKey, mediaSrc, guideText])
 
   return (
     <div ref={panelRef} id="question-guide-panel" className="animate-slide-up-in w-full space-y-4">
