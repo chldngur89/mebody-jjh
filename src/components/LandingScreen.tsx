@@ -223,9 +223,9 @@ export function LandingScreen({
                   wordBreak: 'keep-all',
                 }}
               >
-                나의 바디 코드를
+                나의 몸Bti를
                 <br />
-                발견하세요
+                찾아보세요
               </h2>
               <p
                 style={{
@@ -235,7 +235,7 @@ export function LandingScreen({
                   wordBreak: 'keep-all',
                 }}
               >
-                자세와 균형을 위한 셀프 체크
+                Mebody Check로 개인화 웰니스 가이드를 받아보세요
               </p>
             </div>
 
