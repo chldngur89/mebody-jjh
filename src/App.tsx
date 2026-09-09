@@ -18,7 +18,7 @@ const JourneyTodayScreen = lazy(() => lazyImportWithReload(() => import('./compo
 const JourneyMissionScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyMissionScreen').then(m => ({ default: m.JourneyMissionScreen }))));
 const JourneyReportScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyReportScreen').then(m => ({ default: m.JourneyReportScreen }))));
 const JourneyNextScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyNextScreen').then(m => ({ default: m.JourneyNextScreen }))));
-import { preloadQuestions, saveDraft, submitQuestionnaire, createLocalQuestionnaireResult, readLocalQuestionnaireResult, type Question } from './api/questionnaire';
+import { preloadQuestions, saveDraft, submitQuestionnaire, createLocalQuestionnaireResult, readLocalQuestionnaireResult, isLocalResultId, type Question } from './api/questionnaire';
 import {
   attachQuestionnaireResultToUser,
   fetchLatestCompletedResultForUser,
@@ -48,7 +48,7 @@ import type { AnswerMap } from './utils/bodyCodeCalculator';
 import { readFlowEntry, type Screen, type FlowRoute } from './lib/flowNavigation';
 import { withDeadline } from './lib/deadline';
 import { flowSession, useFlowHistory } from './utils/useFlowHistory';
-import { emptyQuestionnaireProgress, readQuestionnaireProgress, persistQuestionnaireProgress } from './lib/questionnaireProgress';
+import { emptyQuestionnaireProgress, hasIncompleteProgress, readQuestionnaireProgress, persistQuestionnaireProgress } from './lib/questionnaireProgress';
 
 const SESSION_LAST_RESULT_KEY = 'mebody:sessionResultId';
 
@@ -175,7 +175,6 @@ export default function App() {
   };
 
   const openAuth = (returnScreen: Screen, mode: 'signin' | 'signup' = 'signin', successScreen: Screen = returnScreen) => {
-    setPendingAnalysis(null);
     setAuthReturnScreen(returnScreen);
     setAuthSuccessScreen(successScreen);
     setAuthInitialMode(mode);
@@ -206,8 +205,40 @@ export default function App() {
     if (questionnaireProgress.completedResultId || screenRef.current === 'analyzing') return;
     setPendingAnalysis({ answers, questions, questionnaireId: draftId });
     setResultEntrySource('questionnaire');
-    setResultSaveStatus(currentUser ? 'saving' : 'idle');
+    setResultSaveStatus('saving');
     setCurrentScreen('analyzing');
+  };
+
+  const persistAnalysisResult = async (
+    pending: NonNullable<PendingAnalysis>,
+    signal?: AbortSignal,
+  ): Promise<{ resultId: string; resultCode: string }> => {
+    const answers = pending.answers;
+    const questions = pending.questions;
+    let persistedId = pending.questionnaireId;
+    if (!persistedId || isLocalResultId(persistedId)) {
+      const draft = await saveDraft(answers, undefined, signal);
+      persistedId = String(draft.id);
+    }
+
+    let dbResult;
+    try {
+      dbResult = await submitQuestionnaire(answers, persistedId, questions, signal);
+    } catch (firstError) {
+      signal?.throwIfAborted();
+      console.warn('First save attempt failed, retrying once...', firstError);
+      await wait(1000);
+      dbResult = await submitQuestionnaire(answers, persistedId, questions, signal);
+    }
+
+    const dbResultId = String(dbResult.id);
+    const resultCode = dbResult.calculated_code || createLocalQuestionnaireResult(answers, questions).calculated_code;
+
+    if (currentUser) {
+      await attachQuestionnaireResultToUser(dbResultId, currentUser.id);
+    }
+
+    return { resultId: dbResultId, resultCode };
   };
 
   const handleAnalyzePendingAnswers = async () => {
@@ -221,44 +252,24 @@ export default function App() {
     analysisAbortRef.current?.abort();
     analysisAbortRef.current = controller;
     const startedAt = Date.now();
-    const answers = currentPending.answers;
-    const questions = currentPending.questions;
-    const initialDraftId = currentPending.questionnaireId;
-    const localResult = createLocalQuestionnaireResult(answers, questions);
+    const localResult = createLocalQuestionnaireResult(currentPending.answers, currentPending.questions);
 
     let resultId = localResult.id;
     let resultCode = localResult.calculated_code;
-    let finalSaveStatus: ResultSaveStatus = currentUser ? 'saved' : 'idle';
+    let finalSaveStatus: ResultSaveStatus = 'saved';
+    let saveSucceeded = false;
 
     try {
       await withDeadline(async (signal) => {
-        let persistedId = initialDraftId;
-        if (!persistedId) {
-          const draft = await saveDraft(answers, undefined, signal);
-          persistedId = String(draft.id);
-        }
-
-        let dbResult;
-        try {
-          dbResult = await submitQuestionnaire(answers, persistedId, questions, signal);
-        } catch (firstError) {
-          signal.throwIfAborted();
-          console.warn('First save attempt failed, retrying once...', firstError);
-          await wait(1000);
-          dbResult = await submitQuestionnaire(answers, persistedId, questions, signal);
-        }
-
-        const dbResultId = String(dbResult.id);
-        resultId = dbResultId;
-        resultCode = dbResult.calculated_code || resultCode;
-
-        if (currentUser) {
-          await attachQuestionnaireResultToUser(dbResultId, currentUser.id);
-        }
+        const persisted = await persistAnalysisResult(currentPending, signal);
+        resultId = persisted.resultId;
+        resultCode = persisted.resultCode || resultCode;
+        saveSucceeded = true;
       }, controller, 15000);
     } catch (error) {
       console.error('[mebody-error] submit failed; showing the available result:', error);
-      finalSaveStatus = currentUser ? 'failed' : 'idle';
+      finalSaveStatus = 'failed';
+      saveSucceeded = false;
     }
 
     // Analysis screen should remain visible until save finishes,
@@ -270,14 +281,49 @@ export default function App() {
 
     if (!mountedRef.current) return;
     if (screenRef.current !== 'analyzing' || analysisAbortRef.current !== controller) return;
-    setPendingAnalysis(null);
-    setQuestionnaireProgress((progress) => ({ ...progress, completedResultId: resultId }));
+
+    // Keep retry payload when save failed so Home can re-submit.
+    if (saveSucceeded) {
+      setPendingAnalysis(null);
+      setQuestionnaireProgress((progress) => ({ ...progress, completedResultId: resultId, answers: {}, index: 0 }));
+      rememberResultForCurrentSession(resultId);
+    } else {
+      setPendingAnalysis({
+        ...currentPending,
+        questionnaireId: currentPending.questionnaireId,
+      });
+      setQuestionnaireProgress((progress) => ({ ...progress, completedResultId: undefined }));
+    }
+
     setQuestionnaireId(resultId);
     setBodyCode(resultCode);
-    rememberResultForCurrentSession(resultId);
     setResultEntrySource('questionnaire');
     setResultSaveStatus(finalSaveStatus);
     setCurrentScreen('result');
+  };
+
+  const handleRetryResultSave = async () => {
+    const currentPending = pendingAnalysis;
+    if (!currentPending || resultSaveStatus === 'saving') return;
+
+    setResultSaveStatus('saving');
+    try {
+      const persisted = await persistAnalysisResult(currentPending);
+      setPendingAnalysis(null);
+      setQuestionnaireId(persisted.resultId);
+      setBodyCode(persisted.resultCode);
+      setQuestionnaireProgress((progress) => ({
+        ...progress,
+        completedResultId: persisted.resultId,
+        answers: {},
+        index: 0,
+      }));
+      rememberResultForCurrentSession(persisted.resultId);
+      setResultSaveStatus('saved');
+    } catch (error) {
+      console.error('[mebody-error] retry save failed:', error);
+      setResultSaveStatus('failed');
+    }
   };
 
   const handleRestart = () => {
@@ -323,10 +369,14 @@ export default function App() {
     })();
   };
 
-  const handleSignedInRoute = async (user: User) => {
+  const handleSignedInRoute = async (user: User, options?: { navigate?: boolean }) => {
+    const shouldNavigate = options?.navigate !== false;
     setCurrentUser(user);
 
     const currentQuestionnaireId = questionnaireIdRef.current;
+    const canAttach =
+      Boolean(currentQuestionnaireId) &&
+      !isLocalResultId(currentQuestionnaireId!);
 
     try {
       // Profile sync should not block post-login routing.
@@ -336,7 +386,7 @@ export default function App() {
         console.warn('handleSignedInRoute upsertProfileFromUser failed:', profileError);
       }
 
-      if (currentQuestionnaireId) {
+      if (canAttach && currentQuestionnaireId) {
         setResultSaveStatus('saving');
         try {
           await attachQuestionnaireResultToUser(currentQuestionnaireId, user.id);
@@ -347,8 +397,10 @@ export default function App() {
         setLatestResultId(currentQuestionnaireId);
         setResultEntrySource('questionnaire');
         setResultSaveStatus('saved');
-        setActiveTab('home');
-        setCurrentScreen('result');
+        if (shouldNavigate) {
+          setActiveTab('home');
+          setCurrentScreen('result');
+        }
         return;
       }
 
@@ -359,18 +411,23 @@ export default function App() {
         setBodyCode(latestFromDb.calculated_code);
         setResultEntrySource('quick');
         setResultSaveStatus('saved');
-        setActiveTab('home');
-        setCurrentScreen('result');
+        if (shouldNavigate) {
+          setActiveTab('home');
+          setCurrentScreen('result');
+        }
         return;
       }
 
       // Fallback path: legacy users may have only profile body code.
       const profileCode = await fetchUserBodyCodeForUser(user.id, user.email);
-      setQuestionnaireId(undefined);
-      setLatestResultId(undefined);
+      if (!isLocalResultId(currentQuestionnaireId ?? '')) {
+        setQuestionnaireId(undefined);
+        setLatestResultId(undefined);
+      }
       setBodyCode(profileCode?.body_bti_code);
       setResultEntrySource('questionnaire');
       setResultSaveStatus('idle');
+      if (!shouldNavigate) return;
       if (profileCode?.body_bti_code) {
         setActiveTab('status');
         setCurrentScreen('result');
@@ -379,6 +436,7 @@ export default function App() {
       }
     } catch (error) {
       console.warn('handleSignedInRoute failed:', error);
+      if (!shouldNavigate) return;
       setQuestionnaireId(undefined);
       setLatestResultId(undefined);
       setBodyCode(undefined);
@@ -617,13 +675,12 @@ export default function App() {
 
   /**
    * 랜딩의 기본 진입.
-   * 이미 코드가 있으면(로그인 회원의 저장된 결과 또는 이 브라우저의 직전 결과)
-   * 32문항을 다시 묻지 않고 그 결과로 바로 보냅니다.
-   * 다시 재려면 결과·마이페이지의 "진단 다시 하기"(startNewDiagnosis)를 씁니다.
+   * 이미 완료된 결과가 있으면 결과로 보냅니다.
+   * 중간 진행은 Landing에서 이어서/처음부터를 고른 뒤 onResumeIncomplete / startNewDiagnosis 로 처리합니다.
    */
   const startOrResumeDiagnosis = () => {
     const knownResultId = questionnaireId ?? latestResultId;
-    if (knownResultId) {
+    if (knownResultId && !isLocalResultId(knownResultId)) {
       openResultScreen(knownResultId, 'quick');
       return;
     }
@@ -634,6 +691,10 @@ export default function App() {
       return;
     }
     startNewDiagnosis();
+  };
+
+  const resumeIncompleteDiagnosis = () => {
+    setCurrentScreen('questionnaire');
   };
 
   const startNewDiagnosis = () => {
@@ -740,7 +801,14 @@ export default function App() {
           {currentScreen === 'landing' && (
             <LandingScreen
               onStart={startOrResumeDiagnosis}
-              hasExistingCode={Boolean(questionnaireId ?? latestResultId ?? (currentUser && bodyCode))}
+              hasIncompleteProgress={hasIncompleteProgress(questionnaireProgress)}
+              onResumeIncomplete={resumeIncompleteDiagnosis}
+              onStartFresh={startNewDiagnosis}
+              hasExistingCode={Boolean(
+                (questionnaireId && !isLocalResultId(questionnaireId)) ||
+                  latestResultId ||
+                  (currentUser && bodyCode),
+              )}
               isLoggedIn={Boolean(currentUser)}
               userEmail={currentUser?.email}
               userDisplayName={
@@ -786,9 +854,18 @@ export default function App() {
               initialMode={authInitialMode}
               onBack={() => goBack(authReturnScreen)}
               onSignedIn={async (signedInUser) => {
-                setCurrentUser(signedInUser);
-                if (authSuccessScreen === authReturnScreen) goBack(authReturnScreen);
-                else { navigation.replace(); setCurrentScreen(authSuccessScreen); }
+                const explicitDestination = (
+                  ['membership', 'journeyIntro', 'checkout', 'cart', 'journeyToday', 'journeyMission', 'journeyReport', 'journeyNext'] as Screen[]
+                ).includes(authSuccessScreen);
+
+                if (explicitDestination) {
+                  await handleSignedInRoute(signedInUser, { navigate: false });
+                  navigation.replace();
+                  setCurrentScreen(authSuccessScreen);
+                  return;
+                }
+
+                await handleSignedInRoute(signedInUser, { navigate: true });
               }}
               onGoMembership={() => openMembership('auth')}
             />
@@ -857,7 +934,44 @@ export default function App() {
               )}
 
               {currentScreen === 'result' && activeTab === 'home' && resultSaveStatus === 'failed' && (
-                <p role="status">계정에 결과를 저장하지 못했습니다. 현재 탭에서는 결과를 계속 확인할 수 있습니다.</p>
+                <div
+                  role="status"
+                  style={{
+                    margin: '12px 16px 0',
+                    padding: '14px 16px',
+                    borderRadius: '16px',
+                    border: '1px solid #fecaca',
+                    background: '#fef2f2',
+                    display: 'grid',
+                    gap: '10px',
+                  }}
+                >
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#7f1d1d', wordBreak: 'keep-all' }}>
+                    결과를 서버에 저장하지 못했습니다. 화면에서는 계속 볼 수 있지만, 로그인·여정에는 아직 연결되지 않습니다.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void handleRetryResultSave()}
+                    disabled={!pendingAnalysis}
+                    style={{
+                      height: '40px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: pendingAnalysis ? '#014725' : '#9ca3af',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: '14px',
+                      cursor: pendingAnalysis ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    다시 저장
+                  </button>
+                </div>
+              )}
+              {currentScreen === 'result' && activeTab === 'home' && resultSaveStatus === 'saving' && (
+                <p role="status" style={{ margin: '12px 16px 0', fontSize: '13px', fontWeight: 700, color: '#014725' }}>
+                  결과를 저장하는 중…
+                </p>
               )}
               {currentScreen === 'result' && activeTab === 'home' && (
                 <HomeScreen

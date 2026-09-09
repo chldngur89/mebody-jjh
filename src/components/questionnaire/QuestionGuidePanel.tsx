@@ -10,6 +10,18 @@ interface QuestionGuidePanelProps {
   guideText: string
 }
 
+function findScrollParent(start: HTMLElement | null): HTMLElement | null {
+  let node: HTMLElement | null = start?.parentElement ?? null
+  while (node) {
+    const { overflowY } = window.getComputedStyle(node)
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+      return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
 /**
  * 선택지 아래: 미디어(사진이 있을 때만) + 연초록 가이드 박스 1개
  *
@@ -27,11 +39,23 @@ export function QuestionGuidePanel({
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth'
+
     requestAnimationFrame(() => {
-      panelRef.current?.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'center',
+      const scrollParent = findScrollParent(panel)
+      if (!scrollParent) return
+
+      const parentRect = scrollParent.getBoundingClientRect()
+      const panelRect = panel.getBoundingClientRect()
+      const delta =
+        panelRect.top - parentRect.top - (parentRect.height / 2 - panelRect.height / 2)
+      scrollParent.scrollTo({
+        top: scrollParent.scrollTop + delta,
+        behavior,
       })
     })
   }, [mediaKey, mediaSrc, guideText])

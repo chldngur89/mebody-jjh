@@ -8,6 +8,12 @@ interface LandingScreenProps {
   onStart: () => void;
   /** 이미 코드가 있으면 문항을 건너뛰고 결과로 갑니다. 버튼 문구도 바뀝니다. */
   hasExistingCode?: boolean;
+  /** 중간에 멈춘 설문이 있으면 이어서 / 처음부터를 고르게 합니다. */
+  hasIncompleteProgress?: boolean;
+  /** 중간 설문 이어서 하기 */
+  onResumeIncomplete?: () => void;
+  /** 중간 설문 버리고 약관(동의)부터 다시 시작 */
+  onStartFresh?: () => void;
   onQuickResult?: () => void;
   hasQuickResult?: boolean;
   isLoggedIn?: boolean;
@@ -21,6 +27,9 @@ interface LandingScreenProps {
 export function LandingScreen({
   onStart,
   hasExistingCode = false,
+  hasIncompleteProgress = false,
+  onResumeIncomplete,
+  onStartFresh,
   onQuickResult,
   hasQuickResult = false,
   isLoggedIn = false,
@@ -34,8 +43,10 @@ export function LandingScreen({
   const scrollRef = useRef<HTMLDivElement>(null);
   // 로그인 상태에서 "분석 시작하기" 와 "지난 결과 보기" 가 사실상 같은 곳으로 가서
   // 버튼이 두 개 보이면 혼란스럽다. 코드가 있으면 주 버튼 하나로 합친다.
-  const unifiedForMember = isLoggedIn && hasExistingCode;
+  // 다만 중간 진행이 있으면 이어서/처음부터 선택이 우선이다.
+  const unifiedForMember = isLoggedIn && hasExistingCode && !hasIncompleteProgress;
   const showQuickResult = !unifiedForMember && isLoggedIn && hasQuickResult && !!onQuickResult;
+  const canChooseIncomplete = hasIncompleteProgress && !!onResumeIncomplete && !!onStartFresh;
   const memberName = (userDisplayName?.trim() || userEmail?.split('@')[0]?.trim() || '회원').replace(/\s*회원님$/, '');
   const memberGreeting = `${memberName} 회원님`;
   const normalizedBodyCode = latestBodyCode?.trim().toUpperCase();
@@ -229,35 +240,107 @@ export function LandingScreen({
             </div>
 
             <div style={{ display: 'grid', gap: '14px' }}>
-              <button
-                type="button"
-                onClick={onStart}
-                style={{
-                  display: 'inline-flex',
-                  width: '100%',
-                  height: '62px',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  borderRadius: '18px',
-                  border: 'none',
-                  background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                  color: '#ffffff',
-                  fontSize: '17px',
-                  fontWeight: 800,
-                  boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
-                  cursor: 'pointer',
-                }}
-              >
-                <span>
-                  {unifiedForMember
-                    ? '내 코드 · 오늘의 관리 이어서 하기'
-                    : hasExistingCode
-                      ? '내 체형 코드 결과 보기'
-                      : '내 체형 코드 분석 시작하기'}
-                </span>
-                <ChevronRight size={20} />
-              </button>
+              {canChooseIncomplete ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: '12px',
+                    borderRadius: '18px',
+                    border: '1px solid rgba(167,243,208,0.95)',
+                    background: 'rgba(236,253,245,0.72)',
+                    padding: '16px',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: '15px',
+                      fontWeight: 800,
+                      color: '#014725',
+                      wordBreak: 'keep-all',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    이전에 하던 분석이 있어요. 이어서 할까요, 처음부터 다시 할까요?
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#047857', wordBreak: 'keep-all' }}>
+                    처음부터는 약관 동의 화면부터 다시 시작합니다.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onResumeIncomplete}
+                    style={{
+                      display: 'inline-flex',
+                      width: '100%',
+                      height: '54px',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      borderRadius: '16px',
+                      border: 'none',
+                      background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: 800,
+                      boxShadow: '0 12px 24px rgba(1,71,37,0.28)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    이어서 할래요
+                    <ChevronRight size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onStartFresh}
+                    style={{
+                      display: 'inline-flex',
+                      width: '100%',
+                      height: '48px',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '14px',
+                      border: '1px solid rgba(167,243,208,0.95)',
+                      background: '#ffffff',
+                      color: '#014725',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    처음부터 할래요
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onStart}
+                  style={{
+                    display: 'inline-flex',
+                    width: '100%',
+                    height: '62px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    borderRadius: '18px',
+                    border: 'none',
+                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                    color: '#ffffff',
+                    fontSize: '17px',
+                    fontWeight: 800,
+                    boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>
+                    {unifiedForMember
+                      ? '내 코드 · 오늘의 관리 이어서 하기'
+                      : hasExistingCode
+                        ? '내 체형 코드 결과 보기'
+                        : '내 체형 코드 분석 시작하기'}
+                  </span>
+                  <ChevronRight size={20} />
+                </button>
+              )}
 
               {showQuickResult && (
                 <button

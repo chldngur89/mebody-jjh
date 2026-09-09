@@ -6,7 +6,7 @@
  */
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
-import { fetchQuestionnaireResult, fetchQuestions, type BodyCodeContent, type Question, type QuestionnaireResponse } from '../../api/questionnaire';
+import { fetchQuestionnaireResult, fetchQuestions, fetchBodyCodeContentWithFallback, type BodyCodeContent, type Question, type QuestionnaireResponse } from '../../api/questionnaire';
 import {
   fetchAppContent,
   fetchAppImages,
@@ -358,6 +358,7 @@ export function useResultData(
   questionnaireId: string | undefined,
   isLoggedIn: boolean,
   onResultLoad?: (bodyCode: string) => void,
+  initialBodyCode?: string,
 ): ResultData {
   const [result, setResult] = useState<ResultWithContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -377,24 +378,72 @@ export function useResultData(
   }, []);
 
   useEffect(() => {
-    if (!questionnaireId) {
-      setIsLoading(false);
-      return;
-    }
     let cancelled = false;
     setIsLoading(true);
     setError(null);
 
+    const applyCodeOnlyFallback = async (code: string) => {
+      const content = await fetchBodyCodeContentWithFallback(code);
+      if (cancelled) return;
+      const now = new Date().toISOString();
+      setResult({
+        id: `profile-code-${code}`,
+        answers: {},
+        calculated_code: code,
+        status: 'completed',
+        created_at: now,
+        updated_at: now,
+        completed_at: now,
+        body_code_content: content,
+      });
+      onResultLoad?.(code);
+      setError(null);
+    };
+
+    if (!questionnaireId) {
+      const code = initialBodyCode?.trim();
+      if (!code) {
+        setResult(null);
+        setIsLoading(false);
+        return;
+      }
+      void applyCodeOnlyFallback(code).finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
     fetchQuestionnaireResult(questionnaireId)
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return;
         const nextResult = (data as ResultWithContent) ?? null;
-        setResult(nextResult);
-        if (nextResult?.calculated_code) onResultLoad?.(nextResult.calculated_code);
+        if (nextResult?.calculated_code) {
+          setResult(nextResult);
+          onResultLoad?.(nextResult.calculated_code);
+          return;
+        }
+        const code = initialBodyCode?.trim();
+        if (code) {
+          await applyCodeOnlyFallback(code);
+          return;
+        }
+        setResult(null);
+        setError('결과를 찾을 수 없습니다.');
       })
-      .catch((loadError) => {
+      .catch(async (loadError) => {
         if (cancelled) return;
         console.error('Failed to load result:', loadError);
+        const code = initialBodyCode?.trim();
+        if (code) {
+          try {
+            await applyCodeOnlyFallback(code);
+            return;
+          } catch {
+            /* fall through */
+          }
+        }
         setError('결과를 찾을 수 없습니다.');
       })
       .finally(() => {
@@ -404,7 +453,7 @@ export function useResultData(
     return () => {
       cancelled = true;
     };
-  }, [questionnaireId, onResultLoad]);
+  }, [questionnaireId, initialBodyCode, onResultLoad]);
 
   useEffect(() => {
     let cancelled = false;

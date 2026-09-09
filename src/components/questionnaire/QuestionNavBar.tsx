@@ -15,9 +15,13 @@ export function QuestionNavBar({
 }: QuestionNavBarProps) {
   return (
     <div className="animate-slide-up-in shrink-0 border-t border-gray-100 bg-white px-6 py-4">
-      <p className="mb-3 text-center text-xs leading-relaxed text-gray-500" style={{ wordBreak: 'keep-all' }}>
-        확인이 되었다면 아래 {isLastQuestion ? '「결과 보기」' : '「다음」'}을 눌러 주세요.
-      </p>
+      {canGoNext ? (
+        <p className="mb-3 text-center text-xs leading-relaxed text-gray-500" style={{ wordBreak: 'keep-all' }}>
+          확인이 되었다면 아래 {isLastQuestion ? '「결과 보기」' : '「다음」'}을 눌러 주세요.
+        </p>
+      ) : (
+        <div className="mb-3 h-4" aria-hidden />
+      )}
       <div className="flex gap-3">
         <button
           type="button"

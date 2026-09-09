@@ -55,7 +55,7 @@ export function HomeScreen({
 }: HomeScreenProps) {
   /** 방금 담은 상품에 체크 표시를 잠깐 보여줍니다 */
   const [justAdded, setJustAdded] = useState<string | null>(null);
-  const data = useResultData(questionnaireId, isLoggedIn, onResultLoad);
+  const data = useResultData(questionnaireId, isLoggedIn, onResultLoad, initialBodyCode);
 
   // 코드를 이미 알면 결과 조회를 기다리지 않고 이미지를 먼저 받아 둡니다.
   if (initialBodyCode) preloadCharacterImage(initialBodyCode);
@@ -115,28 +115,32 @@ export function HomeScreen({
       </Card>
 
       {/* ── 01 나의 움직임 경향 ────────────────────────────────────── */}
-      <Card>
-        <SectionHeading kicker="내 상태" title="나의 움직임 경향" />
-        <div style={{ background: SURFACE.subtle, borderRadius: '14px', padding: '14px', fontSize: '14px', lineHeight: 1.7, color: BRAND.text, wordBreak: 'keep-all' }}>
-          {data.axisDetails.map((d) => d.code).join(' · ')} — {data.summaryLine}
-        </div>
-      </Card>
+      {data.axisDetails.length > 0 && (
+        <Card>
+          <SectionHeading kicker="내 상태" title="나의 움직임 경향" />
+          <div style={{ background: SURFACE.subtle, borderRadius: '14px', padding: '14px', fontSize: '14px', lineHeight: 1.7, color: BRAND.text, wordBreak: 'keep-all' }}>
+            {data.axisDetails.map((d) => d.code).join(' · ')} — {data.summaryLine}
+          </div>
+        </Card>
+      )}
 
       {/* ── 02 4축 상세 ───────────────────────────────────────────── */}
-      <Card>
-        <SectionHeading kicker="내 상태" title="4축 상세 결과" hint="중앙에 가까울수록 균형" />
-        <div style={{ display: 'grid', gap: '18px' }}>
-          {data.axisRows.map((row) => (
-            <AxisTrack
-              key={row.key}
-              label={row.title.replace(/\s*(위치|높이|회전|유연성)$/, '')}
-              leftLabel={row.labelLeft}
-              rightLabel={row.labelRight}
-              value={knobPercent(row.percentLeft)}
-            />
-          ))}
-        </div>
-      </Card>
+      {data.axisRows.length > 0 && (
+        <Card>
+          <SectionHeading kicker="내 상태" title="4축 상세 결과" hint="중앙에 가까울수록 균형" />
+          <div style={{ display: 'grid', gap: '18px' }}>
+            {data.axisRows.map((row) => (
+              <AxisTrack
+                key={row.key}
+                label={row.title.replace(/\s*(위치|높이|회전|유연성)$/, '')}
+                leftLabel={row.labelLeft}
+                rightLabel={row.labelRight}
+                value={knobPercent(row.percentLeft)}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* ── 03 지금 가장 먼저 해보세요 = 공통 스트레칭 ──────────────── */}
       <Card tone="green" padding="20px">

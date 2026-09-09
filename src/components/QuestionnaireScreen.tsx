@@ -70,6 +70,10 @@ export function QuestionnaireScreen({
   const completionStarted = useRef(false)
   const alive = useRef(true)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const draftIdRef = useRef<string | undefined>(questionnaireId)
+  draftIdRef.current = questionnaireId
+  const pendingDraftAnswersRef = useRef<AnswerMap | null>(null)
+  const draftSaveChainRef = useRef<Promise<void>>(Promise.resolve())
 
   const loadQuestions = useCallback(async () => {
     setIsLoading(true)
@@ -106,19 +110,36 @@ export function QuestionnaireScreen({
   const rawAnswer = currentQuestion ? answers[currentQuestion.question_code] : undefined
   const selectedAnswer = Array.isArray(rawAnswer) ? rawAnswer[0] : rawAnswer
 
+  const runDraftSave = useCallback(async (newAnswers: AnswerMap) => {
+    try {
+      const result = await saveDraft(newAnswers, draftIdRef.current)
+      const nextId = String(result.id)
+      draftIdRef.current = nextId
+      if (alive.current) onProgressChange({ ...progressRef.current, draftId: nextId })
+    } catch (error) {
+      console.error('Failed to save draft:', error)
+    }
+  }, [onProgressChange])
+
+  const enqueueDraftSave = useCallback((newAnswers: AnswerMap) => {
+    pendingDraftAnswersRef.current = newAnswers
+    draftSaveChainRef.current = draftSaveChainRef.current.then(async () => {
+      const latest = pendingDraftAnswersRef.current
+      if (!latest) return
+      pendingDraftAnswersRef.current = null
+      await runDraftSave(latest)
+    })
+    return draftSaveChainRef.current
+  }, [runDraftSave])
+
   const saveDraftDebounced = useCallback(
-    async (newAnswers: AnswerMap) => {
+    (newAnswers: AnswerMap) => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          const result = await saveDraft(newAnswers, questionnaireId)
-          if (alive.current && !questionnaireId) updateProgress({ draftId: result.id })
-        } catch (error) {
-          console.error('Failed to save draft:', error)
-        }
+      saveTimeoutRef.current = setTimeout(() => {
+        void enqueueDraftSave(newAnswers)
       }, 3000)
     },
-    [questionnaireId],
+    [enqueueDraftSave],
   )
 
   const finish = useCallback(
@@ -126,9 +147,12 @@ export function QuestionnaireScreen({
       if (completionStarted.current) return
       completionStarted.current = true
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      onComplete(nextAnswers, questions, questionnaireId)
+      const draftId = draftIdRef.current
+      void enqueueDraftSave(nextAnswers).finally(() => {
+        onComplete(nextAnswers, questions, draftIdRef.current ?? draftId)
+      })
     },
-    [onComplete, questionnaireId, questions],
+    [enqueueDraftSave, onComplete, questions],
   )
 
   const handleAnswer = useCallback(
@@ -137,33 +161,20 @@ export function QuestionnaireScreen({
       const nextAnswers = { ...answers, [currentQuestion.question_code]: value }
       updateProgress({ answers: nextAnswers })
       saveDraftDebounced(nextAnswers)
-
     },
-    [answers, currentQuestion, phase, saveDraftDebounced],
+    [answers, currentQuestion, saveDraftDebounced],
   )
 
   const handleGuidePrev = useCallback(() => {
-    // 가이드 단계에서 이전이면 선택만 지우고 같은 문항의 미선택 select 로 돌아갑니다.
-    if (phase === 'guide' && currentQuestion) {
-      const nextAnswers = { ...answers }
-      delete nextAnswers[currentQuestion.question_code]
-      updateProgress({ answers: nextAnswers })
-      return
-    }
-
     if (currentIndex <= 0) {
       onBack?.()
       return
     }
 
-    // 이전 문항으로 갈 때 그 문항 답을 지워서 선택된 채로 복원하지 않습니다.
     const prevIndex = currentIndex - 1
-    const prevCode = questions[prevIndex]?.question_code
-    const nextAnswers = { ...answers }
-    if (prevCode) delete nextAnswers[prevCode]
-    updateProgress({ answers: nextAnswers, index: prevIndex })
+    updateProgress({ index: prevIndex })
     onPreviousQuestion(prevIndex)
-  }, [answers, currentIndex, currentQuestion, onBack, onPreviousQuestion, phase, questions])
+  }, [currentIndex, onBack, onPreviousQuestion])
 
   const handleGuideNext = useCallback(() => {
     if (!currentQuestion || !answers[currentQuestion.question_code]) return

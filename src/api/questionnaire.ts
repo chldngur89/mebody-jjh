@@ -150,6 +150,8 @@ function isLocalResultId(questionnaireId: string): boolean {
   return questionnaireId.startsWith(LOCAL_RESULT_PREFIX)
 }
 
+export { isLocalResultId }
+
 export function readLocalQuestionnaireResult(questionnaireId: string): QuestionnaireResponse | null {
   if (typeof window === 'undefined' || !isLocalResultId(questionnaireId)) return null
 
@@ -186,6 +188,8 @@ async function fetchBodyCodeContentWithFallback(bodyCode: string): Promise<BodyC
 
   return getFallbackBodyCodeContent(bodyCode)
 }
+
+export { fetchBodyCodeContentWithFallback }
 
 export function createLocalQuestionnaireResult(
   answers: AnswerMap,
@@ -390,12 +394,20 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
   if (error) {
     console.warn(
       isTimeoutError(error)
-        ? 'fetchQuestions Supabase query timed out. Falling back to bundled 32-question snapshot.'
-        : 'fetchQuestions from Supabase failed. Falling back to bundled 32-question snapshot.',
+        ? 'fetchQuestions Supabase query timed out.'
+        : 'fetchQuestions from Supabase failed.',
       error,
     )
   }
 
+  const persisted = readPersistedQuestions()
+  if (persisted) {
+    console.warn('Falling back to persisted questions cache.')
+    questionsCache = persisted
+    return questionsCache
+  }
+
+  console.warn('Falling back to bundled 32-question snapshot.')
   questionsCache = getSnapshotQuestions()
   return questionsCache
 }

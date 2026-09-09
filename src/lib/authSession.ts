@@ -107,15 +107,12 @@ export async function recoverAuthSession(): Promise<Session | null> {
       await clearInvalidAuthSession();
       return null;
     }
-    if (userError || !userData.user) {
-      // Access token may already be unusable; treat as logged out without throwing.
-      if (userError) {
-        console.debug('Supabase getUser recovery:', userError.message);
-        await clearInvalidAuthSession();
-        return null;
-      }
-      return null;
+    // Transient network / getUser failures must not wipe a still-valid refresh session.
+    if (userError) {
+      console.debug('Supabase getUser recovery:', userError.message);
+      return session;
     }
+    if (!userData.user) return null;
     return session;
   } catch (error) {
     if (isInvalidRefreshTokenError(error)) {

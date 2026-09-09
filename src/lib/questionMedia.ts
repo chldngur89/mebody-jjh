@@ -1,5 +1,13 @@
 import { SUPABASE_STORAGE_PUBLIC } from './supabase'
 
+/** Bump when Storage question assets are remastered (same path, new bytes). */
+const QUESTION_MEDIA_CACHE_VERSION = '20260909r'
+
+function withCacheBust(url: string): string {
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}v=${QUESTION_MEDIA_CACHE_VERSION}`
+}
+
 /**
  * questions.media_url 해석
  * - 절대 URL → 그대로
@@ -12,11 +20,11 @@ export function resolveQuestionMediaUrl(mediaUrl?: string | null): string | null
   if (!trimmed) return null
 
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
-    return trimmed
+    return withCacheBust(trimmed)
   }
 
   if (!SUPABASE_STORAGE_PUBLIC) return null
 
   const path = trimmed.replace(/^\//, '')
-  return `${SUPABASE_STORAGE_PUBLIC}/${path}`
+  return withCacheBust(`${SUPABASE_STORAGE_PUBLIC}/${path}`)
 }

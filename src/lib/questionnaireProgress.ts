@@ -25,3 +25,10 @@ export function readQuestionnaireProgress() {
 export function persistQuestionnaireProgress(progress: QuestionnaireProgress) {
   try { sessionStorage.setItem(QUESTIONNAIRE_PROGRESS_KEY, JSON.stringify(progress)); } catch { /* React state still preserves this visit. */ }
 }
+
+/** Mid-flow progress that can be resumed (not yet completed). */
+export function hasIncompleteProgress(progress: QuestionnaireProgress): boolean {
+  if (progress.completedResultId) return false
+  if (progress.index > 0) return true
+  return Object.keys(progress.answers).length > 0
+}

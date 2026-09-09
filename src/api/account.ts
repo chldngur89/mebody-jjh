@@ -303,6 +303,10 @@ async function syncProfileFromQuestionnaireResult(questionnaireId: string, userI
 
 export async function attachQuestionnaireResultToUser(questionnaireId: string | undefined, userId: string): Promise<void> {
   if (!questionnaireId || !userId) return;
+  // local-result-* 등 비영속 id 는 FK 를 걸 수 없으므로 스킵합니다.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(questionnaireId)) {
+    return;
+  }
 
   const { error } = await supabase
     .from('questionnaire_responses')

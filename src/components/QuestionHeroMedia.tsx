@@ -88,9 +88,10 @@ export function QuestionHeroMedia({
   const isVideo = isVideoSource(src, mediaType)
   const showImage = Boolean(src) && !failed
 
-  // 사진이 없는 문항에서 빈 자리를 만들지 않습니다.
-  // (가이드 단계에서 이것 때문에 안내 문구가 화면 아래로 밀려났습니다)
-  if (hideWhenEmpty && !src) return null
+  // 사진이 없는 문항·로드 실패(가이드)에서 빈 자리를 만들지 않습니다.
+  if (hideWhenEmpty && (!src || failed)) return null
+
+  const showLoadingPulse = Boolean(src) && !failed && !ready
 
   return (
     <div
@@ -98,11 +99,23 @@ export function QuestionHeroMedia({
       style={{ height }}
       data-question-hero-media
     >
-      {!showImage || !ready ? (
+      {showLoadingPulse ? (
         <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-teal-50">
           <div className="absolute inset-6 rounded-[28px] border border-emerald-100/80 bg-white/50" />
           <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
             <div className="mb-3 h-12 w-12 shrink-0 animate-pulse rounded-full bg-emerald-100/80" />
+            {(part || title) && (
+              <p className="text-sm font-bold text-gray-600" style={{ wordBreak: 'keep-all' }}>
+                {[part ? `${part}파트` : null, title].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {failed && !hideWhenEmpty ? (
+        <div className="absolute inset-0 overflow-hidden rounded-3xl bg-emerald-50/80">
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
             {(part || title) && (
               <p className="text-sm font-bold text-gray-600" style={{ wordBreak: 'keep-all' }}>
                 {[part ? `${part}파트` : null, title].filter(Boolean).join(' · ')}
