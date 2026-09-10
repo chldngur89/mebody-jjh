@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
-import { ChevronDown, ChevronUp, ArrowLeft, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
 
@@ -9,9 +10,14 @@ interface ConsentScreenProps {
   onAgree: () => void;
 }
 
-export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest('button, a, input, label, textarea, select, [role="button"]'));
+}
+
+export function ConsentScreen({ onAgree }: ConsentScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
-  const screenHeight = isDesktopMockup ? '100%' : '100dvh';
+  const screenHeight = isDesktopMockup ? '100%' : 'var(--mebody-app-height)';
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [agreeContent, setAgreeContent] = useState(false);
@@ -20,124 +26,80 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
 
   const canProceed = agreeContent && agreePrivacy;
 
+  const scrollToBottom = () => {
+    const el = consentScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: preferredScrollBehavior() });
+  };
+
+  const handleSurfaceClick = (event: ReactMouseEvent) => {
+    if (isInteractiveTarget(event.target)) return;
+    scrollToBottom();
+  };
+
   return (
     <div
+      className="mebody-app-surface"
+      onClick={handleSurfaceClick}
       style={{
         position: 'relative',
         overflow: 'hidden',
-        height: isDesktopMockup ? '100%' : undefined,
+        height: screenHeight,
         minHeight: screenHeight,
+        maxHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxSizing: 'border-box',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '56px',
-            left: '-84px',
-            width: '300px',
-            height: '300px',
-            borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.035)',
-            filter: 'blur(58px)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '60px',
-            right: '-96px',
-            width: '320px',
-            height: '320px',
-            borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.03)',
-            filter: 'blur(72px)',
-          }}
-        />
-      </div>
-
       <div
         style={{
           position: 'relative',
           zIndex: 1,
           display: 'flex',
-          height: screenHeight,
-          minHeight: screenHeight,
+          height: '100%',
           flexDirection: 'column',
-          padding: '22px 24px 20px',
-          overflowY: 'auto',
+          padding: isDesktopMockup ? '16px 20px 16px' : '8px 12px 8px',
+          boxSizing: 'border-box',
         }}
       >
-        <div style={{ marginTop: 'auto', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.4)',
-              background: 'rgba(255,255,255,0.72)',
-              padding: '9px 16px',
-              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            <Sparkles size={18} color="#014725" />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>MEBODY</span>
-          </div>
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderRadius: '999px',
-                border: '1px solid rgba(255,255,255,0.4)',
-                background: 'rgba(255,255,255,0.72)',
-                padding: '9px 14px',
-                color: '#374151',
-                fontSize: '12px',
-                fontWeight: 700,
-                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
-                backdropFilter: 'blur(12px)',
-                cursor: 'pointer',
-              }}
-            >
-              <ArrowLeft size={14} />
-              뒤로
-            </button>
-          )}
-        </div>
-
         <div
           style={{
-            flex: '0 1 auto',
-            maxHeight: 'calc(100% - 86px)',
+            flex: 1,
             minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            borderRadius: '28px',
-            background: 'rgba(255,255,255,0.78)',
-            boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
-            backdropFilter: 'blur(20px)',
-            padding: '24px',
+            borderRadius: '20px',
+            background: '#ffffff',
+            boxShadow: '0 12px 28px rgba(15, 23, 42, 0.08)',
+            padding: isDesktopMockup ? '20px 20px 16px' : '16px 14px 12px',
           }}
         >
-          <div style={{ marginBottom: '18px', textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>CONSENT</div>
-            <h1 style={{ fontSize: '27px', lineHeight: 1.34, fontWeight: 850, color: '#111827', marginBottom: '12px', wordBreak: 'keep-all', letterSpacing: '-0.045em' }}>
-              Mebody 체형 분석 전
+          <div style={{ marginBottom: '12px', textAlign: 'center', flexShrink: 0 }}>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '8px' }}>
+              시작 전 안내
+            </div>
+            <h1
+              style={{
+                fontSize: isDesktopMockup ? '24px' : '22px',
+                lineHeight: 1.3,
+                fontWeight: 850,
+                color: '#111827',
+                marginBottom: '8px',
+                wordBreak: 'keep-all',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              체크를 시작하기 전에
               <br />
-              안내 및 동의
+              아래 내용을 확인해 주세요
             </h1>
-            <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-              웰니스 가이드를 위한 셀프 체크 서비스이며 의료행위를 대신하지 않습니다.
+            <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+              몇 분 걸리는 셀프 체크예요. 의료 진단이나 치료를 대신하지 않습니다.
             </p>
           </div>
 
@@ -150,208 +112,204 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               flexDirection: 'column',
             }}
           >
-            <div ref={consentScrollRef} style={{ flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
             <div
-              style={{
-                borderRadius: '18px',
-                border: '1px solid rgba(209,250,229,0.95)',
-                background: 'rgba(236,253,245,0.92)',
-                padding: '16px 18px',
-            paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
-                marginBottom: '16px',
-              }}
+              ref={consentScrollRef}
+              style={{ flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0, WebkitOverflowScrolling: 'touch' }}
             >
-              <ul style={{ display: 'grid', gap: '10px', fontSize: '14px', lineHeight: 1.6, color: '#374151' }}>
-                <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
-                  <span>본 서비스는 웰니스 가이드를 위한 체형(자세) 분석입니다.</span>
-                </li>
-                <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
-                  <span>32문항 응답을 바탕으로 현재의 mebody 코드와 아이덴티티를 추정합니다.</span>
-                </li>
-                <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
-                  <span>개인차, 생활 습관, 환경, 컨디션에 따라 결과는 달라질 수 있습니다.</span>
-                </li>
-                <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
-                  <span>의료행위(진단·치료·교정·재활)가 아니며 의학적 판단을 대체하지 않습니다.</span>
-                </li>
-                <li style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ color: '#016B38', fontWeight: 800 }}>•</span>
-                  <span>통증이나 이상 증상이 있다면 전문가 상담을 우선해주세요.</span>
-                </li>
-              </ul>
-            </div>
-
-            <div
-              style={{
-                borderRadius: '18px',
-                border: '1px solid rgba(229,231,235,0.95)',
-                background: '#ffffff',
-                overflow: 'hidden',
-                marginBottom: '18px',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setDetailsOpen((open) => !open)}
+              <div
                 style={{
-                  display: 'flex',
-                  width: '100%',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px 18px',
-                  background: 'rgba(249,250,251,0.92)',
-                  color: '#1f2937',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
+                  borderRadius: '14px',
+                  background: '#f3faf6',
+                  padding: '14px 14px',
+                  marginBottom: '10px',
                 }}
               >
-                <span>자세히 보기</span>
-                {detailsOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
-              </button>
-              {detailsOpen && (
-                <div style={{ borderTop: '1px solid rgba(243,244,246,1)', padding: '16px 18px', display: 'grid', gap: '14px' }}>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공 범위</div>
-                    <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-                      32문항 설문을 바탕으로 현재의 정렬 패턴과 mebody 코드를 추정하고, 결과 이해를 위한 가이드를 제공합니다.
-                    </p>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>비제공 범위</div>
-                    <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-                      질병 진단, 통증 판독, 치료·재활·교정 처방은 제공하지 않으며, 의학적 판단을 대신하지 않습니다.
-                    </p>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>개인차 및 이용</div>
-                    <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
-                      개인차, 환경, 생활 습관, 컨디션에 따라 결과는 달라질 수 있으며, 회원가입 시 설문 결과는 계정과 연결됩니다.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+                <ul style={{ display: 'grid', gap: '10px', fontSize: '13px', lineHeight: 1.55, color: '#374151' }}>
+                  <li style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>1</span>
+                    <span>질문에 답하면 지금의 자세·체형 경향을 mebody 코드로 보여줍니다.</span>
+                  </li>
+                  <li style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>2</span>
+                    <span>생활 습관, 환경, 컨디션에 따라 결과는 달라질 수 있어요.</span>
+                  </li>
+                  <li style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>3</span>
+                    <span>질병 진단·통증 판독·치료/교정 처방은 포함되지 않습니다.</span>
+                  </li>
+                  <li style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>4</span>
+                    <span>통증이나 이상이 있으면 먼저 전문가 상담을 우선해 주세요.</span>
+                  </li>
+                </ul>
+              </div>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <label
+              <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  borderRadius: '16px',
-                  background: 'rgba(255,255,255,0.88)',
-                  minHeight: '104px',
-                  padding: '16px 18px',
-                  border: '1px solid rgba(229,231,235,0.95)',
-                  cursor: 'pointer',
+                  borderRadius: '14px',
+                  border: '1px solid #e5e7eb',
+                  background: '#ffffff',
+                  overflow: 'hidden',
+                  marginBottom: '10px',
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={agreeContent}
-                  onChange={(event) => setAgreeContent(event.target.checked)}
-                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-                />
-                <span
-                  aria-hidden
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen((open) => !open)}
                   style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '7px',
-                    border: agreeContent ? '2px solid #016B38' : '2px solid #9ca3af',
-                    background: agreeContent ? '#016B38' : '#ffffff',
-                    display: 'inline-flex',
+                    display: 'flex',
+                    width: '100%',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxSizing: 'border-box',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
                   }}
                 >
-                  {agreeContent && <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
-                </span>
-                <span style={{ fontSize: '16px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
-                  위 내용을 이해했고, mebody가 웰니스 목적의 체형 분석 서비스임을 확인했습니다.
-                </span>
-              </label>
+                  <span>자세히 보기</span>
+                  {detailsOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
+                </button>
+                {detailsOpen && (
+                  <div style={{ borderTop: '1px solid #f3f4f6', padding: '12px 14px', display: 'grid', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공하는 것</div>
+                      <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+                        설문 기반의 체형 코드와, 결과를 이해하기 위한 웰니스 가이드입니다.
+                      </p>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공하지 않는 것</div>
+                      <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+                        질병 진단, 통증 판독, 치료·재활·교정 처방은 하지 않으며 의학적 판단을 대신하지 않습니다.
+                      </p>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>결과 저장</div>
+                      <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+                        로그인하면 설문 결과가 계정에 연결되어 다음에 다시 볼 수 있습니다.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  borderRadius: '16px',
-                  background: 'rgba(255,255,255,0.88)',
-                  minHeight: '104px',
-                  padding: '16px 18px',
-                  border: '1px solid rgba(229,231,235,0.95)',
-                  cursor: 'pointer',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={agreePrivacy}
-                  onChange={(event) => setAgreePrivacy(event.target.checked)}
-                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-                />
-                <span
-                  aria-hidden
+              <div style={{ display: 'grid', gap: '8px', paddingBottom: '8px' }}>
+                <label
                   style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '7px',
-                    border: agreePrivacy ? '2px solid #016B38' : '2px solid #9ca3af',
-                    background: agreePrivacy ? '#016B38' : '#ffffff',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxSizing: 'border-box',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    borderRadius: '14px',
+                    background: '#ffffff',
+                    padding: '12px 14px',
+                    border: '1px solid #e5e7eb',
+                    cursor: 'pointer',
                   }}
                 >
-                  {agreePrivacy && <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
-                </span>
-                <span style={{ fontSize: '16px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
-                  개인정보 처리방침과 이용약관에 동의합니다.
-                </span>
-              </label>
+                  <input
+                    type="checkbox"
+                    checked={agreeContent}
+                    onChange={(event) => setAgreeContent(event.target.checked)}
+                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+                  />
+                  <span
+                    aria-hidden
+                    style={{
+                      width: '22px',
+                      height: '22px',
+                      marginTop: '1px',
+                      borderRadius: '6px',
+                      border: agreeContent ? '2px solid #016B38' : '2px solid #9ca3af',
+                      background: agreeContent ? '#016B38' : '#ffffff',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {agreeContent && <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                  </span>
+                  <span style={{ fontSize: '14px', lineHeight: 1.5, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
+                    위 안내를 확인했고, 의료 진단이 아님을 이해했습니다.
+                  </span>
+                </label>
+
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    borderRadius: '14px',
+                    background: '#ffffff',
+                    padding: '12px 14px',
+                    border: '1px solid #e5e7eb',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreePrivacy}
+                    onChange={(event) => setAgreePrivacy(event.target.checked)}
+                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+                  />
+                  <span
+                    aria-hidden
+                    style={{
+                      width: '22px',
+                      height: '22px',
+                      marginTop: '1px',
+                      borderRadius: '6px',
+                      border: agreePrivacy ? '2px solid #016B38' : '2px solid #9ca3af',
+                      background: agreePrivacy ? '#016B38' : '#ffffff',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {agreePrivacy && <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                  </span>
+                  <span style={{ fontSize: '14px', lineHeight: 1.5, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
+                    개인정보 처리방침과 이용약관에 동의합니다.
+                  </span>
+                </label>
+              </div>
             </div>
-            </div>
-            <ScrollIndicator containerRef={consentScrollRef} bottomOffset="30px" />
+            <ScrollIndicator containerRef={consentScrollRef} bottomOffset="24px" />
           </div>
 
           <button
             type="button"
-            onClick={onAgree}
-            disabled={!canProceed}
+            onClick={canProceed ? onAgree : scrollToBottom}
+            aria-disabled={!canProceed}
             style={{
-              marginTop: '18px',
+              marginTop: '10px',
               flexShrink: 0,
               display: 'inline-flex',
               width: '100%',
-              height: '58px',
+              height: '52px',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              borderRadius: '18px',
+              borderRadius: '14px',
               border: 'none',
               background: canProceed ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#e5e7eb',
               color: canProceed ? '#ffffff' : '#9ca3af',
               fontSize: '16px',
               fontWeight: 800,
-              boxShadow: canProceed ? '0 14px 28px rgba(1,71,37,0.25)' : 'none',
-              cursor: canProceed ? 'pointer' : 'not-allowed',
+              boxShadow: canProceed ? '0 12px 24px rgba(1,71,37,0.22)' : 'none',
+              cursor: 'pointer',
             }}
           >
-            내 체형 코드 분석 시작하기
+            {canProceed ? '동의하고 시작하기' : '아래로 내려 동의하기'}
             <span style={{ fontSize: '18px' }}>→</span>
           </button>
         </div>
-        <div style={{ height: 0, marginBottom: 'auto', flexShrink: 0 }} />
       </div>
     </div>
   );

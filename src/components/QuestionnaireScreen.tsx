@@ -189,7 +189,7 @@ export function QuestionnaireScreen({
 
   if (isLoading) {
     return (
-      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ minHeight: '100dvh' }}>
+      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ height: '100%', minHeight: 'var(--mebody-app-height)', maxHeight: 'var(--mebody-app-height)' }}>
         <div className="flex h-full flex-col px-6 pb-8 pt-10">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-4 py-2 shadow-sm">
             <Sparkles size={17} color="#014725" />
@@ -211,7 +211,7 @@ export function QuestionnaireScreen({
 
   if (loadError || !currentQuestion) {
     return (
-      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ minHeight: '100dvh' }}>
+      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ height: '100%', minHeight: 'var(--mebody-app-height)', maxHeight: 'var(--mebody-app-height)' }}>
         <div className="flex h-full flex-col px-6 py-10">
           <h2 className="mb-3 text-2xl font-black text-gray-900">문항을 준비하지 못했습니다</h2>
           <p className="mb-5 text-sm font-bold text-gray-600" style={{ wordBreak: 'keep-all' }}>
@@ -238,7 +238,7 @@ export function QuestionnaireScreen({
   const guideText = getGuideText(currentQuestion)
 
   return (
-    <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ minHeight: '100dvh' }}>
+    <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ height: '100%', minHeight: 'var(--mebody-app-height)', maxHeight: 'var(--mebody-app-height)' }}>
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-3 px-6 pt-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-4 py-2 shadow-sm">

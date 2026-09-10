@@ -2538,6 +2538,42 @@ body {
   background-color: #ffffff !important;
 }
 
+/* KakaoTalk in-app browser: lock to measured visual viewport height.
+   JS (installAppViewportHeight) overwrites --mebody-app-height with px. */
+:root {
+  --mebody-app-height: 100vh;
+}
+
+@supports (height: 100svh) {
+  :root {
+    --mebody-app-height: 100svh;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+@media (max-width: 767px) {
+  html,
+  body {
+    height: var(--mebody-app-height);
+    min-height: var(--mebody-app-height);
+    max-height: var(--mebody-app-height);
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    height: var(--mebody-app-height);
+    min-height: var(--mebody-app-height);
+    max-height: var(--mebody-app-height);
+    overflow: hidden;
+  }
+}
+
 /* ===== 데스크톱 기기 목업 프레임 =====
    화면 컴포넌트들이 inline 으로 minHeight:100dvh 를 갖고 있어(21곳)
    데스크톱에서 프레임이 콘텐츠 길이만큼 늘어났습니다.

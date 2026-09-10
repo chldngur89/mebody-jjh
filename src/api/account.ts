@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { isMissingRpc } from './rpcSupport';
 
 export interface MembershipPlan {
   code: string;
@@ -236,21 +237,39 @@ export async function fetchUserBodyCodeForUser(userId: string, email?: string | 
   };
 }
 
-async function syncProfileFromQuestionnaireResult(questionnaireId: string, userId: string): Promise<void> {
-  const { data: resultData, error: resultError } = await supabase
+/**
+ * 결과 한 건의 코드를 읽습니다.
+ *
+ * 044 이후 테이블 직접 조회는 자기 행만 보이므로, 아직 귀속 전인 비회원 행은
+ * get_questionnaire_response RPC 로 읽습니다(id 를 알아야만 한 행이 나옵니다).
+ */
+async function readCalculatedCode(questionnaireId: string): Promise<string | null> {
+  const { data: rpcData, error: rpcError } = await supabase
+    .rpc('get_questionnaire_response', { p_id: questionnaireId });
+
+  if (!rpcError) {
+    const rows = rpcData as Array<{ calculated_code?: string | null }> | null;
+    const code = Array.isArray(rows) ? rows[0]?.calculated_code : null;
+    if (code) return String(code);
+  } else if (!isMissingRpc(rpcError)) {
+    console.warn('readCalculatedCode rpc failed:', rpcError);
+  }
+
+  const { data, error } = await supabase
     .from('questionnaire_responses')
     .select('calculated_code')
     .eq('id', questionnaireId)
     .maybeSingle();
 
-  if (resultError || !resultData?.calculated_code) {
-    if (resultError && !isMissingTableOrColumn(resultError)) {
-      console.warn('syncProfileFromQuestionnaireResult result lookup failed:', resultError);
-    }
-    return;
+  if (error && !isMissingTableOrColumn(error)) {
+    console.warn('readCalculatedCode fallback failed:', error);
   }
+  return data?.calculated_code ? String(data.calculated_code) : null;
+}
 
-  const bodyCode = String(resultData.calculated_code);
+async function syncProfileFromQuestionnaireResult(questionnaireId: string, userId: string): Promise<void> {
+  const bodyCode = await readCalculatedCode(questionnaireId);
+  if (!bodyCode) return;
   const { data: contentData, error: contentError } = await supabase
     .from('body_code_content')
     .select('character_name, description')
@@ -308,16 +327,30 @@ export async function attachQuestionnaireResultToUser(questionnaireId: string | 
     return;
   }
 
-  const { error } = await supabase
-    .from('questionnaire_responses')
-    .update({ user_id: userId, updated_at: new Date().toISOString() })
-    .eq('id', questionnaireId);
+  // 044 이후 비회원 행은 테이블 UPDATE 로 보이지 않습니다(자기 행만 보임).
+  // claim RPC 가 주인 없는 행에만 내 id 를 붙입니다.
+  const { error: claimError } = await supabase
+    .rpc('claim_questionnaire_response', { p_id: questionnaireId });
 
-  if (error && !isMissingTableOrColumn(error)) {
-    console.warn('attachQuestionnaireResultToUser failed:', error);
+  let failed = false;
+  if (claimError) {
+    if (isMissingRpc(claimError)) {
+      const { error } = await supabase
+        .from('questionnaire_responses')
+        .update({ user_id: userId, updated_at: new Date().toISOString() })
+        .eq('id', questionnaireId);
+      failed = Boolean(error);
+      if (error && !isMissingTableOrColumn(error)) {
+        console.warn('attachQuestionnaireResultToUser failed:', error);
+      }
+    } else {
+      failed = true;
+      console.warn('attachQuestionnaireResultToUser claim failed:', claimError);
+    }
   }
 
-  if (!error) {
+  // claim 이 false 를 돌려줘도(이미 주인이 있는 행) 프로필 동기화는 그대로 진행합니다.
+  if (!failed) {
     await syncProfileFromQuestionnaireResult(questionnaireId, userId);
   }
 }

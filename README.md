@@ -268,11 +268,20 @@ cp .env.example .env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
-# 선택값: 마이페이지의 관리자 콘솔 연결에만 사용합니다.
+# 선택값. 마이페이지의 관리자 콘솔, 결제(/api/billing/*), 보상형 광고 SSV 설정 조회에 씁니다.
+# 진단·문항·결과는 이 서버 없이도 동작해야 합니다.
 VITE_API_BASE_URL=https://mebody-server-production.up.railway.app
+
+# 선택값. 결과 공유용 카카오 JavaScript 키. 비어 있으면 카카오 버튼만 숨고
+# OS 공유·링크 복사는 그대로 동작합니다.
+VITE_KAKAO_JAVASCRIPT_KEY=
+
+# 선택값. 공유 링크의 기준 주소. 브라우저에서는 비워두면 현재 origin 을 씁니다.
+# 네이티브 앱은 origin 이 localhost 라서 이 값이 없으면 배포 주소로 대체합니다.
+VITE_PUBLIC_SITE_URL=
 ```
 
-로컬에서 서버와 같이 테스트할 때만 `VITE_API_BASE_URL=http://localhost:8080`으로 변경합니다.
+로컬에서 서버와 같이 테스트할 때만 `VITE_API_BASE_URL=http://localhost:8081`으로 변경합니다.
 
 ### 실행과 빌드
 
@@ -322,8 +331,47 @@ Supabase Storage bucket: `images`
 
 - 비회원: 현재 탭 `sessionStorage`에만 결과 ID를 보관합니다.
 - 비회원: 새 탭, 새 브라우저 또는 공유 URL 단독 진입은 랜딩으로 보냅니다.
+- 공유 링크에는 결과 ID 가 없으므로 받은 사람에게 원 사용자의 결과가 복원되지 않습니다.
 - 로그인 회원: `questionnaire_responses.user_id` 기준 최신 완료 결과를 불러옵니다.
 - Supabase Auth 세션 저장은 유지합니다.
+
+## 결과 공유
+
+`부분 구현` — 링크 복사와 OS 공유는 동작하고, 카카오톡 공유는 키를 발급받으면 켜집니다.
+
+- 공유 링크: `https://<도메인>/?ref=share&code=FRRS`
+- 링크에 담는 값은 **몸BTI 코드뿐입니다.** `result id` 는 넣지 않습니다.
+  id 가 링크에 실리면 받은 사람이 조회 RPC 로 원 사용자의 32문항 응답을 열 수 있습니다.
+- `code` 는 결과 복원용이 아니라 랜딩 문구("친구의 몸BTI는 FRRS 였어요") 재료입니다.
+  링크로 들어온 사람은 자기 진단을 처음부터 새로 합니다.
+- 공유 파라미터는 첫 진입에서 한 번 읽고 URL 에서 지웁니다(`flowUrl`).
+- 카카오 피드 이미지는 `public/og-image.png`(1200×630)를 씁니다. 캐릭터 PNG 는 세로 비율이라 잘립니다.
+- 이벤트 기록은 `src/lib/analytics.ts` 의 `track()` 인터페이스만 있습니다. 외부 분석 SDK 는 아직 붙이지 않았습니다.
+  payload 에는 `body_code`·`share_channel`·`ref` 만 넣습니다.
+
+사람이 해야 하는 준비: Kakao Developers 앱 생성 → JavaScript 키 발급 →
+플랫폼 Web 에 도메인 등록 → 카카오톡 공유 활성화 → `VITE_KAKAO_JAVASCRIPT_KEY` 설정.
+
+## 진단 응답 접근 정책 (`db/journey/044`, `045`)
+
+적용 전에는 `questionnaire_responses` 의 조회 정책이 `user_id IS NULL` 이라
+**익명·로그인 사용자 모두 남의 비회원 결과 381건을 id 없이 읽을 수 있었습니다.**
+
+- 읽기: `get_questionnaire_response(p_id)` RPC 한 곳으로만 나갑니다. id 를 알아야 한 행이 나오고 `user_id` 는 돌려주지 않습니다.
+- 쓰기: `save_questionnaire_response(...)` RPC 로 저장합니다.
+  `UPDATE ... WHERE id = ?` 는 WHERE 절이 컬럼을 읽어 SELECT 권한을 함께 요구하므로,
+  읽기 권한만 회수하면 비회원 저장이 깨집니다. 그래서 쓰기도 함께 옮겼습니다.
+- 로그인 직후 비회원 결과 귀속은 `claim_questionnaire_response(p_id)` 가 맡습니다(익명은 실행 불가).
+- 앱은 RPC 가 없으면 예전 테이블 경로로 폴백하므로 SQL 적용과 앱 배포 순서는 상관없습니다.
+
+045 는 여기에 하나를 더 얹습니다. **제출이 끝난 결과(`status='completed'`)는 더 이상 바뀌지 않습니다.**
+결과 id 는 주소창(`?result=...`)에 보이므로 언젠가는 샙니다. 044 만으로는 id 를 아는 사람이
+저장 RPC 로 남의 코드와 32문항 답변을 통째로 덮어쓸 수 있었습니다(운영에서 실측했습니다).
+같은 결과를 다시 보내는 요청은 오류 대신 조용히 통과시킵니다. 저장 실패로 판단한 앱의 재시도와
+제출 직후 늦게 도착하는 임시저장이 그 경로입니다. 재측정은 새 id 로 새 행을 만들므로 영향이 없습니다.
+
+id 가 새면 **읽기는 여전히 됩니다.** id 자체가 자기 결과를 여는 열쇠라서 그렇습니다.
+다만 공유 링크에는 id 가 없고, 앱은 자기 세션에서 만든 결과가 아니면 화면을 열지 않고 랜딩으로 보냅니다.
 
 ## 주요 파일
 
@@ -334,6 +382,10 @@ Supabase Storage bucket: `images`
 - `src/utils/bodyCodeCalculator.ts`: 32문항 기반 4축 mebody 코드와 아이덴티티 계산
 - `src/data/v1QuestionsSnapshot.ts`: 즉시 렌더링용 32문항 스냅샷
 - `src/utils/characterImages.ts`: Supabase Storage 우선 캐릭터 이미지 해석
+- `src/lib/share.ts`: 공유 링크·문구 조립, OS 공유, 링크 복사
+- `src/lib/kakao.ts`: 카카오 SDK 지연 로드와 피드 공유(키가 있을 때만)
+- `src/lib/analytics.ts`: 이벤트 기록 인터페이스(외부 SDK 없음)
+- `src/api/rpcSupport.ts`: 마이그레이션 적용 전 DB 에서 RPC 폴백 판별
 
 ## 변경 시 검증 체크리스트
 
@@ -347,3 +399,6 @@ Supabase Storage bucket: `images`
 - 홈페이지와 간이 결과에 Vercel 모바일 앱 CTA를 추가했다면 이 README의 연결 상태도 함께 갱신합니다.
 - 결과 이후 비즈니스 모델이 결정되면 `미정` 항목과 구현 상태를 함께 갱신합니다.
 - 앱 문구의 문항 수와 `정밀 체크` 표현이 현재 정책과 일치하는지 확인합니다.
+- 비회원이 32문항을 완주해 결과가 저장·표시되는지 확인합니다(응답 저장 경로를 바꾸면 가장 먼저 깨집니다).
+- 공유 링크에 `result` 파라미터가 섞여 있지 않은지 확인합니다.
+- 카카오 키가 없을 때 카카오 버튼이 숨고 나머지 공유가 동작하는지 확인합니다.

@@ -51,7 +51,9 @@
     "verify:fulfillment": "node scripts/verify-fulfillment.mjs",
     "verify:order-api": "node scripts/verify-order-api.mjs",
     "verify:questions-cleanup": "node scripts/verify-questions-cleanup.mjs",
+    "verify:response-hardening": "node scripts/verify-response-hardening.mjs",
     "export:questions": "node scripts/export-questions.mjs",
-    "verify:flow": "node scripts/verify-flow-navigation.mjs"
+    "verify:flow": "node scripts/verify-flow-navigation.mjs",
+    "verify:share-freeze": "node scripts/verify-share-and-freeze.mjs"
   }
 }

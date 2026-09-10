@@ -22,6 +22,8 @@ interface LandingScreenProps {
   latestBodyCode?: string;
   onAccount?: () => void;
   onPreviewSignedIn?: () => void;
+  /** 공유 링크(?ref=share&code=FRRS)로 들어온 경우의 친구 코드. 소셜 문구에만 씁니다. */
+  sharedCode?: string;
 }
 
 export function LandingScreen({
@@ -38,6 +40,7 @@ export function LandingScreen({
   latestBodyCode,
   onAccount,
   onPreviewSignedIn,
+  sharedCode,
 }: LandingScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -62,7 +65,7 @@ export function LandingScreen({
         : '재접속 반갑습니다. 첫 진단을 완료하면 mebody 코드와 코드 플랜이 내 페이지에 저장됩니다.'
     : '회원가입하면 결과 저장, 지난 결과 확인, 코드 플랜과 오늘의 미션을 다음 방문에서도 이어서 볼 수 있습니다.';
   const accountActionLabel = isLoggedIn ? '내 페이지' : '회원가입 / 로그인';
-  const landingHeight = isDesktopMockup ? '100%' : '100dvh';
+  const landingHeight = isDesktopMockup ? '100%' : 'var(--mebody-app-height)';
 
   return (
     <div
@@ -212,6 +215,24 @@ export function LandingScreen({
               >
                 mebody
               </h1>
+
+              {sharedCode && (
+                <p
+                  style={{
+                    margin: '-14px 0 20px',
+                    padding: '10px 14px',
+                    borderRadius: '999px',
+                    background: '#EEF4EC',
+                    color: '#014725',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    lineHeight: 1.5,
+                    wordBreak: 'keep-all',
+                  }}
+                >
+                  친구의 몸BTI는 <strong style={{ fontWeight: 800 }}>{sharedCode}</strong> 였어요. 나는 어떤 유형일까요?
+                </p>
+              )}
 
               <h2
                 style={{

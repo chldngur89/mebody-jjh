@@ -1,5 +1,7 @@
 import { Check } from 'lucide-react'
 import type { Question } from '../../api/questionnaire'
+import { preferredScrollBehavior } from '../../lib/viewport'
+import { scrollParentToBottom } from './findScrollParent'
 import type { QuestionPhase } from './types'
 
 interface QuestionCardProps {
@@ -23,6 +25,18 @@ export function QuestionCard({
     { value: '③', label: question.option_3 },
   ]
   const isGuidePhase = phase === 'guide'
+
+  const handleSelect = (value: string, target: HTMLElement) => {
+    onAnswer(value)
+
+    const behavior = preferredScrollBehavior()
+    const run = () => scrollParentToBottom(target, behavior)
+
+    // 같은 답을 다시 눌러도, 가이드가 펼쳐진 뒤에도 하단(다음)으로 내립니다.
+    requestAnimationFrame(run)
+    window.setTimeout(run, 120)
+    window.setTimeout(run, 320)
+  }
 
   return (
     <>
@@ -50,7 +64,7 @@ export function QuestionCard({
             <button
               key={option.value}
               type="button"
-              onClick={() => onAnswer(option.value)}
+              onClick={(event) => handleSelect(option.value, event.currentTarget)}
               className={`group flex min-h-[72px] w-full items-center justify-between rounded-2xl border-2 px-5 text-left font-semibold transition-all active:scale-[0.98] ${
                 isGuidePhase ? 'py-4' : 'py-5'
               } ${

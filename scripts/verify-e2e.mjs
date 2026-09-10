@@ -9,6 +9,7 @@
  */
 import { readFileSync } from 'node:fs'
 import pg from 'pg'
+import { randomUUID } from 'node:crypto'
 import { buildAxisPriority, selectDailyMissions, buildMissionSteps, buildReportPayload,
          recommendNextJourney, reportRangeFor } from '../src/utils/journeyRules.ts'
 import { buildCareRoutine } from '../src/utils/careRoutine.ts'
@@ -37,19 +38,30 @@ try{
   // ══ 비회원 ══
   console.log('■ 비회원')
   await anon()
-  const anonDraft=await T(()=>c.query(`INSERT INTO public.questionnaire_responses (answers,status,question_version)
-    VALUES ('{"A1":"①"}'::jsonb,'draft','mebody_v1_32') RETURNING id`))
-  ok('진단 초안 생성', anonDraft.ok, anonDraft.ok?'':anonDraft.code)
-  const anonId=anonDraft.ok?anonDraft.r.rows[0].id:null
-  if(anonId){
-    const sub=await T(()=>c.query(`UPDATE public.questionnaire_responses
-      SET status='completed',calculated_code='FRRS',completed_at=now() WHERE id=$1`,[anonId]))
-    ok('결과 제출', sub.ok&&sub.r.rowCount===1, sub.ok?'':sub.code)
+  // 044 적용 전이면 테이블에 직접 쓰고, 적용 뒤면 저장 RPC 를 씁니다. 앱과 같은 분기입니다.
+  const hasSaveRpc=(await c.query(`SELECT to_regprocedure(
+    'public.save_questionnaire_response(uuid,jsonb,text,text,timestamptz,text,text,jsonb)') IS NOT NULL AS x`)).rows[0].x
+  const anonId=randomUUID()
+  const anonDraft=await T(()=>hasSaveRpc
+    ? c.query(`SELECT public.save_questionnaire_response(p_id=>$1,p_answers=>'{"A1":"①"}'::jsonb,
+        p_status=>'draft',p_question_version=>'mebody_v1_32')`,[anonId])
+    : c.query(`INSERT INTO public.questionnaire_responses (id,answers,status,question_version)
+        VALUES ($1,'{"A1":"①"}'::jsonb,'draft','mebody_v1_32')`,[anonId]))
+  ok('진단 초안 생성', anonDraft.ok, anonDraft.ok?(hasSaveRpc?'RPC':'테이블'):anonDraft.code)
+  if(anonDraft.ok){
+    const sub=await T(()=>hasSaveRpc
+      ? c.query(`SELECT public.save_questionnaire_response(p_id=>$1,p_answers=>'{"A1":"①"}'::jsonb,
+          p_status=>'completed',p_calculated_code=>'FRRS',p_completed_at=>now())`,[anonId])
+      : c.query(`UPDATE public.questionnaire_responses
+          SET status='completed',calculated_code='FRRS',completed_at=now() WHERE id=$1`,[anonId]))
+    ok('결과 제출', sub.ok, sub.ok?'':sub.code)
     const read=await T(()=>c.query(`SELECT calculated_code FROM public.get_questionnaire_response($1)`,[anonId]))
     ok('조회 RPC 로 자기 결과 확인', read.ok&&read.r.rows[0]?.calculated_code==='FRRS', read.ok?'':read.code)
   }
+  // 044 전: 정책이 걸러 0건. 044 후: SELECT 권한 자체가 없어 42501.
   const peek=await T(()=>c.query(`SELECT count(*)::int n FROM public.questionnaire_responses WHERE user_id IS NOT NULL`))
-  ok('회원 응답은 못 봄', peek.ok&&peek.r.rows[0].n===0, peek.ok?`${peek.r.rows[0].n}건`:peek.code)
+  ok('회원 응답은 못 봄', peek.ok?peek.r.rows[0].n===0:peek.code==='42501',
+    peek.ok?`${peek.r.rows[0].n}건`:peek.code)
   const q=await T(()=>c.query(`SELECT count(*)::int n FROM public.questions WHERE is_active AND question_set='mebody_v1_32'`))
   ok('32문항 조회', q.ok&&q.r.rows[0].n===32, q.ok?`${q.r.rows[0].n}개`:q.code)
   const jt=await T(()=>c.query(`SELECT count(*)::int n FROM public.journey_content_tags`))

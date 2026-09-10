@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { V1_QUESTION_SET, V1_QUESTIONS_SNAPSHOT, type V1Question } from '../data/v1QuestionsSnapshot'
 import { calculateBodyCode, type AnswerMap, type ScoringQuestion } from '../utils/bodyCodeCalculator'
+import { isMissingRpc, isRpcKnownMissing, markRpcMissing } from './rpcSupport'
 
 export type QuestionAnswerType = 'single' | 'multi'
 
@@ -83,20 +84,82 @@ function stripUnsupportedColumns(payload: Record<string, unknown>, error: unknow
   return removed ? nextPayload : null
 }
 
+/** 새 응답의 id 를 앱이 만듭니다. 이유는 아래 mutateQuestionnaireResponse 주석 참고. */
+function newResponseId(): string {
+  try {
+    return crypto.randomUUID()
+  } catch {
+    // randomUUID 가 없는 아주 오래된 환경용 폴백
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+      const r = (Math.random() * 16) | 0
+      return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+    })
+  }
+}
+
+/**
+ * 응답 저장 — save_questionnaire_response RPC 를 씁니다.
+ *
+ * 테이블에 직접 쓰지 않는 이유:
+ *   044 에서 비회원의 테이블 SELECT·UPDATE 를 회수했습니다. 그 전에는 SELECT 정책이
+ *   `user_id IS NULL` 이라 남의 비회원 응답 381건이 id 없이도 전부 읽혔습니다.
+ *   그런데 `UPDATE ... WHERE id = ?` 은 WHERE 절이 컬럼을 읽으므로 SELECT 권한을
+ *   함께 요구합니다. 읽기만 막으면 저장이 42501 로 깨지기 때문에 쓰기도 함수로 옮겼습니다.
+ *
+ * 새 응답의 id 는 앱이 만듭니다. RPC 가 id 를 돌려주긴 하지만, 아래 폴백 경로에서도
+ * 같은 id 를 써야 호출부가 어느 쪽이든 동일하게 동작합니다.
+ * 호출부는 `id` 와 `calculated_code` 만 쓰므로 반환값을 payload 로 조립해도 됩니다.
+ */
+const SAVE_RPC = 'save_questionnaire_response'
+
+async function saveViaRpc(
+  id: string,
+  payload: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  if (isRpcKnownMissing(SAVE_RPC)) return false
+
+  const request = supabase.rpc(SAVE_RPC, {
+    p_id: id,
+    p_answers: payload.answers ?? {},
+    p_status: payload.status ?? 'draft',
+    p_calculated_code: payload.calculated_code ?? null,
+    p_completed_at: payload.completed_at ?? null,
+    p_question_version: payload.question_version ?? null,
+    p_primary_identity: payload.primary_identity ?? null,
+    p_scoring_meta: payload.scoring_meta ?? null,
+  })
+
+  const { error } = await (signal ? request.abortSignal(signal) : request)
+  if (!error) return true
+  // 044 미적용 DB — 예전 테이블 경로로 되돌아갑니다
+  if (isMissingRpc(error)) {
+    markRpcMissing(SAVE_RPC)
+    return false
+  }
+
+  console.error('Error saving questionnaire response:', error)
+  throw error
+}
+
 async function mutateQuestionnaireResponse(questionnaireId: string | undefined, payload: Record<string, unknown>, signal?: AbortSignal) {
-  let nextPayload = { ...payload }
+  const id = questionnaireId ?? newResponseId()
+  const result = { ...payload, id } as Record<string, unknown> & { id: string }
+
+  signal?.throwIfAborted()
+  if (await saveViaRpc(id, payload, signal)) return result
+
+  // ── 폴백: 044 를 아직 적용하지 않은 DB
+  let nextPayload = questionnaireId ? { ...payload } : { ...payload, id }
 
   while (true) {
     signal?.throwIfAborted()
-    const request = (
-      questionnaireId
-        ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
-        : supabase.from('questionnaire_responses').insert(nextPayload)
-    )
-      .select()
-    const { data, error } = await (signal ? request.abortSignal(signal) : request).single()
+    const request = questionnaireId
+      ? supabase.from('questionnaire_responses').update(nextPayload).eq('id', questionnaireId)
+      : supabase.from('questionnaire_responses').insert(nextPayload)
+    const { error } = await (signal ? request.abortSignal(signal) : request)
 
-    if (!error) return data
+    if (!error) return result
 
     const strippedPayload = stripUnsupportedColumns(nextPayload, error)
     if (strippedPayload) {

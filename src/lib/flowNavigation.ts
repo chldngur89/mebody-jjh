@@ -37,6 +37,10 @@ export function flowUrl(route: FlowRoute, href: string) {
   // QA entry parameters must not force a stale screen after a reload.
   url.searchParams.delete('ui');
   url.searchParams.delete('mode');
+  // 공유 링크 파라미터는 첫 진입에서 한 번만 읽습니다.
+  // 남겨두면 진단 도중 새로고침해도 계속 "친구가 공유했어요" 가 붙습니다.
+  url.searchParams.delete('ref');
+  url.searchParams.delete('code');
   if (route.resultId) url.searchParams.set('result', route.resultId);
   else url.searchParams.delete('result');
   return `${url.pathname}${url.search}${url.hash}`;

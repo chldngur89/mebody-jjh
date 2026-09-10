@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '../lib/supabase'
+import { isMissingRpc } from './rpcSupport'
 import {
   compareJourneyResults,
   type JourneyComparison,
@@ -842,6 +843,18 @@ interface ComparableResultRow {
 
 async function fetchComparableResult(resultId: string): Promise<ComparableResultRow | null> {
   if (!isPersistedResultId(resultId)) return null
+
+  // 044 이후: 아직 내 것으로 귀속되지 않은 결과도 id 로 한 행만 읽습니다.
+  const { data: rpcData, error: rpcError } = await supabase
+    .rpc('get_questionnaire_response', { p_id: resultId })
+
+  if (!rpcError) {
+    const rows = rpcData as ComparableResultRow[] | null
+    const row = Array.isArray(rows) ? rows[0] : null
+    if (row) return row
+  } else if (!isMissingRpc(rpcError)) {
+    warn('fetchComparableResult rpc', rpcError)
+  }
 
   const { data, error } = await supabase
     .from('questionnaire_responses')

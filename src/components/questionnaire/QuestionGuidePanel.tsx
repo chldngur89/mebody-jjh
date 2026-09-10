@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { QuestionHeroMedia } from '../QuestionHeroMedia'
+import { preferredScrollBehavior } from '../../lib/viewport'
+import { findScrollParent } from './findScrollParent'
 
 interface QuestionGuidePanelProps {
   mediaKey: string
@@ -10,22 +12,10 @@ interface QuestionGuidePanelProps {
   guideText: string
 }
 
-function findScrollParent(start: HTMLElement | null): HTMLElement | null {
-  let node: HTMLElement | null = start?.parentElement ?? null
-  while (node) {
-    const { overflowY } = window.getComputedStyle(node)
-    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-      return node
-    }
-    node = node.parentElement
-  }
-  return null
-}
-
 /**
  * 선택지 아래: 미디어(사진이 있을 때만) + 연초록 가이드 박스 1개
  *
- * 답 선택 후 항상 초록 안내로 시선을 내립니다.
+ * 답 선택 후 스크롤을 하단(다음 버튼 쪽)으로 내려 확인을 유도합니다.
  * 상단 메인 접힘/유지는 QuestionMediaLayout(옵션 가이드 미디어 유무)이 담당합니다.
  */
 export function QuestionGuidePanel({
@@ -42,22 +32,24 @@ export function QuestionGuidePanel({
     const panel = panelRef.current
     if (!panel) return
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth'
+    const behavior = preferredScrollBehavior()
 
-    requestAnimationFrame(() => {
+    const scrollTowardNext = () => {
       const scrollParent = findScrollParent(panel)
       if (!scrollParent) return
-
-      const parentRect = scrollParent.getBoundingClientRect()
-      const panelRect = panel.getBoundingClientRect()
-      const delta =
-        panelRect.top - parentRect.top - (parentRect.height / 2 - panelRect.height / 2)
       scrollParent.scrollTo({
-        top: scrollParent.scrollTop + delta,
+        top: scrollParent.scrollHeight,
         behavior,
       })
+    }
+
+    // 가이드 패널·이미지가 펼쳐진 뒤 높이가 잡히도록 두 번 맞춥니다.
+    const frame = window.requestAnimationFrame(() => {
+      scrollTowardNext()
+      window.setTimeout(scrollTowardNext, 280)
     })
+
+    return () => window.cancelAnimationFrame(frame)
   }, [mediaKey, mediaSrc, guideText])
 
   return (

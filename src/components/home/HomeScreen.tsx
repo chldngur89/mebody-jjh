@@ -16,6 +16,7 @@ import { AdSlot } from '../AdSlot';
 import { AxisTrack, Card, CTA, Chip, DirectionCard, PageTitle, SectionHeading } from '../ui';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { getCharacterStorageUrl, preloadCharacterImage } from '../../utils/characterImages';
+import { ResultShareCard } from './ResultShareCard';
 import { useResultData } from './resultData';
 import { addToCart } from '../../lib/cart';
 
@@ -113,6 +114,13 @@ export function HomeScreen({
           </p>
         </div>
       </Card>
+
+      {/* ── 결과 공유 ─────────────────────────────────────────────── */}
+      <ResultShareCard
+        bodyCode={data.bodyCode}
+        characterName={data.characterName}
+        summaryLine={data.summaryLine}
+      />
 
       {/* ── 01 나의 움직임 경향 ────────────────────────────────────── */}
       {data.axisDetails.length > 0 && (

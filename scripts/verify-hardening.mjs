@@ -8,6 +8,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { randomUUID } from 'node:crypto'
 
 const env = {}
 for (const line of readFileSync(resolve('.env.local'), 'utf8').split('\n')) {
@@ -41,6 +42,8 @@ async function req(method, path, body, prefer) {
   try { parsed = await res.json() } catch { /* 204 등 */ }
   return { status: res.status, body: parsed }
 }
+/** PostgREST 는 없는 함수에 404 를 돌려줍니다. 그걸로 044 적용 여부를 가릅니다. */
+const rpc = (name, args) => req('POST', `rpc/${name}`, args)
 const denied = (r) =>
   r.status === 401 || r.status === 403 ||
   String(r.body?.code) === '42501' ||
@@ -85,26 +88,35 @@ const pr = await req('GET', 'products?select=id&status=eq.ACTIVE')
 check('상품 조회', Array.isArray(pr.body) && pr.body.length > 0, `${pr.body?.length}행`)
 
 console.log('\n5. 비회원 진단이 되는가 (실제 행을 만들고 지웁니다)')
-// Prefer: return=representation 이 없으면 생성된 행을 돌려주지 않아 정리를 못 한다.
-const created = await req('POST', 'questionnaire_responses?select=id', {
-  answers: { __qa: 'verify-hardening' }, status: 'draft', question_version: 'mebody_v1_32',
-}, 'return=representation')
-const newId = Array.isArray(created.body) ? created.body[0]?.id : created.body?.id
-check('비회원 초안 생성 (INSERT ... RETURNING)', Boolean(newId),
-  `status=${created.status} ${JSON.stringify(created.body)?.slice(0, 90)}`)
+// id 는 앱과 마찬가지로 클라이언트가 만든다.
+// RETURNING 을 쓰면 SELECT 정책이 필요해서 044 적용 뒤에 막힌다.
+const newId = randomUUID()
 
-if (newId) {
-  const upd = await req('PATCH', `questionnaire_responses?id=eq.${newId}&select=id`, {
-    status: 'completed', calculated_code: 'FRRS',
-  })
+// 저장 RPC 가 있으면 그쪽을, 없으면 예전 테이블 경로를 쓴다(앱과 같은 분기).
+const viaRpc = await rpc('save_questionnaire_response', {
+  p_id: newId, p_answers: { __qa: 'verify-hardening' },
+  p_status: 'draft', p_question_version: 'mebody_v1_32',
+})
+const created = viaRpc.status === 404
+  ? await req('POST', 'questionnaire_responses', {
+      id: newId, answers: { __qa: 'verify-hardening' }, status: 'draft', question_version: 'mebody_v1_32',
+    })
+  : viaRpc
+check('비회원 초안 생성', created.status < 300,
+  `${viaRpc.status === 404 ? '테이블' : 'RPC'} status=${created.status}`)
+
+if (created.status < 300) {
+  const upd = viaRpc.status === 404
+    ? await req('PATCH', `questionnaire_responses?id=eq.${newId}`, { status: 'completed', calculated_code: 'FRRS' })
+    : await rpc('save_questionnaire_response', {
+        p_id: newId, p_answers: { __qa: 'verify-hardening' }, p_status: 'completed', p_calculated_code: 'FRRS',
+      })
   check('비회원 결과 제출 (UPDATE)', upd.status < 300, `status=${upd.status}`)
 
-  const rpc = await fetch(`${url}/rest/v1/rpc/get_questionnaire_response`, {
-    method: 'POST', headers: H, body: JSON.stringify({ p_id: newId }),
-  })
-  const rpcBody = await rpc.json().catch(() => null)
-  check('조회 RPC 로 자기 결과 확인', rpc.ok && Array.isArray(rpcBody) && rpcBody.length === 1,
-    `status=${rpc.status} ${JSON.stringify(rpcBody)?.slice(0, 80)}`)
+  const readBack = await rpc('get_questionnaire_response', { p_id: newId })
+  check('조회 RPC 로 자기 결과 확인',
+    readBack.status < 300 && Array.isArray(readBack.body) && readBack.body.length === 1,
+    `status=${readBack.status} ${JSON.stringify(readBack.body)?.slice(0, 80)}`)
 
   // 검증용 행 정리.
   // anon 에 DELETE 권한이 없는 게 정상이므로(하드닝) 정리는 서비스 롤 키로 한다.
@@ -127,7 +139,7 @@ if (newId) {
       : '     .env.local 에 SUPABASE_SERVICE_ROLE_KEY 가 없어 자동 정리를 못 했습니다. 아래를 실행하세요:')
     console.log(`     DELETE FROM public.questionnaire_responses WHERE id = '${newId}';`)
   }
-} else if (created.status < 300) {
+} else {
   // 행은 만들어졌는데 id 를 못 받은 경우 — 반드시 알린다
   console.log('\n  ※ 행이 생성됐지만 id 를 받지 못했습니다. 아래로 정리하세요:')
   console.log("     DELETE FROM public.questionnaire_responses WHERE answers->>'__qa' = 'verify-hardening';")

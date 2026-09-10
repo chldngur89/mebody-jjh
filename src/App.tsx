@@ -3,6 +3,8 @@ import type { CSSProperties } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useMediaQuery } from './utils/useMediaQuery';
 import { LandingScreen } from './components/LandingScreen';
+import { track } from './lib/analytics';
+import { SHARE_REF, isShareableBodyCode } from './lib/share';
 import { AnalyzingScreen } from './components/AnalyzingScreen';
 import { lazyImportWithReload } from './lib/chunkLoadRecovery';
 
@@ -87,6 +89,18 @@ export default function App() {
   const restoredRoute = useRef(readFlowEntry(history.state, flowSession())?.route).current;
   const [questionnaireProgress, setQuestionnaireProgress] = useState(readQuestionnaireProgress);
   useEffect(() => persistQuestionnaireProgress(questionnaireProgress), [questionnaireProgress]);
+  /**
+   * 공유 링크로 들어왔는지. 첫 진입에서 한 번만 읽고 그 뒤로는 URL 에서 지웁니다(flowUrl).
+   * code 는 결과를 여는 열쇠가 아니라 랜딩 문구 재료일 뿐입니다.
+   */
+  const sharedCode = useRef(
+    bootSearchParams.get('ref') === SHARE_REF && isShareableBodyCode(bootSearchParams.get('code'))
+      ? String(bootSearchParams.get('code'))
+      : undefined,
+  ).current;
+  useEffect(() => {
+    if (sharedCode) track('shared_link_opened', { ref: SHARE_REF, body_code: sharedCode });
+  }, [sharedCode]);
   const previewScreenParam = bootSearchParams.get('ui');
   // ?ui=<screen> 로 특정 화면을 바로 여는 QA 용 파라미터. 결제 화면도 로그인 없이 확인할 수 있어야
   // 검증이 가능해서 membership·checkout 을 함께 둡니다(결제 자체는 로그인이 필요합니다).
@@ -237,6 +251,8 @@ export default function App() {
     if (currentUser) {
       await attachQuestionnaireResultToUser(dbResultId, currentUser.id);
     }
+
+    if (sharedCode) track('shared_questionnaire_completed', { ref: SHARE_REF, body_code: resultCode });
 
     return { resultId: dbResultId, resultCode };
   };
@@ -698,6 +714,7 @@ export default function App() {
   };
 
   const startNewDiagnosis = () => {
+    if (sharedCode) track('shared_questionnaire_started', { ref: SHARE_REF, body_code: sharedCode });
     setDiagnosisReturnScreen(currentScreen);
     setQuestionnaireProgress(emptyQuestionnaireProgress());
     setPendingAnalysis(null);
@@ -777,9 +794,9 @@ export default function App() {
   if (isBootstrapping) {
     return (
       <div className={isDesktopMockup ? "mebody-desktop-backdrop min-h-screen flex items-center justify-center p-4" : ""}>
-        <div 
-          className={isDesktopMockup ? "mebody-app-surface w-full max-w-md flex items-center justify-center" : "mebody-app-surface w-full min-h-screen flex items-center justify-center"}
-          style={isDesktopMockup ? DESKTOP_FRAME_STYLE : {}}
+        <div
+          className={isDesktopMockup ? "mebody-app-surface w-full max-w-md flex items-center justify-center" : "mebody-app-surface w-full flex items-center justify-center"}
+          style={isDesktopMockup ? DESKTOP_FRAME_STYLE : { height: 'var(--mebody-app-height)', minHeight: 'var(--mebody-app-height)' }}
         >
           <div className="text-gray-500">로딩 중...</div>
         </div>
@@ -790,11 +807,11 @@ export default function App() {
   return (
     <div className={isDesktopMockup ? "mebody-desktop-backdrop min-h-screen flex items-center justify-center p-4" : ""}>
       <div
-        className={isDesktopMockup ? "mebody-frame w-full max-w-md relative" : "w-full min-h-screen relative"}
-        style={isDesktopMockup ? DESKTOP_FRAME_STYLE : undefined}
+        className={isDesktopMockup ? "mebody-frame w-full max-w-md relative" : "w-full relative"}
+        style={isDesktopMockup ? DESKTOP_FRAME_STYLE : { height: 'var(--mebody-app-height)', minHeight: 'var(--mebody-app-height)', overflow: 'hidden' }}
       >
         <Suspense fallback={
-          <div className="min-h-screen flex items-center justify-center">
+          <div className="flex items-center justify-center" style={{ height: 'var(--mebody-app-height)', minHeight: 'var(--mebody-app-height)' }}>
             <div className="text-gray-400">화면을 불러오는 중...</div>
           </div>
         }>
@@ -823,6 +840,7 @@ export default function App() {
                 setActiveTab('home');
                 setCurrentScreen('result');
               }}
+              sharedCode={sharedCode}
             />
           )}
 
