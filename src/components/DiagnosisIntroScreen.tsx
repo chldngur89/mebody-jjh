@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type UIEvent } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
+import { CTA, PRODUCT } from '../theme/copy';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
@@ -169,7 +170,7 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
           >
             <div style={{ marginBottom: '14px', textAlign: 'center' }}>
               <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '8px' }}>
-                MEASUREMENT AXES
+                측정 축 · {PRODUCT.codeGuide}
               </div>
               <h1
                 style={{
@@ -184,7 +185,7 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               >
                 아래 4개 축을 기준으로
                 <br />
-                나의 mebody 코드와 아이덴티티를 계산합니다
+                나의 {PRODUCT.codeName}를 계산합니다
               </h1>
               <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
                 정답을 맞히는 방식이 아니라, 지금 몸이 더 가깝게 느끼는 방향을 선택해주면 됩니다.
@@ -219,7 +220,7 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               }}
             >
               <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#466e65', textAlign: 'center', wordBreak: 'keep-all' }}>
-                같은 자세를 오래 유지할수록 보상 패턴이 더 선명하게 드러납니다.
+                같은 자세를 오래 유지할수록 몸의 사용 패턴이 더 선명하게 드러납니다.
                 <br />
                 지금 몸이 자주 쓰는 방향을 떠올리며 답해주세요.
               </p>
@@ -289,7 +290,7 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
                 cursor: 'pointer',
               }}
             >
-              내 체형 코드 분석 시작하기
+              {canBegin ? CTA.diagnosisStart : CTA.introLocked}
               <ArrowRight size={18} />
             </button>
             {!canBegin && (

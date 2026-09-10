@@ -3,6 +3,7 @@ import { Sparkles, UserRound } from 'lucide-react'
 import { fetchQuestions, saveDraft } from '../api/questionnaire'
 import type { Question } from '../api/questionnaire'
 import type { AnswerMap } from '../utils/bodyCodeCalculator'
+import { PRODUCT } from '../theme/copy'
 import { QuestionCard } from './questionnaire/QuestionCard'
 import { QuestionMediaLayout } from './questionnaire/QuestionMediaLayout'
 import { QuestionNavBar } from './questionnaire/QuestionNavBar'
@@ -189,11 +190,18 @@ export function QuestionnaireScreen({
 
   if (isLoading) {
     return (
-      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ height: '100%', minHeight: 'var(--mebody-app-height)', maxHeight: 'var(--mebody-app-height)' }}>
+      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{
+        height: '100%',
+        minHeight: 'var(--mebody-app-height)',
+        maxHeight: 'var(--mebody-app-height)',
+        boxSizing: 'border-box',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
         <div className="flex h-full flex-col px-6 pb-8 pt-10">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-4 py-2 shadow-sm">
             <Sparkles size={17} color="#014725" />
-            <span className="text-xs font-black tracking-wide text-gray-800">MEBODY</span>
+            <span className="text-xs font-black tracking-wide text-gray-800">{PRODUCT.mark}</span>
           </div>
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">LOADING</p>
@@ -211,7 +219,14 @@ export function QuestionnaireScreen({
 
   if (loadError || !currentQuestion) {
     return (
-      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ height: '100%', minHeight: 'var(--mebody-app-height)', maxHeight: 'var(--mebody-app-height)' }}>
+      <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{
+        height: '100%',
+        minHeight: 'var(--mebody-app-height)',
+        maxHeight: 'var(--mebody-app-height)',
+        boxSizing: 'border-box',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
         <div className="flex h-full flex-col px-6 py-10">
           <h2 className="mb-3 text-2xl font-black text-gray-900">문항을 준비하지 못했습니다</h2>
           <p className="mb-5 text-sm font-bold text-gray-600" style={{ wordBreak: 'keep-all' }}>
@@ -238,12 +253,19 @@ export function QuestionnaireScreen({
   const guideText = getGuideText(currentQuestion)
 
   return (
-    <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{ height: '100%', minHeight: 'var(--mebody-app-height)', maxHeight: 'var(--mebody-app-height)' }}>
+    <div className="mebody-app-surface overflow-hidden rounded-3xl shadow-xl" style={{
+        height: '100%',
+        minHeight: 'var(--mebody-app-height)',
+        maxHeight: 'var(--mebody-app-height)',
+        boxSizing: 'border-box',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-3 px-6 pt-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-4 py-2 shadow-sm">
             <Sparkles size={16} color="#014725" />
-            <span className="text-xs font-black tracking-wide text-gray-800">MEBODY</span>
+            <span className="text-xs font-black tracking-wide text-gray-800">{PRODUCT.mark}</span>
           </div>
           {handleAccountAction && (
             <button

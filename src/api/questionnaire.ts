@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { V1_QUESTION_SET, V1_QUESTIONS_SNAPSHOT, type V1Question } from '../data/v1QuestionsSnapshot'
 import { calculateBodyCode, type AnswerMap, type ScoringQuestion } from '../utils/bodyCodeCalculator'
+import { PRODUCT } from '../theme/copy'
 import { isMissingRpc, isRpcKnownMissing, markRpcMissing } from './rpcSupport'
 
 export type QuestionAnswerType = 'single' | 'multi'
@@ -194,7 +195,7 @@ function getFallbackBodyCodeContent(bodyCode: string): BodyCodeContent {
   return {
     body_code: bodyCode,
     character_name: bodyCode,
-    description: '현재 답변을 기준으로 mebody 코드가 계산되었습니다.',
+    description: `현재 답변을 기준으로 ${PRODUCT.codeName}가 계산되었습니다.`,
     neck_result: '목 위치 사용 패턴입니다.',
     shoulder_result: '어깨 높이 사용 패턴입니다.',
     pelvis_result: '골반 회전 사용 패턴입니다.',

@@ -34,6 +34,7 @@ import {
   type ResultGuideSection,
 } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
+import { PRODUCT } from '../theme/copy';
 import { characterNames, getAxisScoreBreakdown, type AnswerMap } from '../utils/bodyCodeCalculator';
 import { buildCareRoutine, formatRoutineDuration, type CareRoutine } from '../utils/careRoutine';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
@@ -676,7 +677,7 @@ export function useCodePlanData(questionnaireId?: string): CodePlanDataState {
   const bodyCode = result?.calculated_code || '----';
   const content = result?.body_code_content ?? null;
   const summaryLine = pickSummaryLine(content);
-  const characterName = content?.character_name || characterNames[bodyCode] || '나의 mebody 코드';
+  const characterName = content?.character_name || characterNames[bodyCode] || `나의 ${PRODUCT.codeName}`;
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
   const characterImage = resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls);
 
@@ -2220,7 +2221,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
           >
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>GUIDE</div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>나의 mebody 코드 가이드 보기</div>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>나의 {PRODUCT.codeName} 가이드 보기</div>
             </div>
             {guideOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
           </button>

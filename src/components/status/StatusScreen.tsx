@@ -13,8 +13,9 @@ import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { fetchRewardBalance } from '../../api/journey';
-import { fetchChallengeStatus, fetchRewardHistory, type ChallengeStatus, type RewardEntry } from '../../api/routineHistory';
+import { fetchChallengeStatus, type ChallengeStatus } from '../../api/routineHistory';
 import { BRAND, SURFACE } from '../../theme/brand';
+import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl } from '../../utils/characterImages';
 import { Card, CTA, Chip, PageTitle, ProgressTrack, SectionHeading, TextLink } from '../ui';
 import { MeasurementSection, MembershipSection, OrdersSection, ProfileSection } from './StatusSections';
@@ -50,7 +51,6 @@ export function StatusScreen({
   bodyCode,
   characterName,
   isPaid = false,
-  tier,
   journeyProgress,
   onOpenResult,
   onOpenRoutine,
@@ -61,26 +61,22 @@ export function StatusScreen({
   onSubscriptionChanged,
 }: StatusScreenProps) {
   const [balance, setBalance] = useState(0);
-  const [history, setHistory] = useState<RewardEntry[]>([]);
   const [challenge, setChallenge] = useState<ChallengeStatus | null>(null);
 
   useEffect(() => {
     if (!user?.id) {
       setBalance(0);
-      setHistory([]);
       setChallenge(null);
       return;
     }
     let cancelled = false;
     void (async () => {
-      const [b, h, c] = await Promise.all([
+      const [b, c] = await Promise.all([
         fetchRewardBalance(user.id).catch(() => 0),
-        fetchRewardHistory(30),
         fetchChallengeStatus(),
       ]);
       if (cancelled) return;
       setBalance(b);
-      setHistory(h);
       setChallenge(c);
     })();
     return () => {
@@ -109,7 +105,7 @@ export function StatusScreen({
     <div style={{ display: 'grid', gap: '14px' }}>
       <PageTitle eyebrow="MY STATUS" title="내 상태" />
 
-      {/* .status-user-summary */}
+      {/* .status-user-summary — 최상단 */}
       <Card>
         <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
           <div
@@ -133,9 +129,8 @@ export function StatusScreen({
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{name} 회원님</h2>
-              <Chip tone={isPaid ? 'solid' : 'subtle'}>{isPaid ? (tier === 'pro' ? 'PRO 멤버십' : '멤버십') : '무료'}</Chip>
+              {isPaid && <Chip tone="solid">VIP</Chip>}
             </div>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: BRAND.muted }}>{user.email}</p>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <small style={{ fontSize: '10px', color: BRAND.muted, letterSpacing: '0.08em' }}>적립금</small>
@@ -152,9 +147,12 @@ export function StatusScreen({
         />
       </Card>
 
+      {/* 내 정보 — 미등록이면 빨간 경고 + 펼침 */}
+      <ProfileSection user={user} />
+
       {/* 내 코드 */}
       <Card>
-        <SectionHeading kicker="홈" title="나의 결과" />
+        <SectionHeading title="나의 결과" />
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
@@ -172,7 +170,7 @@ export function StatusScreen({
             {bodyCode ?? '----'}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '16px', fontWeight: 800, wordBreak: 'keep-all' }}>{characterName ?? '나의 mebody 코드'}</div>
+            <div style={{ fontSize: '16px', fontWeight: 800, wordBreak: 'keep-all' }}>{characterName ?? `나의 ${PRODUCT.codeName}`}</div>
             <TextLink onClick={() => onOpenResult?.()}>결과 자세히 보기 →</TextLink>
           </div>
         </div>
@@ -187,7 +185,7 @@ export function StatusScreen({
             : '내 코드에 맞는 미션이 하루 한 가지씩 배정됩니다.'}
         </p>
         <CTA variant="outline" onClick={onOpenRoutine}>
-          {journeyProgress ? '오늘의 미션 하러 가기' : '14일 관리 시작하기'} <ChevronRight size={18} />
+          {journeyProgress ? COPY_CTA.missionToday : COPY_CTA.missionStart} <ChevronRight size={18} />
         </CTA>
       </Card>
 
@@ -198,9 +196,6 @@ export function StatusScreen({
         onOpenMembership={onOpenMembership}
         onChanged={onSubscriptionChanged}
       />
-
-      {/* 내 정보 — 닉네임 · 키 · 몸무게 */}
-      <ProfileSection user={user} />
 
       {/* 주문 내역 */}
       <OrdersSection user={user} onChanged={onSubscriptionChanged} />
@@ -238,50 +233,7 @@ export function StatusScreen({
         />
       </Card>
 
-      {/* 적립 내역 */}
       <Card>
-        <SectionHeading kicker="적립" title="적립 내역" hint={`${balance.toLocaleString()}원`} />
-        {history.length === 0 ? (
-          <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>아직 적립 내역이 없습니다.</p>
-        ) : (
-          <div style={{ display: 'grid' }}>
-            {history.map((entry, index) => (
-              <div
-                key={entry.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '11px 0',
-                  borderTop: index === 0 ? 'none' : `1px solid ${SURFACE.hairline}`,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, wordBreak: 'keep-all' }}>{entry.label}</div>
-                  <div style={{ fontSize: '11px', color: BRAND.muted, marginTop: '2px' }}>
-                    {new Date(entry.createdAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    flexShrink: 0,
-                    fontSize: '14px',
-                    fontWeight: 900,
-                    color: entry.amount > 0 ? BRAND.green : '#B4453A',
-                  }}
-                >
-                  {entry.amount > 0 ? '+' : ''}
-                  {entry.amount.toLocaleString()}원
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <SectionHeading kicker="계정" title="계정 관리" />
         <div style={{ display: 'grid', gap: '10px' }}>
           {onStartDiagnosis && (
             <CTA variant="outline" onClick={onStartDiagnosis} style={{ marginTop: 0 }}>

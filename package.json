@@ -54,6 +54,7 @@
     "verify:response-hardening": "node scripts/verify-response-hardening.mjs",
     "export:questions": "node scripts/export-questions.mjs",
     "verify:flow": "node scripts/verify-flow-navigation.mjs",
-    "verify:share-freeze": "node scripts/verify-share-and-freeze.mjs"
+    "verify:share-freeze": "node scripts/verify-share-and-freeze.mjs",
+    "verify:signup": "node scripts/verify-signup.mjs"
   }
 }

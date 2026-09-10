@@ -1,5 +1,6 @@
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
+import { CTA, LEGAL, PRODUCT } from '../theme/copy';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
@@ -94,12 +95,12 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
                 letterSpacing: '-0.03em',
               }}
             >
-              체크를 시작하기 전에
+              {PRODUCT.codeName} 체크 전에
               <br />
               아래 내용을 확인해 주세요
             </h1>
             <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
-              몇 분 걸리는 셀프 체크예요. 의료 진단이나 치료를 대신하지 않습니다.
+              {PRODUCT.codeGuide}를 찾는 셀프 체크예요. 의료 진단이나 치료를 대신하지 않습니다.
             </p>
           </div>
 
@@ -127,7 +128,7 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
                 <ul style={{ display: 'grid', gap: '10px', fontSize: '13px', lineHeight: 1.55, color: '#374151' }}>
                   <li style={{ display: 'flex', gap: '10px' }}>
                     <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>1</span>
-                    <span>질문에 답하면 지금의 자세·체형 경향을 mebody 코드로 보여줍니다.</span>
+                    <span>질문에 답하면 지금의 자세·체형 경향을 {PRODUCT.codeName}로 보여줍니다.</span>
                   </li>
                   <li style={{ display: 'flex', gap: '10px' }}>
                     <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>2</span>
@@ -177,7 +178,7 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공하는 것</div>
                       <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
-                        설문 기반의 체형 코드와, 결과를 이해하기 위한 웰니스 가이드입니다.
+                        설문 기반 {PRODUCT.codeName}({PRODUCT.codeGuide})와, 결과를 이해하기 위한 웰니스 가이드입니다.
                       </p>
                     </div>
                     <div>
@@ -275,7 +276,26 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
                     {agreePrivacy && <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
                   </span>
                   <span style={{ fontSize: '14px', lineHeight: 1.5, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
-                    개인정보 처리방침과 이용약관에 동의합니다.
+                    <a
+                      href={LEGAL.privacyPath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                      style={{ color: '#014725', fontWeight: 800, textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                    >
+                      {LEGAL.privacyLabel}
+                    </a>
+                    과{' '}
+                    <a
+                      href={LEGAL.termsPath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                      style={{ color: '#014725', fontWeight: 800, textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                    >
+                      {LEGAL.termsLabel}
+                    </a>
+                    에 동의합니다.
                   </span>
                 </label>
               </div>
@@ -306,7 +326,7 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
               cursor: 'pointer',
             }}
           >
-            {canProceed ? '동의하고 시작하기' : '아래로 내려 동의하기'}
+            {canProceed ? CTA.consentAgree : CTA.consentLocked}
             <span style={{ fontSize: '18px' }}>→</span>
           </button>
         </div>

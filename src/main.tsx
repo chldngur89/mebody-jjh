@@ -3,7 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { recoverAuthSession } from "./lib/authSession";
 import { installChunkLoadRecovery } from "./lib/chunkLoadRecovery";
-import { installAppViewportHeight } from "./lib/viewport";
+import { installAppViewportHeight, installInAppFocusAssist } from "./lib/viewport";
 
 function retireLegacyPwaCache() {
   if (typeof window === 'undefined') return;
@@ -28,6 +28,7 @@ function retireLegacyPwaCache() {
 
 installChunkLoadRecovery();
 installAppViewportHeight();
+installInAppFocusAssist();
 retireLegacyPwaCache();
 void recoverAuthSession().catch(() => undefined);
 

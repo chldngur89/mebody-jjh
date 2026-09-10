@@ -8,6 +8,7 @@
 import { ChevronRight, Lock } from 'lucide-react';
 import type { Entitlement } from '../../api/entitlement';
 import { BRAND, SURFACE } from '../../theme/brand';
+import { CTA as COPY_CTA } from '../../theme/copy';
 import { Card, CTA, Chip, DirectionCard, PageTitle, ProgressTrack, SectionHeading } from '../ui';
 
 export interface RoutineTabProps {
@@ -85,7 +86,7 @@ export function RoutineTab({
               : '멤버십 이용 중이라 언제든 새로 시작할 수 있습니다.'}
           </p>
           <CTA variant="light" onClick={onOpenJourney}>
-            14일 관리 시작하기 <ChevronRight size={18} />
+            {COPY_CTA.missionStart} <ChevronRight size={18} />
           </CTA>
         </Card>
         <DirectionCard

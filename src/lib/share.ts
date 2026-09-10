@@ -1,12 +1,13 @@
 /**
  * 결과 공유 — 코드와 캐릭터 이름만 나갑니다.
  *
- * 공유 링크에 담는 것: ref=share, code=몸BTI 코드. 그게 전부입니다.
+ * 공유 링크에 담는 것: ref=share, code=Mebody Code. 그게 전부입니다.
  * **result id 를 넣지 않습니다.** id 가 링크에 실리면 받은 사람이
  * get_questionnaire_response 로 원 사용자의 32문항 응답을 그대로 열 수 있습니다.
  * code 는 결과를 복원하는 열쇠가 아니라 "친구는 FRRS 였다" 는 말풍선 재료입니다.
  */
 import { track, type ShareChannel } from './analytics'
+import { PRODUCT } from '../theme/copy'
 
 export const SHARE_REF = 'share'
 export const BODY_CODE_PATTERN = /^[FC][RL][RL][SF]$/
@@ -44,19 +45,29 @@ export interface SharePayload {
   bodyCode: string
   characterName: string
   summaryLine?: string
+  /** 예: C · L · L · F — 목 중앙, ... 링크에는 넣지 않고 공유 문구에만 씁니다. */
+  tendencyLine?: string
 }
 
 export function buildShareTitle({ bodyCode, characterName }: SharePayload): string {
-  return `내 몸BTI는 ${bodyCode} ${characterName}`
+  return `내 ${PRODUCT.codeName}는 ${bodyCode} ${characterName}`
 }
 
 export function buildShareText(payload: SharePayload): string {
   const lines = [
     `${buildShareTitle(payload)}.`,
-    payload.summaryLine?.trim() || '32문항으로 목·어깨·골반·유연성 사용 습관을 확인했어요.',
+    payload.tendencyLine?.trim() || payload.summaryLine?.trim() || '32문항으로 목·어깨·골반·유연성 사용 습관을 확인했어요.',
     '너는 어떤 유형인지 궁금해요.',
   ]
   return lines.filter(Boolean).join('\n')
+}
+
+export function buildShareDescription(payload: SharePayload): string {
+  return (
+    payload.tendencyLine?.trim() ||
+    payload.summaryLine?.trim() ||
+    '32문항으로 확인한 내 몸 사용 습관. 너는 어떤 유형일까?'
+  )
 }
 
 export type ShareOutcome = 'shared' | 'cancelled' | 'unsupported' | 'failed'

@@ -335,6 +335,72 @@ Supabase Storage bucket: `images`
 - 로그인 회원: `questionnaire_responses.user_id` 기준 최신 완료 결과를 불러옵니다.
 - Supabase Auth 세션 저장은 유지합니다.
 
+## 회원가입 — 이메일과 휴대폰
+
+`구현 완료` — 둘 다 **가입 즉시 로그인**됩니다. 확인 절차 코드는 이미 들어 있고 설정값만 바꾸면 켜집니다.
+
+### 지금 상태 — 조건 없이 가입
+
+이메일이든 휴대폰이든, 값 두 개만 넣으면 그 자리에서 가입되고 로그인 상태가 됩니다.
+
+| 항목 | 지금 | 다시 거는 방법 |
+|---|---|---|
+| 이메일 확인 메일 | 없음 | `MEBODY_AUTH_REQUIRE_EMAIL_VERIFICATION=true` |
+| 휴대폰 인증번호 | 없음 | SMS 제공자 연결 후 `MEBODY_AUTH_REQUIRE_PHONE_VERIFICATION=true` |
+| 비밀번호 길이 | 1자 (사실상 제한 없음) | `MEBODY_AUTH_MIN_PASSWORD_LENGTH=8` |
+| 비밀번호 확인 칸 | 없앰(앱·홈페이지 둘 다) | `AuthScreen.tsx` 와 `static/index.html` 에 다시 넣어야 함 |
+| 승인 대기 계정 | 로그인할 때 자동으로 풀림 | 확인 절차를 켜면 닫힘 |
+| 이름 | 선택 | — |
+| 이메일/휴대폰 선택 | 입력하는 대로 자동 판별 | — |
+
+막는 것은 계정을 만들 수 없는 입력뿐입니다. 빈 값, 그리고 이메일도 번호도 아닌 값입니다.
+Supabase 는 관리자 생성 경로에서 비밀번호 길이를 보지 않습니다(실측: 1자도 생성·로그인 됨).
+지금 남아 있는 제한은 전부 우리 설정이고 값 하나로 되돌릴 수 있습니다.
+
+스위치는 서버의 `mebody.auth` 블록에 있습니다(`mebody-server/src/main/resources/application.yml`).
+앱 코드는 손대지 않아도 됩니다. 현재 값은 `GET /api/public/auth/config` 로 확인할 수 있습니다.
+
+### 승인 대기로 남는 계정이 없게
+
+가입 창구가 둘입니다. 앱(`mebody-jjh`)과 홈페이지(`mebody-server` 정적 페이지)이고, 둘 다
+`POST /api/public/auth/signup` 을 거쳐 승인된 상태로 계정을 만듭니다.
+
+그래도 승인 대기로 남을 수 있는 경로가 둘 있습니다.
+
+1. 서버에 못 붙어 앱이 Supabase 로 직접 가입한 경우
+2. 예전에 인증 메일 방식으로 만들어 둔 계정
+
+이 계정들은 로그인할 때 `email_not_confirmed` 로 막힙니다. 그래서 **로그인이 그 이유로 실패하면
+앱과 홈페이지가 `POST /api/public/auth/approve` 를 부르고 한 번만 다시 로그인합니다.**
+승인만 할 뿐 로그인을 시켜주지는 않으므로 비밀번호는 여전히 맞아야 합니다.
+`MEBODY_AUTH_REQUIRE_EMAIL_VERIFICATION=true` 로 확인 절차를 켜면 이 경로는 저절로 닫힙니다.
+
+### 왜 서버를 거치는가
+
+Supabase 프로젝트의 Confirm email 이 켜져 있습니다. 앱에서 그냥 가입하면 확인 메일을 열기 전까지
+로그인이 막힙니다(실측: `email_not_confirmed`). 확인된 상태로 계정을 만들려면 서비스 롤 키가 필요한데
+그 키는 앱에 둘 수 없습니다. 그래서 가입만 `POST /api/public/auth/signup` 을 거칩니다.
+서버에 못 붙으면 이메일 가입은 예전처럼 Supabase 직접 가입으로 되돌아갑니다.
+
+### 휴대폰은 왜 별칭 이메일인가
+
+Supabase 의 전화 제공자가 꺼져 있어 번호로는 **가입도 로그인도** 거부됩니다
+(실측: `phone_provider_disabled`). 그래서 번호를 `01012345678@phone.mebody.net` 모양의 이메일로 바꿔
+계정을 만들고, 로그인할 때도 앱이 같은 규칙으로 번호를 바꿔 보냅니다.
+
+- 변환 규칙은 두 곳에 같이 있습니다. `src/lib/identifier.ts` 와 `SignupIdentifier.java` 입니다.
+  **한쪽만 바꾸면 가입은 되는데 로그인이 안 됩니다.**
+- 도메인도 두 곳이 같아야 합니다. 앱 `VITE_PHONE_ALIAS_DOMAIN`, 서버 `mebody.auth.phone-alias-domain`.
+- 실제 번호는 `auth.users.phone` 에 국제표기(`+8210...`)로, 메타데이터에는 `phone_number` 로 함께 남깁니다.
+  나중에 전화 제공자를 켜고 `MEBODY_AUTH_PHONE_MODE=native` 로 바꿀 때 쓰려고 미리 넣어둔 값입니다.
+- 별칭 주소는 받을 수 있는 메일함이 아닙니다. 그래서 휴대폰 계정은 비밀번호 재설정을 지원하지 않습니다.
+
+### 사람이 해야 하는 것 (휴대폰 인증을 켤 때)
+
+1. Supabase → Authentication → Providers → Phone 활성화, Twilio 등 SMS 제공자 연결
+2. `MEBODY_AUTH_PHONE_MODE=native`, `MEBODY_AUTH_REQUIRE_PHONE_VERIFICATION=true`
+3. 기존 별칭 계정을 번호 계정으로 옮기는 이전 작업 (별칭 계정에 이미 번호가 들어 있습니다)
+
 ## 결과 공유
 
 `부분 구현` — 링크 복사와 OS 공유는 동작하고, 카카오톡 공유는 키를 발급받으면 켜집니다.
@@ -386,6 +452,8 @@ id 가 새면 **읽기는 여전히 됩니다.** id 자체가 자기 결과를 �
 - `src/lib/kakao.ts`: 카카오 SDK 지연 로드와 피드 공유(키가 있을 때만)
 - `src/lib/analytics.ts`: 이벤트 기록 인터페이스(외부 SDK 없음)
 - `src/api/rpcSupport.ts`: 마이그레이션 적용 전 DB 에서 RPC 폴백 판별
+- `src/api/signup.ts`: 회원가입 요청(서버 경유, 서버 없으면 이메일만 폴백)
+- `src/lib/identifier.ts`: 이메일·휴대폰 판별과 별칭 이메일 변환
 
 ## 변경 시 검증 체크리스트
 
@@ -402,3 +470,8 @@ id 가 새면 **읽기는 여전히 됩니다.** id 자체가 자기 결과를 �
 - 비회원이 32문항을 완주해 결과가 저장·표시되는지 확인합니다(응답 저장 경로를 바꾸면 가장 먼저 깨집니다).
 - 공유 링크에 `result` 파라미터가 섞여 있지 않은지 확인합니다.
 - 카카오 키가 없을 때 카카오 버튼이 숨고 나머지 공유가 동작하는지 확인합니다.
+- 이메일·휴대폰으로 가입한 직후 바로 로그인 상태가 되는지 확인합니다(`npm run verify:signup`).
+- 비밀번호 길이 제한을 올렸다면 앱의 오류 문구가 그 길이를 그대로 보여주는지 확인합니다.
+- 홈페이지(`/`)의 회원가입도 확인 메일 없이 바로 로그인되는지 확인합니다.
+- 승인 대기 상태의 계정이 로그인 한 번으로 풀리는지 확인합니다.
+- 휴대폰으로 가입한 계정이 로그아웃 뒤 같은 번호로 다시 로그인되는지 확인합니다.

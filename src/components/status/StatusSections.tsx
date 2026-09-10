@@ -1,7 +1,8 @@
 /**
  * 내 상태 화면의 확장 섹션 네 가지.
  *
- *   1) 프로필 편집   — 닉네임 · 키 · 몸무게 (037 이 만들어 두고 안 쓰던 컬럼을 여기서 처음 씁니다)
+ *   1) 프로필 편집   — 이름 · 이메일 · 비밀번호 · 휴대폰 · 키 · 몸무게
+ *                      (미등록이면 빨간 경고 + 펼침, 완료면 접힘)
  *   2) 주문 내역     — fetchMyOrders() 는 있었는데 부르는 화면이 없었습니다
  *   3) 멤버십 관리   — 다음 결제일 · 해지. **해지도 서버가 합니다**(앱은 구독을 못 바꿉니다)
  *   4) 측정 기록     — 지난 진단 목록과 직전 대비 변화(compareJourneyResults 재사용)
@@ -17,13 +18,18 @@ import { fetchMyOrders, type FulfillmentStatus, type MyOrder } from '../../api/o
 import {
   fetchMeasurementHistory,
   fetchMyProfile,
-  updateMyProfile,
+  isProfileComplete,
+  saveMyProfile,
+  updateMyEmail,
+  updateMyPassword,
   validateBody,
   type MeasurementRecord,
   type MyProfile,
 } from '../../api/profile';
 import { compareJourneyResults } from '../../utils/journeyCompare';
+import { formatPhone, isEmail, normalizePhone, phoneFromLoginEmail } from '../../lib/identifier';
 import { BRAND, SURFACE } from '../../theme/brand';
+import { PRODUCT } from '../../theme/copy';
 import { Collapsible, CTA } from '../ui';
 
 function krw(value: number): string {
@@ -93,28 +99,73 @@ function FulfillmentTrack({ order }: { order: MyOrder }) {
 
 export function ProfileSection({ user }: { user: User }) {
   const [profile, setProfile] = useState<MyProfile | null>(null);
-  const [nickname, setNickname] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [phone, setPhone] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoaded(false);
+    const metaName =
+      typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name.trim() : '';
     void fetchMyProfile(user.id).then((p) => {
-      if (cancelled || !p) return;
+      if (cancelled) return;
       setProfile(p);
-      setNickname(p.nickname ?? '');
-      setHeight(p.heightCm === null ? '' : String(p.heightCm));
-      setWeight(p.weightKg === null ? '' : String(p.weightKg));
+      const seededName = p?.nickname?.trim() || p?.displayName?.trim() || metaName || '';
+      setName(seededName);
+      const authEmail = user.email?.trim() ?? '';
+      const profileEmail = p?.email?.trim() ?? '';
+      // 휴대폰 별칭 이메일은 연락용으로 보이지 않게 하고, 프로필에 다른 이메일이 있으면 그걸 우선합니다.
+      const aliasPhone = phoneFromLoginEmail(authEmail);
+      setEmail(aliasPhone ? (phoneFromLoginEmail(profileEmail) ? '' : profileEmail) : profileEmail || authEmail);
+
+      const seededPhone = p?.phone || phoneFromLoginEmail(p?.email) || phoneFromLoginEmail(user.email) || '';
+      setPhone(seededPhone ? formatPhone(seededPhone) : '');
+      setHeight(p?.heightCm == null ? '' : String(p.heightCm));
+      setWeight(p?.weightKg == null ? '' : String(p.weightKg));
+      setPassword('');
+      setPasswordConfirm('');
+      setLoaded(true);
     });
     return () => {
       cancelled = true;
     };
-  }, [user.id]);
+  }, [user.id, user.email, user.user_metadata?.display_name]);
+
+  const metaName =
+    typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name.trim() : '';
+  const incomplete =
+    loaded &&
+    !isProfileComplete({
+      nickname: profile?.nickname,
+      displayName: profile?.displayName || metaName,
+      phone: profile?.phone,
+      heightCm: profile?.heightCm,
+      weightKg: profile?.weightKg,
+      email: profile?.email ?? user.email,
+    });
+
+  useEffect(() => {
+    if (!loaded) return;
+    setOpen(incomplete);
+  }, [loaded, incomplete]);
 
   const save = async () => {
-    if (!profile) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setNotice({ text: '이름을 입력해주세요.', ok: false });
+      setOpen(true);
+      return;
+    }
+
     const h = height.trim() === '' ? null : Number(height);
     const w = weight.trim() === '' ? null : Number(weight);
     if ((h !== null && Number.isNaN(h)) || (w !== null && Number.isNaN(w))) {
@@ -126,58 +177,206 @@ export function ProfileSection({ user }: { user: User }) {
       setNotice({ text: invalid, ok: false });
       return;
     }
+    if (h === null || w === null) {
+      setNotice({ text: '키와 몸무게를 모두 입력해주세요.', ok: false });
+      setOpen(true);
+      return;
+    }
+
+    let nextPhone: string | null = null;
+    if (phone.trim()) {
+      nextPhone = normalizePhone(phone);
+      if (!nextPhone) {
+        setNotice({ text: '휴대폰 번호를 다시 확인해주세요.', ok: false });
+        return;
+      }
+    } else {
+      setNotice({ text: '휴대폰 번호를 입력해주세요.', ok: false });
+      setOpen(true);
+      return;
+    }
+
+    const nextEmail = email.trim().toLowerCase();
+    if (nextEmail && !isEmail(nextEmail)) {
+      setNotice({ text: '이메일 형식이 올바르지 않습니다.', ok: false });
+      return;
+    }
+    if (password || passwordConfirm) {
+      if (!password) {
+        setNotice({ text: '새 비밀번호를 입력해주세요.', ok: false });
+        return;
+      }
+      if (password !== passwordConfirm) {
+        setNotice({ text: '비밀번호 확인이 일치하지 않습니다.', ok: false });
+        return;
+      }
+    }
 
     setSaving(true);
     setNotice(null);
-    const next = await updateMyProfile(profile.id, {
-      nickname: nickname.trim() || null,
-      heightCm: h,
-      weightKg: w,
-    });
+
+    const authEmail = user.email?.trim().toLowerCase() ?? '';
+    if (nextEmail && nextEmail !== authEmail && !phoneFromLoginEmail(authEmail)) {
+      const emailResult = await updateMyEmail(nextEmail);
+      if (!emailResult.ok) {
+        setSaving(false);
+        setNotice({ text: emailResult.message, ok: false });
+        return;
+      }
+    } else if (nextEmail && phoneFromLoginEmail(authEmail) && nextEmail !== authEmail) {
+      // 휴대폰 가입자는 로그인 별칭은 유지하고, 연락 이메일만 프로필에 둡니다.
+    }
+
+    if (password) {
+      const passwordResult = await updateMyPassword(password);
+      if (!passwordResult.ok) {
+        setSaving(false);
+        setNotice({ text: passwordResult.message, ok: false });
+        return;
+      }
+    }
+
+    const next = await saveMyProfile(
+      user.id,
+      profile?.id ?? null,
+      {
+        nickname: trimmedName,
+        phone: nextPhone,
+        heightCm: h,
+        weightKg: w,
+      },
+      { email: nextEmail || authEmail || null },
+    );
     setSaving(false);
     if (!next) {
       setNotice({ text: '저장하지 못했습니다. 잠시 후 다시 시도해주세요.', ok: false });
       return;
     }
     setProfile(next);
-    setNotice({ text: '저장되었습니다.', ok: true });
+    setName(next.nickname ?? next.displayName ?? trimmedName);
+    if (next.phone) setPhone(formatPhone(next.phone));
+    setPassword('');
+    setPasswordConfirm('');
+    const done = isProfileComplete(next);
+    setOpen(!done);
+    setNotice({
+      text: done
+        ? password
+          ? '저장되었습니다. 비밀번호도 변경되었습니다.'
+          : nextEmail && nextEmail !== authEmail && !phoneFromLoginEmail(authEmail)
+            ? '저장되었습니다. 이메일 변경은 확인 메일을 확인해주세요.'
+            : '저장되었습니다.'
+        : '저장되었습니다. 남은 항목도 이어서 입력해주세요.',
+      ok: true,
+    });
   };
 
-  const bmi =
-    profile?.heightCm && profile?.weightKg
-      ? (profile.weightKg / (profile.heightCm / 100) ** 2).toFixed(1)
-      : null;
+  const passwordMismatch = passwordConfirm.length > 0 && password !== passwordConfirm;
 
   return (
     <Collapsible
-      kicker="계정"
-      title="내 정보"
-      hint={bmi ? `BMI ${bmi}` : profile?.nickname ? profile.nickname : undefined}
+      title={incomplete ? '내 정보를 입력해주세요' : '내 정보 수정 및 비밀 번호 변경'}
+      hint={incomplete ? '입력 필요' : '완료'}
+      tone={incomplete ? 'danger' : 'default'}
+      open={open}
+      onOpenChange={setOpen}
+      dense
     >
-      <div style={{ display: 'grid', gap: '10px' }}>
-        <Field label="닉네임" value={nickname} onChange={setNickname} placeholder="앱에서 부를 이름" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <Field label="키 (cm)" value={height} onChange={setHeight} placeholder="170" inputMode="decimal" />
-          <Field label="몸무게 (kg)" value={weight} onChange={setWeight} placeholder="65" inputMode="decimal" />
+      <div style={{ display: 'grid', gap: '8px' }}>
+        {incomplete && (
+          <p
+            style={{
+              margin: 0,
+              fontSize: '11.5px',
+              lineHeight: 1.45,
+              fontWeight: 800,
+              color: '#8E3A32',
+              wordBreak: 'keep-all',
+            }}
+          >
+            이름 · 휴대폰 · 키 · 몸무게를 모두 등록해 주세요.
+          </p>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <Field compact label="이름" value={name} onChange={setName} placeholder="이름" autoComplete="name" />
+          <Field
+            compact
+            label="휴대폰"
+            value={phone}
+            onChange={(value) => setPhone(formatPhone(value))}
+            placeholder="010-0000-0000"
+            inputMode="tel"
+            autoComplete="tel"
+          />
         </div>
-        <p style={{ margin: 0, fontSize: '11px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
-          키와 몸무게는 선택입니다. 넣어두시면 이후 리포트에서 변화를 함께 보여드립니다.
-          체형 코드 계산에는 쓰이지 않습니다.
+
+        <Field
+          compact
+          label="이메일"
+          value={email}
+          onChange={setEmail}
+          placeholder="email@example.com"
+          inputMode="email"
+          autoComplete="email"
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <Field
+            compact
+            label="새 비밀번호"
+            value={password}
+            onChange={setPassword}
+            placeholder="변경 시에만"
+            type="password"
+            autoComplete="new-password"
+          />
+          <Field
+            compact
+            label="비밀번호 확인"
+            value={passwordConfirm}
+            onChange={setPasswordConfirm}
+            placeholder="다시 입력"
+            type="password"
+            autoComplete="new-password"
+            invalid={passwordMismatch}
+          />
+        </div>
+        {passwordMismatch && (
+          <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#8E3A32' }}>
+            비밀번호 확인이 일치하지 않습니다.
+          </p>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <Field compact label="키 (cm)" value={height} onChange={setHeight} placeholder="170" inputMode="decimal" />
+          <Field compact label="몸무게 (kg)" value={weight} onChange={setWeight} placeholder="65" inputMode="decimal" />
+        </div>
+
+        <p style={{ margin: '2px 0 0', fontSize: '10.5px', lineHeight: 1.45, color: BRAND.muted, wordBreak: 'keep-all' }}>
+          비밀번호는 바꿀 때만 입력하세요. 키·몸무게는 {PRODUCT.codeName} 계산에 쓰이지 않습니다.
         </p>
+
         {notice && (
           <p
             style={{
               margin: 0,
-              fontSize: '12px',
+              fontSize: '11.5px',
               fontWeight: 800,
               color: notice.ok ? BRAND.green : '#8E3A32',
+              wordBreak: 'keep-all',
             }}
           >
             {notice.text}
           </p>
         )}
-        <CTA onClick={() => void save()} disabled={saving || !profile} style={{ marginTop: '4px' }}>
-          <Save size={16} /> {saving ? '저장 중...' : '저장'}
+
+        <CTA
+          onClick={() => void save()}
+          disabled={saving || !loaded || passwordMismatch}
+          style={{ marginTop: '6px', padding: '11px 14px', fontSize: '14px', borderRadius: '12px', gap: '6px' }}
+        >
+          <Save size={15} /> {saving ? '저장 중...' : '저장'}
         </CTA>
       </div>
     </Collapsible>
@@ -455,13 +654,16 @@ export function MembershipSection({
 
 // ---------------------------------------------------------------- 4) 측정 기록
 
+const MEASUREMENT_VISIBLE = 3;
+
 export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenResult?: (id: string) => void }) {
   const [records, setRecords] = useState<MeasurementRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    void fetchMeasurementHistory(user.id, 10).then((list) => {
+    // 화면에 3개만 보여도, 3번째의 「직전 대비」를 위해 하나 더 읽습니다.
+    void fetchMeasurementHistory(user.id, MEASUREMENT_VISIBLE + 1).then((list) => {
       if (cancelled) return;
       setRecords(list);
       setLoading(false);
@@ -471,15 +673,21 @@ export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenR
     };
   }, [user.id]);
 
+  const visible = records.slice(0, MEASUREMENT_VISIBLE);
+
   return (
-    <Collapsible kicker="기록" title="측정 기록" hint={records.length > 0 ? `${records.length}회` : undefined}>
+    <Collapsible
+      kicker="기록"
+      title="측정 기록"
+      hint={visible.length > 0 ? `최근 ${visible.length}회` : undefined}
+    >
       {loading ? (
         <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>불러오는 중...</p>
-      ) : records.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p style={{ margin: 0, fontSize: '12.5px', color: BRAND.muted }}>아직 완료한 측정이 없습니다.</p>
       ) : (
         <div style={{ display: 'grid' }}>
-          {records.map((record, index) => {
+          {visible.map((record, index) => {
             const previous = records[index + 1];
             // 직전 측정 대비 무엇이 달라졌는지. 축 데이터가 없으면 요약이 비어 표시하지 않습니다.
             const comparison = previous
@@ -571,27 +779,39 @@ function Field({
   onChange,
   placeholder,
   inputMode,
+  autoComplete,
+  type = 'text',
+  invalid = false,
+  compact = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  inputMode?: 'text' | 'decimal';
+  inputMode?: 'text' | 'decimal' | 'tel' | 'email';
+  autoComplete?: string;
+  type?: 'text' | 'password' | 'email';
+  invalid?: boolean;
+  compact?: boolean;
 }) {
   return (
-    <label style={{ display: 'grid', gap: '5px' }}>
-      <span style={{ fontSize: '11.5px', fontWeight: 900, color: BRAND.muted }}>{label}</span>
+    <label style={{ display: 'grid', gap: compact ? '3px' : '5px', minWidth: 0 }}>
+      <span style={{ fontSize: compact ? '10.5px' : '11.5px', fontWeight: 900, color: BRAND.muted }}>{label}</span>
       <input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
+        autoComplete={autoComplete}
         style={{
-          height: '42px',
-          borderRadius: '12px',
-          border: `1px solid ${SURFACE.hairline}`,
-          padding: '0 12px',
-          fontSize: '13px',
+          width: '100%',
+          boxSizing: 'border-box',
+          height: compact ? '38px' : '42px',
+          borderRadius: compact ? '10px' : '12px',
+          border: `1px solid ${invalid ? '#dc2626' : SURFACE.hairline}`,
+          padding: compact ? '0 10px' : '0 12px',
+          fontSize: compact ? '12.5px' : '13px',
           fontFamily: 'inherit',
           outline: 'none',
           background: '#ffffff',

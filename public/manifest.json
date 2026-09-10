@@ -1,7 +1,7 @@
 {
-  "name": "mebody | Mebody Check로 몸Bti 찾기",
+  "name": "mebody | Mebody Code · 체형코드(몸Bti)",
   "short_name": "mebody",
-  "description": "Mebody Check를 통해 몸Bti를 찾고, 나에게 맞는 개인화 웰니스 가이드를 받아보세요.",
+  "description": "Mebody Code(체형코드(몸Bti))를 찾고, 나에게 맞는 개인화 웰니스 가이드를 받아보세요.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

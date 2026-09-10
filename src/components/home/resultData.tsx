@@ -14,6 +14,7 @@ import {
   type StoreProduct,
 } from '../../api/content';
 import { AXIS_GREEN_THEME } from '../../data/axisTheme';
+import { PRODUCT } from '../../theme/copy';
 import { fetchRewardBalance } from '../../api/journey';
 import { previewRewardUse } from '../../api/orders';
 import { SUPABASE_STORAGE_PUBLIC, supabase } from '../../lib/supabase';
@@ -174,7 +175,7 @@ function pickSummaryLine(content: BodyCodeContent | null): string {
     .map((sentence) => sentence.trim())
     .find(Boolean);
 
-  return fromDescription || '현재 몸이 가장 자주 쓰는 보상 패턴을 기준으로 mebody 코드를 정리했습니다.';
+  return fromDescription || `현재 몸이 가장 자주 쓰는 사용 패턴을 기준으로 ${PRODUCT.codeName}를 정리했습니다.`;
 }
 
 function getAxisSentence(content: BodyCodeContent | null, key: AxisKey, fallback: string) {
@@ -482,7 +483,7 @@ export function useResultData(
   const bodyCode = result?.calculated_code || '----';
   const content = result?.body_code_content ?? null;
   const summaryLine = pickSummaryLine(content);
-  const characterName = content?.character_name || characterNames[bodyCode] || '나의 mebody 코드';
+  const characterName = content?.character_name || characterNames[bodyCode] || `나의 ${PRODUCT.codeName}`;
   const characterImage = resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls);
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
 

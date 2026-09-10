@@ -15,6 +15,7 @@ import { Check, ChevronRight, ExternalLink, Plus } from 'lucide-react';
 import { AdSlot } from '../AdSlot';
 import { AxisTrack, Card, CTA, Chip, DirectionCard, PageTitle, SectionHeading } from '../ui';
 import { BRAND, SURFACE } from '../../theme/brand';
+import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl, preloadCharacterImage } from '../../utils/characterImages';
 import { ResultShareCard } from './ResultShareCard';
 import { useResultData } from './resultData';
@@ -25,7 +26,7 @@ export interface HomeScreenProps {
   isLoggedIn?: boolean;
   isPaid?: boolean;
   onResultLoad?: (bodyCode: string) => void;
-  /** 03 "지금 시작하기" — 미션 탭으로 */
+  /** 03 미션 탭으로 */
   onStartCare?: () => void;
   /** direction-card CTA — 루틴(14일) 탭으로 */
   onOpenRoutine?: () => void;
@@ -87,10 +88,14 @@ export function HomeScreen({
   }
 
   const primaryAxis = data.axisRows[0];
+  const tendencyLine =
+    data.axisDetails.length > 0
+      ? `${data.axisDetails.map((d) => d.code).join(' · ')} — ${data.summaryLine}`
+      : data.summaryLine;
 
   return (
     <div style={{ display: 'grid', gap: '14px' }}>
-      {/* ── hero-card ─────────────────────────────────────────────── */}
+      {/* ── hero + 경향 + 4축 + 공유 (한 박스) ─────────────────────── */}
       <Card padding="26px 20px 22px" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         {/* .hero-glow */}
         <span style={{ position: 'absolute', width: '180px', height: '180px', left: '-70px', top: '-50px', borderRadius: '50%', background: '#EEF4EC' }} />
@@ -112,43 +117,53 @@ export function HomeScreen({
           <p style={{ margin: '12px 0 0', color: BRAND.muted, fontSize: '14px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {data.summaryLine}
           </p>
+          {data.axisDetails.length > 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                background: SURFACE.subtle,
+                borderRadius: '14px',
+                padding: '12px 14px',
+                fontSize: '13px',
+                lineHeight: 1.65,
+                color: BRAND.text,
+                wordBreak: 'keep-all',
+                textAlign: 'left',
+              }}
+            >
+              {tendencyLine}
+            </div>
+          )}
+
+          {data.axisRows.length > 0 && (
+            <div style={{ marginTop: '16px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
+                <strong style={{ fontSize: '15px', fontWeight: 800, color: BRAND.text }}>4축 상세 결과</strong>
+                <span style={{ fontSize: '11px', color: BRAND.muted, fontWeight: 700, flexShrink: 0 }}>중앙에 가까울수록 균형</span>
+              </div>
+              <div style={{ display: 'grid', gap: '14px' }}>
+                {data.axisRows.map((row) => (
+                  <AxisTrack
+                    key={row.key}
+                    label={row.title.replace(/\s*(위치|높이|회전|유연성)$/, '')}
+                    leftLabel={row.labelLeft}
+                    rightLabel={row.labelRight}
+                    value={knobPercent(row.percentLeft)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <ResultShareCard
+            embedded
+            bodyCode={data.bodyCode}
+            characterName={data.characterName}
+            summaryLine={data.summaryLine}
+            tendencyLine={tendencyLine}
+          />
         </div>
       </Card>
-
-      {/* ── 결과 공유 ─────────────────────────────────────────────── */}
-      <ResultShareCard
-        bodyCode={data.bodyCode}
-        characterName={data.characterName}
-        summaryLine={data.summaryLine}
-      />
-
-      {/* ── 01 나의 움직임 경향 ────────────────────────────────────── */}
-      {data.axisDetails.length > 0 && (
-        <Card>
-          <SectionHeading kicker="내 상태" title="나의 움직임 경향" />
-          <div style={{ background: SURFACE.subtle, borderRadius: '14px', padding: '14px', fontSize: '14px', lineHeight: 1.7, color: BRAND.text, wordBreak: 'keep-all' }}>
-            {data.axisDetails.map((d) => d.code).join(' · ')} — {data.summaryLine}
-          </div>
-        </Card>
-      )}
-
-      {/* ── 02 4축 상세 ───────────────────────────────────────────── */}
-      {data.axisRows.length > 0 && (
-        <Card>
-          <SectionHeading kicker="내 상태" title="4축 상세 결과" hint="중앙에 가까울수록 균형" />
-          <div style={{ display: 'grid', gap: '18px' }}>
-            {data.axisRows.map((row) => (
-              <AxisTrack
-                key={row.key}
-                label={row.title.replace(/\s*(위치|높이|회전|유연성)$/, '')}
-                leftLabel={row.labelLeft}
-                rightLabel={row.labelRight}
-                value={knobPercent(row.percentLeft)}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
 
       {/* ── 03 지금 가장 먼저 해보세요 = 공통 스트레칭 ──────────────── */}
       <Card tone="green" padding="20px">
@@ -162,13 +177,13 @@ export function HomeScreen({
         </p>
         <div style={{ marginTop: '12px', fontSize: '12px', color: 'rgba(255,255,255,.7)' }}>◷ 약 15분 · 5단계</div>
         <CTA variant="light" onClick={onStartCare}>
-          지금 시작하기 <ChevronRight size={18} />
+          {COPY_CTA.missionNow} <ChevronRight size={18} />
         </CTA>
       </Card>
 
       {/* ── 04 자세 사용 설명서 ───────────────────────────────────── */}
       <Card>
-        <SectionHeading kicker="가이드" title="mebody 자세 사용 설명서" />
+        <SectionHeading kicker="가이드" title={`${PRODUCT.mark} 자세 사용 설명서`} />
         <div style={{ display: 'grid', gap: '12px' }}>
           {data.youtubeVideos.slice(0, 2).map((video) => (
             <a
@@ -285,7 +300,7 @@ export function HomeScreen({
         ]}
         action={
           <CTA variant="light" onClick={isLoggedIn ? onOpenRoutine : onGoAuth}>
-            {isLoggedIn ? '나의 14일 루틴 시작하기' : '회원가입하고 시작하기'} <ChevronRight size={18} />
+            {isLoggedIn ? COPY_CTA.missionStart : COPY_CTA.authSignup} <ChevronRight size={18} />
           </CTA>
         }
       />

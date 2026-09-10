@@ -1,12 +1,11 @@
 /**
- * 결과 공유 카드 — hero-card 바로 아래.
+ * 결과 공유 블록 — hero 카드 안에 붙이거나 단독 카드로 쓸 수 있습니다.
  *
  * 나가는 값은 몸BTI 코드와 캐릭터 이름뿐입니다. 문항 응답·축 점수·result id 는
  * 링크에도 문구에도 넣지 않습니다(근거: src/lib/share.ts 주석).
- *
- * 기존 CTA("14일 관리 시작하기")보다 약하게 보여야 해서 outline + 텍스트 버튼을 씁니다.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Link2 } from 'lucide-react'
 import { Card, CTA } from '../ui'
 import { BRAND, SURFACE } from '../../theme/brand'
 import { track, type ShareChannel } from '../../lib/analytics'
@@ -25,11 +24,20 @@ export interface ResultShareCardProps {
   bodyCode: string
   characterName: string
   summaryLine?: string
+  tendencyLine?: string
+  /** true 이면 바깥 Card 없이 내용만 렌더합니다(hero 와 한 박스로 합칠 때). */
+  embedded?: boolean
 }
 
 const TOAST_MS = 2200
 
-export function ResultShareCard({ bodyCode, characterName, summaryLine }: ResultShareCardProps) {
+export function ResultShareCard({
+  bodyCode,
+  characterName,
+  summaryLine,
+  tendencyLine,
+  embedded = false,
+}: ResultShareCardProps) {
   const [toast, setToast] = useState<string | null>(null)
   /**
    * 복사가 막힌 환경(카카오 인앱 브라우저, 구형 웹뷰, 비 HTTPS)에서 직접 복사할 주소.
@@ -52,7 +60,7 @@ export function ResultShareCard({ bodyCode, characterName, summaryLine }: Result
 
   if (!shareable) return null
 
-  const payload: SharePayload = { bodyCode, characterName, summaryLine }
+  const payload: SharePayload = { bodyCode, characterName, summaryLine, tendencyLine }
   const kakaoReady = isKakaoShareConfigured()
   const nativeReady = canNativeShare()
 
@@ -90,27 +98,59 @@ export function ResultShareCard({ bodyCode, characterName, summaryLine }: Result
     }
   }
 
-  return (
-    <Card>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: '15px', fontWeight: 800, color: BRAND.text }}>결과 공유하기</strong>
-        <span style={{ fontSize: '12px', color: BRAND.muted }}>코드와 캐릭터만 전달돼요</span>
-      </div>
-      <p style={{ margin: '8px 0 0', fontSize: '13px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
-        내 답변은 함께 가지 않아요. 친구는 링크를 열면 자기 진단을 새로 시작합니다.
+  const body = (
+    <div style={{ textAlign: 'center' }}>
+      <strong
+        style={{
+          display: 'block',
+          fontSize: '15px',
+          fontWeight: 800,
+          color: BRAND.text,
+          letterSpacing: '-0.02em',
+        }}
+      >
+        결과 공유하기
+      </strong>
+      <p
+        style={{
+          margin: '6px 0 0',
+          fontSize: '12.5px',
+          lineHeight: 1.5,
+          color: BRAND.muted,
+          wordBreak: 'keep-all',
+        }}
+      >
+        코드와 캐릭터가 전달되요
       </p>
 
       {kakaoReady && (
-        <CTA variant="outline" onClick={() => void run('kakao')} disabled={busy !== null}>
+        <CTA
+          variant="outline"
+          onClick={() => void run('kakao')}
+          disabled={busy !== null}
+          style={{ marginTop: '14px' }}
+        >
           카카오톡으로 공유
         </CTA>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', marginTop: kakaoReady ? '10px' : '16px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gap: '8px',
+          marginTop: kakaoReady ? '8px' : '14px',
+        }}
+      >
         {nativeReady && (
-          <ShareTextButton label="공유하기" onClick={() => void run('native')} disabled={busy !== null} />
+          <ShareActionButton label="공유하기" onClick={() => void run('native')} disabled={busy !== null} />
         )}
-        <ShareTextButton label="링크 복사" onClick={() => void run('copy')} disabled={busy !== null} />
+        <ShareActionButton
+          label="링크 복사"
+          icon={<Link2 size={15} strokeWidth={2.4} />}
+          onClick={() => void run('copy')}
+          disabled={busy !== null}
+          primary
+        />
       </div>
 
       {toast && (
@@ -118,8 +158,14 @@ export function ResultShareCard({ bodyCode, characterName, summaryLine }: Result
           role="status"
           aria-live="polite"
           style={{
-            marginTop: '10px', background: SURFACE.subtle, borderRadius: '12px',
-            padding: '10px 12px', fontSize: '13px', color: BRAND.text, wordBreak: 'keep-all',
+            marginTop: '10px',
+            background: SURFACE.subtle,
+            borderRadius: '12px',
+            padding: '10px 12px',
+            fontSize: '13px',
+            color: BRAND.text,
+            wordBreak: 'keep-all',
+            textAlign: 'left',
           }}
         >
           {toast}
@@ -134,25 +180,73 @@ export function ResultShareCard({ bodyCode, characterName, summaryLine }: Result
           onFocus={(event) => event.currentTarget.select()}
           onClick={(event) => event.currentTarget.select()}
           style={{
-            marginTop: '8px', width: '100%', boxSizing: 'border-box',
-            border: `1px solid ${SURFACE.hairline}`, borderRadius: '12px',
-            padding: '11px 12px', fontSize: '13px', fontFamily: 'inherit',
-            color: BRAND.text, background: '#ffffff',
+            marginTop: '8px',
+            width: '100%',
+            boxSizing: 'border-box',
+            border: `1px solid ${SURFACE.hairline}`,
+            borderRadius: '12px',
+            padding: '11px 12px',
+            fontSize: '13px',
+            fontFamily: 'inherit',
+            color: BRAND.text,
+            background: '#ffffff',
+            textAlign: 'left',
           }}
         />
       )}
-    </Card>
+    </div>
   )
+
+  if (embedded) {
+    return (
+      <div
+        style={{
+          marginTop: '18px',
+          paddingTop: '18px',
+          borderTop: `1px solid ${SURFACE.hairline}`,
+        }}
+      >
+        {body}
+      </div>
+    )
+  }
+
+  return <Card>{body}</Card>
 }
 
-function ShareTextButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        flex: 1,
+function ShareActionButton({
+  label,
+  onClick,
+  disabled,
+  primary = false,
+  icon,
+}: {
+  label: string
+  onClick: () => void
+  disabled: boolean
+  primary?: boolean
+  icon?: ReactNode
+}) {
+  const style: CSSProperties = primary
+    ? {
+        width: '100%',
+        border: `1.5px solid ${BRAND.green}`,
+        background: BRAND.green,
+        borderRadius: '14px',
+        padding: '13px 14px',
+        color: '#ffffff',
+        fontWeight: 800,
+        fontSize: '14px',
+        fontFamily: 'inherit',
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '7px',
+      }
+    : {
+        width: '100%',
         border: `1px solid ${SURFACE.hairline}`,
         background: '#ffffff',
         borderRadius: '12px',
@@ -163,8 +257,11 @@ function ShareTextButton({ label, onClick, disabled }: { label: string; onClick:
         fontFamily: 'inherit',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.55 : 1,
-      }}
-    >
+      }
+
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} style={style}>
+      {icon}
       {label}
     </button>
   )

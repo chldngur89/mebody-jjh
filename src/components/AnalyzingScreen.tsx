@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
+import { PRODUCT } from '../theme/copy';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { AXIS_ICON_SRC } from '../data/axisIcons';
 import { useMediaQuery } from '../utils/useMediaQuery';
@@ -51,12 +52,17 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '100dvh',
+        minHeight: isDesktopMockup ? '100%' : 'var(--mebody-app-height)',
+        height: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
+        maxHeight: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
         display: 'flex',
         flexDirection: 'column',
+        boxSizing: 'border-box',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', position: 'relative' }}>
@@ -100,7 +106,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
 
           {/* Subtitle */}
           <p className="text-gray-600 mb-12">
-            {errorMessage ?? '답변을 저장하고 mebody 코드를 계산하는 중입니다.'}
+            {errorMessage ?? `답변을 저장하고 ${PRODUCT.codeName}를 계산하는 중입니다.`}
           </p>
 
           {errorMessage && (
@@ -140,7 +146,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-white animate-pulse" style={{ animationDelay: '0.6s' }}>
                   <img src={AXIS_ICON_SRC.flexibility} alt="" className="w-full h-full object-contain" />
                 </div>
-                <span className="text-xs text-gray-600">다리</span>
+                <span className="text-xs text-gray-600">하체</span>
               </div>
             </div>
           </div>

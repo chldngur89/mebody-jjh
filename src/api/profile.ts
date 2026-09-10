@@ -1,30 +1,31 @@
 /**
- * 내 프로필 — 닉네임 · 키 · 몸무게.
- *
- * `height_cm` / `weight_kg` 는 037 에서 컬럼만 만들어 두고 앱에서 아무 데도 쓰지 않았습니다.
- * 여기가 그 값을 처음 쓰는 곳입니다.
+ * 내 프로필 — 이름 · 이메일 · 휴대폰 · 키 · 몸무게.
  *
  * user_profiles 는 본인 행에 대해 SELECT/UPDATE 권한이 이미 있습니다(RLS 로 본인만).
- * 그래서 프로필 편집은 서버를 거치지 않습니다 — 결제와 달리 남에게 영향을 주지 않습니다.
+ * 이메일·비밀번호 변경은 Supabase Auth 를 거칩니다.
+ * 휴대폰은 연락처로만 저장합니다. 로그인 식별자(휴대폰 별칭 이메일)는 바꾸지 않을 수 있습니다.
  */
 import { supabase } from '../lib/supabase'
+import { isEmail, phoneFromLoginEmail } from '../lib/identifier'
 
 export interface MyProfile {
   id: string
   email: string | null
   displayName: string | null
   nickname: string | null
+  phone: string | null
   heightCm: number | null
   weightKg: number | null
 }
 
 export interface ProfileInput {
   nickname?: string | null
+  phone?: string | null
   heightCm?: number | null
   weightKg?: number | null
 }
 
-const COLUMNS = 'id, email, display_name, nickname, height_cm, weight_kg'
+const COLUMNS = 'id, email, display_name, nickname, phone, height_cm, weight_kg'
 
 function warn(label: string, error: unknown) {
   const code = String((error as { code?: string } | null)?.code ?? '')
@@ -42,9 +43,24 @@ function toProfile(row: Record<string, unknown>): MyProfile {
     email: row.email ? String(row.email) : null,
     displayName: row.display_name ? String(row.display_name) : null,
     nickname: row.nickname ? String(row.nickname) : null,
+    phone: row.phone ? String(row.phone) : null,
     heightCm: num(row.height_cm),
     weightKg: num(row.weight_kg),
   }
+}
+
+/** 이름·휴대폰·키·몸무게가 모두 있으면 완료로 봅니다. */
+export function isProfileComplete(profile: {
+  nickname?: string | null
+  displayName?: string | null
+  phone?: string | null
+  heightCm?: number | null
+  weightKg?: number | null
+  email?: string | null
+}): boolean {
+  const name = (profile.nickname ?? profile.displayName ?? '').trim()
+  const phone = (profile.phone ?? phoneFromLoginEmail(profile.email) ?? '').trim()
+  return Boolean(name && phone && profile.heightCm != null && profile.weightKg != null)
 }
 
 /** auth 사용자 id 로 내 프로필 행을 찾습니다. id 와 auth_user_id 둘 다 볼 수 있습니다. */
@@ -72,11 +88,22 @@ export function validateBody(heightCm: number | null, weightKg: number | null): 
   return null
 }
 
-export async function updateMyProfile(profileId: string, input: ProfileInput): Promise<MyProfile | null> {
+export async function updateMyProfile(
+  profileId: string,
+  input: ProfileInput,
+  options?: { userId?: string; email?: string | null },
+): Promise<MyProfile | null> {
   const patch: Record<string, unknown> = {}
-  if (input.nickname !== undefined) patch.nickname = input.nickname
+  if (input.nickname !== undefined) {
+    patch.nickname = input.nickname
+    patch.display_name = input.nickname
+    patch.name = input.nickname
+  }
+  if (input.phone !== undefined) patch.phone = input.phone
   if (input.heightCm !== undefined) patch.height_cm = input.heightCm
   if (input.weightKg !== undefined) patch.weight_kg = input.weightKg
+  if (options?.email !== undefined) patch.email = options.email
+
   if (Object.keys(patch).length === 0) return null
 
   const { data, error } = await supabase
@@ -90,7 +117,79 @@ export async function updateMyProfile(profileId: string, input: ProfileInput): P
     warn('updateMyProfile', error)
     return null
   }
+
+  if (input.nickname !== undefined) {
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { display_name: input.nickname ?? '' },
+    })
+    if (authError) console.warn('[profile] auth display_name sync failed:', authError)
+  }
+
   return data ? toProfile(data as Record<string, unknown>) : null
+}
+
+/** 프로필 행이 없으면 만들어 저장합니다. */
+export async function saveMyProfile(
+  userId: string,
+  profileId: string | null,
+  input: ProfileInput,
+  options?: { email?: string | null },
+): Promise<MyProfile | null> {
+  if (profileId) return updateMyProfile(profileId, input, { userId, email: options?.email })
+
+  const payload: Record<string, unknown> = {
+    id: userId,
+    auth_user_id: userId,
+    email: options?.email ?? null,
+  }
+  if (input.nickname !== undefined) {
+    payload.nickname = input.nickname
+    payload.display_name = input.nickname
+    payload.name = input.nickname
+  }
+  if (input.phone !== undefined) payload.phone = input.phone
+  if (input.heightCm !== undefined) payload.height_cm = input.heightCm
+  if (input.weightKg !== undefined) payload.weight_kg = input.weightKg
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .upsert(payload, { onConflict: 'id' })
+    .select(COLUMNS)
+    .maybeSingle()
+
+  if (error) {
+    warn('saveMyProfile', error)
+    return null
+  }
+
+  if (input.nickname !== undefined) {
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { display_name: input.nickname ?? '' },
+    })
+    if (authError) console.warn('[profile] auth display_name sync failed:', authError)
+  }
+
+  return data ? toProfile(data as Record<string, unknown>) : null
+}
+
+/** 로그인 이메일 변경. 확인 메일이 필요할 수 있습니다. */
+export async function updateMyEmail(nextEmail: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const email = nextEmail.trim().toLowerCase()
+  if (!isEmail(email)) return { ok: false, message: '이메일 형식이 올바르지 않습니다.' }
+
+  const { error } = await supabase.auth.updateUser({ email })
+  if (error) return { ok: false, message: error.message || '이메일을 바꾸지 못했습니다.' }
+  return { ok: true }
+}
+
+/** 비밀번호 변경. 빈 값이면 건너뜁니다. */
+export async function updateMyPassword(nextPassword: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const password = nextPassword.trim()
+  if (!password) return { ok: true }
+
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) return { ok: false, message: error.message || '비밀번호를 바꾸지 못했습니다.' }
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------

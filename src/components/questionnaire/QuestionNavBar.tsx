@@ -1,3 +1,5 @@
+import { CTA } from '../../theme/copy'
+
 interface QuestionNavBarProps {
   onPrev: () => void
   onNext: () => void
@@ -13,11 +15,13 @@ export function QuestionNavBar({
   canGoPrev = true,
   canGoNext = true,
 }: QuestionNavBarProps) {
+  const nextLabel = isLastQuestion ? CTA.analyze : CTA.next
+
   return (
     <div className="animate-slide-up-in shrink-0 border-t border-gray-100 bg-white px-6 py-4">
       {canGoNext ? (
         <p className="mb-3 text-center text-xs leading-relaxed text-gray-500" style={{ wordBreak: 'keep-all' }}>
-          확인이 되었다면 아래 {isLastQuestion ? '「결과 보기」' : '「다음」'}을 눌러 주세요.
+          확인이 되었다면 아래 「{nextLabel}」을 눌러 주세요.
         </p>
       ) : (
         <div className="mb-3 h-4" aria-hidden />
@@ -37,7 +41,7 @@ export function QuestionNavBar({
           disabled={!canGoNext}
           className="disabled:opacity-40 disabled:cursor-not-allowed flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all hover:brightness-105 active:scale-[0.98]"
         >
-          {isLastQuestion ? '결과 보기' : '다음'}
+          {nextLabel}
         </button>
       </div>
     </div>

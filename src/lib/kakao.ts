@@ -9,7 +9,8 @@
  *   Kakao Developers → 앱 생성 → JavaScript 키 → 플랫폼 Web 에 도메인 등록
  *   → 카카오톡 공유 활성화. 등록하지 않은 도메인에서는 전송이 거부됩니다.
  */
-import { buildShareTitle, buildShareUrl, shareBaseUrl, type SharePayload, type ShareOutcome } from './share'
+import { buildShareTitle, buildShareUrl, buildShareDescription, shareBaseUrl, type SharePayload, type ShareOutcome } from './share'
+import { PRODUCT } from '../theme/copy'
 
 const SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
 const SDK_ELEMENT_ID = 'kakao-js-sdk'
@@ -103,13 +104,13 @@ export async function shareToKakao(payload: SharePayload): Promise<ShareOutcome>
       objectType: 'feed',
       content: {
         title: buildShareTitle(payload),
-        description: payload.summaryLine?.trim() || '32문항으로 확인한 내 몸 사용 습관. 너는 어떤 유형일까?',
+        description: buildShareDescription(payload),
         // 캐릭터 PNG 는 세로 비율이라 피드에서 잘립니다. 가로 카드(1200×630)를 씁니다.
         // TODO 코드별 가로 카드 이미지가 생기면 여기만 바꾸면 됩니다.
         imageUrl: `${shareBaseUrl()}/og-image.png`,
         link,
       },
-      buttons: [{ title: '나도 몸BTI 해보기', link }],
+      buttons: [{ title: `나도 ${PRODUCT.codeGuide} 해보기`, link }],
     })
     return 'shared'
   } catch (error) {

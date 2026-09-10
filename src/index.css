@@ -2539,9 +2539,10 @@ body {
 }
 
 /* KakaoTalk in-app browser: lock to measured visual viewport height.
-   JS (installAppViewportHeight) overwrites --mebody-app-height with px. */
+   JS (installAppViewportHeight) overwrites --mebody-app-height / --mebody-vv-top. */
 :root {
   --mebody-app-height: 100vh;
+  --mebody-vv-top: 0px;
 }
 
 @supports (height: 100svh) {
@@ -2559,18 +2560,52 @@ body,
 @media (max-width: 767px) {
   html,
   body {
+    width: 100%;
     height: var(--mebody-app-height);
     min-height: var(--mebody-app-height);
     max-height: var(--mebody-app-height);
     overflow: hidden;
     overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
+  /* Fixed root tracks visualViewport so Kakao chrome/keyboard don't clip CTAs. */
   #root {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--mebody-vv-top, 0px);
+    width: 100%;
     height: var(--mebody-app-height);
     min-height: var(--mebody-app-height);
     max-height: var(--mebody-app-height);
     overflow: hidden;
+  }
+
+  html.is-inapp,
+  html.is-kakao {
+    -webkit-tap-highlight-color: rgba(1, 71, 37, 0.12);
+  }
+
+  html.is-inapp body,
+  html.is-kakao body {
+    touch-action: manipulation;
+  }
+
+  html.is-inapp .animate-bounce,
+  html.is-kakao .animate-bounce {
+    animation: none !important;
+  }
+
+  /* iOS/Kakao: keep form controls at 16px so focus doesn't force-zoom. */
+  html.is-inapp input,
+  html.is-inapp textarea,
+  html.is-inapp select,
+  html.is-kakao input,
+  html.is-kakao textarea,
+  html.is-kakao select {
+    font-size: 16px !important;
   }
 }
 

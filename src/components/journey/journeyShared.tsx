@@ -214,10 +214,15 @@ export function JourneyScreenShell({
       style={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '100dvh',
+        minHeight: isDesktopMockup ? '100%' : 'var(--mebody-app-height)',
+        height: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
+        maxHeight: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: JOURNEY_BACKGROUND,
-        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxSizing: 'border-box',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>

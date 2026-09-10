@@ -205,10 +205,10 @@ export default function App() {
     openAuth(returnScreen, 'signin', 'membership');
   };
 
-  const openResultScreen = (id: string, source: ResultEntrySource) => {
+  const openResultScreen = (id: string, source: ResultEntrySource, tab: AppTab = 'home') => {
     setPendingAnalysis(null);
     setQuestionnaireId(id);
-    setActiveTab('home');
+    setActiveTab(tab);
     setCurrentScreen('result');
     setResultEntrySource(source);
     setResultSaveStatus(currentUser ? 'saved' : 'idle');
@@ -414,7 +414,8 @@ export default function App() {
         setResultEntrySource('questionnaire');
         setResultSaveStatus('saved');
         if (shouldNavigate) {
-          setActiveTab('home');
+          // 로그인 직후는 항상 내 상태 탭으로 보냅니다.
+          setActiveTab('status');
           setCurrentScreen('result');
         }
         return;
@@ -428,7 +429,7 @@ export default function App() {
         setResultEntrySource('quick');
         setResultSaveStatus('saved');
         if (shouldNavigate) {
-          setActiveTab('home');
+          setActiveTab('status');
           setCurrentScreen('result');
         }
         return;
@@ -527,25 +528,31 @@ export default function App() {
 
         if (restoredRoute) {
           setQuestionnaireId(sharedResultId ?? resolvedResultId);
+          // 로그인 재접속: 진단/저니 중간이 아니면 미션 탭으로 보냅니다.
+          const midFlow = (
+            restoredRoute.screen === 'questionnaire'
+            || restoredRoute.screen === 'analyzing'
+            || restoredRoute.screen === 'auth'
+            || restoredRoute.screen.startsWith('journey')
+          );
+          if (!midFlow) {
+            setActiveTab('mission');
+            setCurrentScreen('result');
+          }
           return;
         }
 
         if (sharedResultId) {
-          openResultScreen(sharedResultId, 'shared');
+          openResultScreen(sharedResultId, 'shared', 'mission');
           return;
         }
 
         // 이미 코드가 있으면 문항을 다시 묻지 않습니다.
-        //
-        // 예전에는 부트스트랩이 코드를 읽어 놓고도 항상 랜딩에 머물러서,
-        // "저장된 코드 FRRS 가 있습니다" 라고 알려주면서 한 번 더 누르게 했습니다.
-        // 로그인 직후 경로(handleSignedInRoute)는 바로 결과로 보냈으므로
-        // 두 경로가 서로 다르게 동작하고 있었습니다. 여기서 같게 맞춥니다.
+        // 재접속(세션 복원)은 미션 탭으로, 로그인 직후는 handleSignedInRoute 가 내 상태로 보냅니다.
         if (resolvedResultId) {
-          openResultScreen(resolvedResultId, 'quick');
+          openResultScreen(resolvedResultId, 'quick', 'mission');
         } else if (resolvedProfileCode) {
-          // 결과 행 없이 프로필 코드만 있는 예전 계정 — 홈은 그릴 자료가 없어 내 상태로 보냅니다.
-          setActiveTab('status');
+          setActiveTab('mission');
           setCurrentScreen('result');
         } else {
           // 코드가 없으면 문항 플로우로 태웁니다(동의 → 안내 → 문항).
@@ -836,8 +843,8 @@ export default function App() {
               latestBodyCode={bodyCode}
               onAccount={currentUser ? openMyPage : () => openAuth('landing')}
               onPreviewSignedIn={() => {
-                // 미리보기도 실제 로그인과 같은 화면(홈)을 보여줍니다.
-                setActiveTab('home');
+                // 미리보기(로그인 직후와 동일): 내 상태 탭
+                setActiveTab('status');
                 setCurrentScreen('result');
               }}
               sharedCode={sharedCode}

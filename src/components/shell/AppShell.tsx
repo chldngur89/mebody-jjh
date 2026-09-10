@@ -75,10 +75,11 @@ export function AppShell({
         flexDirection: 'column',
         // height:100% 는 부모에 확정 높이가 없으면 auto 가 되어 스크롤 영역이 안 잡힙니다.
         // 뷰포트에 직접 묶어 flex:1 스크롤러가 실제로 제한되게 합니다.
-        height: '100dvh',
-        maxHeight: '100dvh',
+        height: 'var(--mebody-app-height)',
+        maxHeight: 'var(--mebody-app-height)',
         background: BRAND.bg,
         overflow: 'hidden',
+        paddingTop: 'env(safe-area-inset-top)',
       }}
     >
       <TopBar onBrandClick={onBrandClick} right={topBarRight} />
