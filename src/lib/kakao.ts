@@ -107,7 +107,7 @@ export async function shareToKakao(payload: SharePayload): Promise<ShareOutcome>
         description: buildShareDescription(payload),
         // 캐릭터 PNG 는 세로 비율이라 피드에서 잘립니다. 가로 카드(1200×630)를 씁니다.
         // TODO 코드별 가로 카드 이미지가 생기면 여기만 바꾸면 됩니다.
-        imageUrl: `${shareBaseUrl()}/og-image.png`,
+        imageUrl: `${shareBaseUrl()}/og-image.png?v=20260909`,
         link,
       },
       buttons: [{ title: `나도 ${PRODUCT.codeGuide} 해보기`, link }],

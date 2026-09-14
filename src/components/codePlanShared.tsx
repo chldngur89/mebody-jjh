@@ -283,6 +283,9 @@ function renderReadableText(text: string) {
 }
 
 function pickSummaryLine(content: BodyCodeContent | null): string {
+  const fromIdentity = content?.identity_summary?.trim();
+  if (fromIdentity) return fromIdentity;
+
   const line = content?.description
     ?.split(/[.\n]/)
     .map((sentence) => sentence.trim())
@@ -645,6 +648,7 @@ export function useCodePlanData(questionnaireId?: string): CodePlanDataState {
     let cancelled = false;
 
     Promise.all([fetchResultGuide(code), fetchBodyCodeNextPage(code), fetchResultSectionsByBodyCode(code)])
+      // result_sections: 코드 플랜 상세 전용. Home identity/share 는 body_code_content.
       .then(([guide, nextPage, detail]) => {
         if (cancelled) return;
         setGuideSections(guide?.sections ?? []);
@@ -1150,6 +1154,7 @@ function formatClock(seconds: number): string {
  * 단계 타이머 — 미션 화면(JourneyMissionScreen)과 같은 방식입니다.
  * 시작하면 그 단계의 시간만큼 카운트다운하고, 0 이 되면 자동으로 완료 체크됩니다.
  * 감소는 타이머가, 완료 처리는 별도 effect 가 합니다(업데이터 안에서 부작용을 일으키지 않도록).
+ * 동시에 한 단계만 돌아갈 수 있습니다(다른 단계 시작은 막음).
  */
 function RoutineStepTimer({
   storageKey,
@@ -1157,27 +1162,39 @@ function RoutineStepTimer({
   durationSec,
   onToggle,
   onComplete,
+  blockedByOther,
+  onRunningChange,
 }: {
   storageKey: string;
   done: boolean;
   durationSec: number;
   onToggle: () => void;
   onComplete: () => void;
+  /** 다른 단계 타이머가 돌아가는 중이면 시작을 막습니다. */
+  blockedByOther?: boolean;
+  onRunningChange?: (running: boolean) => void;
 }) {
   const initial = useRef(readTimerProgress(storageKey, durationSec)).current;
   const [remaining, setRemaining] = useState(initial.remaining);
   // Leaving a screen pauses the timer; returning requires an explicit resume.
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(initial.started);
+  const onRunningChangeRef = useRef(onRunningChange);
+  onRunningChangeRef.current = onRunningChange;
+  const setRunningSafe = useCallback((next: boolean) => {
+    setRunning(next);
+    onRunningChangeRef.current?.(next);
+  }, []);
   const wasDone = useRef(done);
   useEffect(() => {
-    if (wasDone.current && !done) {
+    if (done) {
+      setRunningSafe(false);
+    } else if (wasDone.current && !done) {
       setRemaining(durationSec);
-      setRunning(false);
       setStarted(false);
     }
     wasDone.current = done;
-  }, [done, durationSec]);
+  }, [done, durationSec, setRunningSafe]);
   useEffect(() => {
     saveTimerProgress(storageKey, { remaining, started });
   }, [storageKey, remaining, started]);
@@ -1193,9 +1210,13 @@ function RoutineStepTimer({
   // 0 이 되면 자동 완료.
   useEffect(() => {
     if (!running || remaining > 0) return;
-    setRunning(false);
+    setRunningSafe(false);
     if (!done) onComplete();
-  }, [running, remaining, done, onComplete]);
+  }, [running, remaining, done, onComplete, setRunningSafe]);
+
+  useEffect(() => () => {
+    onRunningChangeRef.current?.(false);
+  }, []);
 
   if (done) {
     return (
@@ -1228,6 +1249,7 @@ function RoutineStepTimer({
   }
 
   const progress = durationSec > 0 ? ((durationSec - remaining) / durationSec) * 100 : 0;
+  const startBlocked = Boolean(blockedByOther) && !running;
 
   return (
     <div style={{ marginTop: '14px' }}>
@@ -1254,9 +1276,11 @@ function RoutineStepTimer({
         </div>
         <button
           type="button"
+          disabled={startBlocked}
           onClick={() => {
+            if (startBlocked) return;
             setStarted(true);
-            setRunning((v) => !v);
+            setRunningSafe(!running);
           }}
           style={{
             display: 'inline-flex',
@@ -1266,13 +1290,16 @@ function RoutineStepTimer({
             gap: '6px',
             borderRadius: '999px',
             border: 'none',
-            background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+            background: startBlocked
+              ? '#d1d5db'
+              : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
             padding: '0 18px',
             color: '#ffffff',
             fontSize: '13px',
             fontWeight: 900,
             fontFamily: 'inherit',
-            cursor: 'pointer',
+            cursor: startBlocked ? 'not-allowed' : 'pointer',
+            opacity: startBlocked ? 0.72 : 1,
           }}
         >
           {running ? (
@@ -1283,7 +1310,7 @@ function RoutineStepTimer({
           ) : (
             <>
               <Play size={14} />
-              {started ? '이어서 하기' : '시작하기'}
+              {startBlocked ? '다른 단계 진행 중' : started ? '이어서 하기' : '시작하기'}
             </>
           )}
         </button>
@@ -1349,9 +1376,22 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
     [useAxisRoutine, data.careRoutine.steps, routineItems],
   );
   const [routineRecord, setRoutineRecord] = useState<CareRoutineRecord>(() => readCareRoutineRecord(routineStorageKey));
+  /** 완료된 단계를 다시 펼쳐 볼 때(완료 상태는 유지). */
+  const [expandedDoneKeys, setExpandedDoneKeys] = useState<string[]>([]);
+  /** 동시에 돌아가는 타이머는 하나만 허용합니다. */
+  const [activeRunningKey, setActiveRunningKey] = useState<string | null>(null);
   useEffect(() => {
     setRoutineRecord(readCareRoutineRecord(routineStorageKey));
+    setExpandedDoneKeys([]);
+    setActiveRunningKey(null);
   }, [routineStorageKey]);
+
+  const handleTimerRunningChange = useCallback((timerKey: string, running: boolean) => {
+    setActiveRunningKey((current) => {
+      if (running) return timerKey;
+      return current === timerKey ? null : current;
+    });
+  }, []);
 
   const routineDoneCount = routineStepKeys.filter((key) => routineRecord.done.includes(key)).length;
   const routineAllDone = routineStepCount > 0 && routineDoneCount === routineStepCount;
@@ -1649,9 +1689,50 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   >
                     누구나 4축(목 → 어깨 → 골반 → 하체)을 같은 순서로 전부 합니다. 코드에 따라 달라지는 건 순서가 아니라 세트 수예요. 내 코드에 맞는 개별 미션은 14일 관리에서 하루 한 가지씩 따로 나갑니다.
                   </div>
-                  {data.careRoutine.steps.map((step) => (
+                  {data.careRoutine.steps.map((step) => {
+                    const stepKey = `${step.kind}-${step.order}`;
+                    const stepDone = routineRecord.done.includes(stepKey);
+                    const stepExpanded = expandedDoneKeys.includes(stepKey);
+                    if (stepDone && !stepExpanded) {
+                      return (
+                        <button
+                          key={stepKey}
+                          type="button"
+                          onClick={() => setExpandedDoneKeys((keys) => [...keys, stepKey])}
+                          style={{
+                            display: 'flex',
+                            width: '100%',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            borderRadius: '16px',
+                            background: 'rgba(1,71,37,0.06)',
+                            border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                            padding: '14px 16px',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                            <CheckCircle2 size={18} color="#014725" style={{ flexShrink: 0 }} />
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b7280', marginBottom: '3px' }}>
+                                STEP {step.order}
+                                {step.axisLabel ? ` · ${step.axisLabel}` : ''}
+                              </div>
+                              <div style={{ fontSize: '15px', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                                {step.title} — 완료
+                              </div>
+                            </div>
+                          </div>
+                          <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: '#6b7280' }}>다시 보기</span>
+                        </button>
+                      );
+                    }
+                    return (
                     <div
-                      key={`${step.kind}-${step.order}`}
+                      key={stepKey}
                       style={{
                         borderRadius: '24px',
                         background: step.kind === 'finish' ? 'rgba(248,252,248,0.95)' : 'rgba(244,251,249,0.95)',
@@ -1754,18 +1835,74 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       <RoutineStepTimer
                         key={`${routineStorageKey}:${step.kind}-${step.order}:${step.durationSec}`}
                         storageKey={`${routineStorageKey}:timer:${step.kind}-${step.order}:${step.durationSec}`}
-                        done={routineRecord.done.includes(`${step.kind}-${step.order}`)}
+                        done={stepDone}
                         durationSec={step.durationSec}
-                        onToggle={() => toggleRoutineStep(`${step.kind}-${step.order}`)}
-                        onComplete={() => markRoutineStepDone(`${step.kind}-${step.order}`)}
+                        blockedByOther={Boolean(activeRunningKey) && activeRunningKey !== `${routineStorageKey}:timer:${step.kind}-${step.order}:${step.durationSec}`}
+                        onRunningChange={(running) =>
+                          handleTimerRunningChange(
+                            `${routineStorageKey}:timer:${step.kind}-${step.order}:${step.durationSec}`,
+                            running,
+                          )
+                        }
+                        onToggle={() => {
+                          if (stepDone) {
+                            setExpandedDoneKeys((keys) => keys.filter((key) => key !== stepKey));
+                          }
+                          toggleRoutineStep(stepKey);
+                        }}
+                        onComplete={() => {
+                          markRoutineStepDone(stepKey);
+                          setExpandedDoneKeys((keys) => keys.filter((key) => key !== stepKey));
+                        }}
                       />
                     </div>
-                  ))}
+                    );
+                  })}
                 </>
               ) : routineItems.length > 0 ? (
-                routineItems.map((exercise, index) => (
+                routineItems.map((exercise, index) => {
+                  const stepKey = `legacy-${index}`;
+                  const stepDone = routineRecord.done.includes(stepKey);
+                  const stepExpanded = expandedDoneKeys.includes(stepKey);
+                  if (stepDone && !stepExpanded) {
+                    return (
+                      <button
+                        key={stepKey}
+                        type="button"
+                        onClick={() => setExpandedDoneKeys((keys) => [...keys, stepKey])}
+                        style={{
+                          display: 'flex',
+                          width: '100%',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          borderRadius: '16px',
+                          background: 'rgba(1,71,37,0.06)',
+                          border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                          padding: '14px 16px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <CheckCircle2 size={18} color="#014725" style={{ flexShrink: 0 }} />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b7280', marginBottom: '3px' }}>
+                              STEP {index + 1}
+                            </div>
+                            <div style={{ fontSize: '15px', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                              {exercise.title} — 완료
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: '#6b7280' }}>다시 보기</span>
+                      </button>
+                    );
+                  }
+                  return (
                   <div
-                    key={`${exercise.title}-${index}`}
+                    key={stepKey}
                     style={{
                       borderRadius: '24px',
                       background: 'rgba(244,251,249,0.95)',
@@ -1788,13 +1925,29 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     <RoutineStepTimer
                       key={`${routineStorageKey}:legacy-${index}:${exercise.durationMinutes}`}
                       storageKey={`${routineStorageKey}:timer:legacy-${index}:${exercise.durationMinutes}`}
-                      done={routineRecord.done.includes(`legacy-${index}`)}
+                      done={stepDone}
                       durationSec={Math.max(60, Math.round(exercise.durationMinutes * 60))}
-                      onToggle={() => toggleRoutineStep(`legacy-${index}`)}
-                      onComplete={() => markRoutineStepDone(`legacy-${index}`)}
+                      blockedByOther={Boolean(activeRunningKey) && activeRunningKey !== `${routineStorageKey}:timer:legacy-${index}:${exercise.durationMinutes}`}
+                      onRunningChange={(running) =>
+                        handleTimerRunningChange(
+                          `${routineStorageKey}:timer:legacy-${index}:${exercise.durationMinutes}`,
+                          running,
+                        )
+                      }
+                      onToggle={() => {
+                        if (stepDone) {
+                          setExpandedDoneKeys((keys) => keys.filter((key) => key !== stepKey));
+                        }
+                        toggleRoutineStep(stepKey);
+                      }}
+                      onComplete={() => {
+                        markRoutineStepDone(stepKey);
+                        setExpandedDoneKeys((keys) => keys.filter((key) => key !== stepKey));
+                      }}
                     />
                   </div>
-                ))
+                  );
+                })
               ) : (
                 <div style={{ fontSize: '14px', lineHeight: 1.6, color: '#6b7280', paddingTop: '4px', wordBreak: 'keep-all' }}>
                   아직 연결된 루틴이 없습니다.

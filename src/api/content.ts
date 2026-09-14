@@ -142,13 +142,17 @@ export async function fetchBodyCodeNextPage(bodyCode: string | null | undefined)
   return { title: data.title ?? '', sections };
 }
 
-/** 결과 페이지 0)~5) 아코디언용 섹션 (스펙 07) */
+/** 코드 플랜 아코디언용 섹션 (0~5). Home/공유 identity 카피에는 쓰지 않음 — body_code_content 사용. */
 export interface ResultSectionItem {
   section_key: string;
   title: string;
   content: string;
 }
 
+/**
+ * 코드 플랜 상세 가이드만 조회합니다.
+ * section_key 2/3(이해·공감)은 레거시로 남아 있을 수 있으나 Home 에서는 호출하지 않습니다.
+ */
 export async function fetchResultSectionsByBodyCode(bodyCode: string | null | undefined): Promise<ResultSectionItem[]> {
   if (!bodyCode || bodyCode.length !== 4) return [];
   const { data, error } = await supabase

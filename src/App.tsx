@@ -106,7 +106,11 @@ export default function App() {
   // 검증이 가능해서 membership·checkout 을 함께 둡니다(결제 자체는 로그인이 필요합니다).
   const previewScreen = import.meta.env.DEV ? (['landing', 'auth', 'result', 'membership', 'checkout', 'cart', 'journeyIntro', 'journeyToday'] as const).find((screen) => screen === previewScreenParam) : undefined;
   const bootAuthMode = bootSearchParams.get('mode') === 'signup' ? 'signup' : 'signin';
-  const [currentScreen, setCurrentScreen] = useState<Screen>(restoredRoute?.screen === 'journeyMission' ? 'journeyToday' : restoredRoute?.screen === 'questionnaire' && questionnaireProgress.completedResultId ? 'result' : restoredRoute?.screen === 'analyzing' ? 'questionnaire' : restoredRoute?.screen ?? previewScreen ?? 'landing');
+  const [currentScreen, setCurrentScreen] = useState<Screen>(
+    sharedCode
+      ? 'landing'
+      : restoredRoute?.screen === 'journeyMission' ? 'journeyToday' : restoredRoute?.screen === 'questionnaire' && questionnaireProgress.completedResultId ? 'result' : restoredRoute?.screen === 'analyzing' ? 'questionnaire' : restoredRoute?.screen ?? previewScreen ?? 'landing',
+  );
   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>(restoredRoute?.resultId);
   const [bodyCode, setBodyCode] = useState<string | undefined>(restoredRoute?.bodyCode);
   const sharedResultIdParam = bootSearchParams.get('result');
@@ -141,7 +145,11 @@ export default function App() {
   }, [currentScreen]);
   const screenRef = useRef(currentScreen);
   screenRef.current = currentScreen;
-  const navigation = useFlowHistory({ screen: currentScreen, tab: activeTab, resultId: questionnaireId, bodyCode,
+  const navigation = useFlowHistory({ screen: currentScreen, tab: activeTab,
+    // 랜딩에서는 result id 를 URL 에 실지 않습니다(주소창 복사 시 개인 결과 노출 방지).
+    resultId: currentScreen === 'landing' ? undefined : questionnaireId,
+    bodyCode,
+    shareCode: currentScreen === 'landing' ? sharedCode : undefined,
     diagnosisId: questionnaireProgress.id, authSuccess: currentScreen === 'auth' ? authSuccessScreen : undefined,
     questionIndex: currentScreen === 'questionnaire' ? questionnaireProgress.index : undefined }, (route: FlowRoute) => {
     setPendingAnalysis(null);
@@ -414,8 +422,8 @@ export default function App() {
         setResultEntrySource('questionnaire');
         setResultSaveStatus('saved');
         if (shouldNavigate) {
-          // 로그인 직후는 항상 내 상태 탭으로 보냅니다.
-          setActiveTab('status');
+          // 로그인 직후는 홈에서 코드를 먼저 보게 합니다.
+          setActiveTab('home');
           setCurrentScreen('result');
         }
         return;
@@ -429,7 +437,7 @@ export default function App() {
         setResultEntrySource('quick');
         setResultSaveStatus('saved');
         if (shouldNavigate) {
-          setActiveTab('status');
+          setActiveTab('home');
           setCurrentScreen('result');
         }
         return;
@@ -446,7 +454,7 @@ export default function App() {
       setResultSaveStatus('idle');
       if (!shouldNavigate) return;
       if (profileCode?.body_bti_code) {
-        setActiveTab('status');
+        setActiveTab('home');
         setCurrentScreen('result');
       } else {
         setCurrentScreen('consent');
@@ -490,6 +498,11 @@ export default function App() {
         setCurrentUser(user);
 
         if (!user) {
+          // 공유 링크(?ref=share&code=XXXX)는 개인 결과가 아니라 공개 미리보기 랜딩으로 보냅니다.
+          if (sharedCode) {
+            setCurrentScreen('landing');
+            return;
+          }
           if (restoredRoute && !restoredRoute.screen.startsWith('journey')
             && (!sharedResultId || sessionResultId === sharedResultId)) {
             setLatestResultId(sessionResultId);
@@ -505,6 +518,13 @@ export default function App() {
 
         syncUserInBackground(user);
         refreshLatestResultInBackground(user.id, user.email);
+
+        // 공유 링크로 들어온 로그인 사용자도 먼저 친구 공개 카드를 보게 합니다.
+        // (본인 홈/미션으로 바로 보내면 공유 의도가 사라지고 개인 결과가 노출됩니다.)
+        if (sharedCode) {
+          setCurrentScreen('landing');
+          return;
+        }
 
         // 어디로 보낼지 정하려면 코드가 있는지부터 알아야 합니다.
         let resolvedResultId: string | undefined;
@@ -527,8 +547,8 @@ export default function App() {
         }
 
         if (restoredRoute) {
-          setQuestionnaireId(sharedResultId ?? resolvedResultId);
-          // 로그인 재접속: 진단/저니 중간이 아니면 미션 탭으로 보냅니다.
+          setQuestionnaireId(sharedResultId ?? resolvedResultId ?? restoredRoute.resultId);
+          // 로그인 재접속: 진단/저니 중간이 아니면 홈에서 코드를 먼저 보여줍니다.
           const midFlow = (
             restoredRoute.screen === 'questionnaire'
             || restoredRoute.screen === 'analyzing'
@@ -536,23 +556,22 @@ export default function App() {
             || restoredRoute.screen.startsWith('journey')
           );
           if (!midFlow) {
-            setActiveTab('mission');
+            setActiveTab('home');
             setCurrentScreen('result');
           }
           return;
         }
 
         if (sharedResultId) {
-          openResultScreen(sharedResultId, 'shared', 'mission');
+          openResultScreen(sharedResultId, 'shared', 'home');
           return;
         }
 
-        // 이미 코드가 있으면 문항을 다시 묻지 않습니다.
-        // 재접속(세션 복원)은 미션 탭으로, 로그인 직후는 handleSignedInRoute 가 내 상태로 보냅니다.
+        // 이미 코드가 있으면 문항을 다시 묻지 않고 홈 결과 카드로 보냅니다.
         if (resolvedResultId) {
-          openResultScreen(resolvedResultId, 'quick', 'mission');
+          openResultScreen(resolvedResultId, 'quick', 'home');
         } else if (resolvedProfileCode) {
-          setActiveTab('mission');
+          setActiveTab('home');
           setCurrentScreen('result');
         } else {
           // 코드가 없으면 문항 플로우로 태웁니다(동의 → 안내 → 문항).
@@ -698,19 +717,19 @@ export default function App() {
 
   /**
    * 랜딩의 기본 진입.
-   * 이미 완료된 결과가 있으면 결과로 보냅니다.
+   * 이미 완료된 결과가 있으면 홈 결과 카드로 보냅니다.
    * 중간 진행은 Landing에서 이어서/처음부터를 고른 뒤 onResumeIncomplete / startNewDiagnosis 로 처리합니다.
    */
   const startOrResumeDiagnosis = () => {
     const knownResultId = questionnaireId ?? latestResultId;
     if (knownResultId && !isLocalResultId(knownResultId)) {
-      openResultScreen(knownResultId, 'quick');
+      openResultScreen(knownResultId, 'quick', 'home');
       return;
     }
-    // 결과 ID 는 아직 못 받았지만 코드가 저장돼 있는 회원이면
-    // 문항으로 보내지 말고 내 페이지로 보냅니다(거기서 최근 결과를 찾아줍니다).
-    if (currentUser && bodyCode) {
-      openMyPage();
+    // 결과 ID 는 아직 못 받았지만 코드가 있으면 홈에서 코드 카드를 보여줍니다.
+    if (bodyCode) {
+      setActiveTab('home');
+      setCurrentScreen('result');
       return;
     }
     startNewDiagnosis();
@@ -1039,7 +1058,10 @@ export default function App() {
                   isPaid={entitlement.isPaid}
                   tier={entitlement.tier !== 'free' ? entitlement.tier : undefined}
                   journeyProgress={journeySummary ?? undefined}
-                  onOpenResult={(id) => { if (id) { setQuestionnaireId(id); setBodyCode(undefined); } setActiveTab('home'); }}
+                  onOpenResult={(id) => {
+                    if (id) setQuestionnaireId(id);
+                    setActiveTab('home');
+                  }}
                   onOpenRoutine={openJourneyIntro}
                   onOpenMembership={() => openMembership('result')}
                   onStartDiagnosis={startNewDiagnosis}

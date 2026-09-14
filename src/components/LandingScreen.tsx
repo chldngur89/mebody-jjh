@@ -1,9 +1,11 @@
 import { ChevronRight, Clock3, LayoutDashboard, Sparkles } from 'lucide-react';
 import { BRAND_PAGE_BG } from '../theme/brand';
 import { CTA, PRODUCT } from '../theme/copy';
-import { useRef } from 'react';
+import { useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react';
+import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
+import { SharePreviewCard } from './SharePreviewCard';
 
 interface LandingScreenProps {
   onStart: () => void;
@@ -23,7 +25,7 @@ interface LandingScreenProps {
   latestBodyCode?: string;
   onAccount?: () => void;
   onPreviewSignedIn?: () => void;
-  /** 공유 링크(?ref=share&code=FRRS)로 들어온 경우의 친구 코드. 소셜 문구에만 씁니다. */
+  /** 공유 링크(?ref=share&code=FRRS) — 공개 미리보기 카드용. 개인 결과는 열지 않습니다. */
   sharedCode?: string;
 }
 
@@ -42,7 +44,10 @@ export function LandingScreen({
   sharedCode,
 }: LandingScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
+  /** 짧은 뷰포트에서는 버튼을 위쪽에 두고 바깥 스크롤로 넘깁니다. */
+  const isShortViewport = useMediaQuery('(max-height: 720px)');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
   // 로그인 상태에서 "분석 시작하기" 와 "지난 결과 보기" 가 사실상 같은 곳으로 가서
   // 버튼이 두 개 보이면 혼란스럽다. 코드가 있으면 주 버튼 하나로 합친다.
   // 다만 중간 진행이 있으면 이어서/처음부터 선택이 우선이다.
@@ -53,6 +58,25 @@ export function LandingScreen({
   const accountLabel = isLoggedIn ? '내 페이지' : '로그인';
   const accountActionLabel = isLoggedIn ? '내 페이지' : '회원가입 / 로그인';
   const landingHeight = isDesktopMockup ? '100%' : 'var(--mebody-app-height)';
+
+  const scrollToCta = useCallback(() => {
+    const container = scrollRef.current;
+    const target = ctaRef.current;
+    if (!container || !target) return;
+    const cRect = container.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    // 이미 충분히 보이면 움직이지 않습니다.
+    if (tRect.top >= cRect.top + 8 && tRect.bottom <= cRect.bottom - 8) return;
+    const nextTop = container.scrollTop + (tRect.top - cRect.top) - 12;
+    container.scrollTo({ top: Math.max(0, nextTop), behavior: preferredScrollBehavior() });
+  }, []);
+
+  const handleSurfaceClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const el = event.target as HTMLElement | null;
+    if (!el) return;
+    if (el.closest('button, a, input, textarea, select, [role="button"]')) return;
+    scrollToCta();
+  };
 
   return (
     <div
@@ -99,6 +123,7 @@ export function LandingScreen({
 
       <div
         ref={scrollRef}
+        onClick={handleSurfaceClick}
         style={{
           position: 'relative',
           zIndex: 1,
@@ -110,6 +135,7 @@ export function LandingScreen({
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
           boxSizing: 'border-box',
+          cursor: 'default',
         }}
       >
         <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -152,15 +178,13 @@ export function LandingScreen({
           )}
         </div>
 
-        {/* 상단 여백 — 본문 카드를 화면 하단으로 밀어 둡니다 */}
-        <div style={{ flex: '1 1 auto', minHeight: '28px' }} aria-hidden />
-
         <div
           style={{
-            flex: '0 0 auto',
+            flex: isShortViewport ? '0 0 auto' : '1 1 auto',
+            minHeight: isShortViewport ? undefined : 0,
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
+            overflow: isShortViewport ? 'visible' : 'hidden',
             borderRadius: '28px',
             background: 'rgba(255,255,255,0.78)',
             boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
@@ -169,25 +193,27 @@ export function LandingScreen({
         >
           <div
             style={{
+              flex: isShortViewport ? undefined : 1,
+              minHeight: isShortViewport ? undefined : 0,
               display: 'flex',
               flexDirection: 'column',
-              padding: '28px 26px 28px',
+              padding: isShortViewport ? '22px 22px 20px' : '28px 26px 28px',
             }}
           >
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', flexShrink: 0 }}>
               <div
                 style={{
                   position: 'relative',
-                  margin: '0 auto 22px',
-                  width: '94px',
-                  height: '94px',
+                  margin: isShortViewport ? '0 auto 14px' : '0 auto 22px',
+                  width: isShortViewport ? '72px' : '94px',
+                  height: isShortViewport ? '72px' : '94px',
                   borderRadius: '24px',
                   background: 'linear-gradient(135deg, #016B38 0%, #014725 100%)',
                   boxShadow: '0 14px 30px rgba(1,71,37,0.34)',
                 }}
               >
                 <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={40} color="#ffffff" strokeWidth={2.6} />
+                  <Sparkles size={isShortViewport ? 30 : 40} color="#ffffff" strokeWidth={2.6} />
                 </div>
                 <div
                   style={{
@@ -204,8 +230,8 @@ export function LandingScreen({
 
               <h1
                 style={{
-                  marginBottom: '22px',
-                  fontSize: '52px',
+                  marginBottom: isShortViewport ? '12px' : '22px',
+                  fontSize: isShortViewport ? '40px' : '52px',
                   lineHeight: 0.96,
                   fontWeight: 800,
                   letterSpacing: '-0.04em',
@@ -219,21 +245,9 @@ export function LandingScreen({
               </h1>
 
               {sharedCode && (
-                <p
-                  style={{
-                    margin: '-10px 0 18px',
-                    padding: '10px 14px',
-                    borderRadius: '999px',
-                    background: '#EEF4EC',
-                    color: '#014725',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    lineHeight: 1.5,
-                    wordBreak: 'keep-all',
-                  }}
-                >
-                  친구의 {PRODUCT.codeGuide}는 <strong style={{ fontWeight: 800 }}>{sharedCode}</strong> 였어요. 나는 어떤 유형일까요?
-                </p>
+                <div style={{ width: '100%', margin: '0 0 18px' }}>
+                  <SharePreviewCard bodyCode={sharedCode} onStartDiagnosis={onStart} />
+                </div>
               )}
 
               <h2
@@ -248,9 +262,17 @@ export function LandingScreen({
                   textAlign: 'center',
                 }}
               >
-                나의 {PRODUCT.codeName}를
-                <br />
-                찾아보세요
+                {sharedCode ? (
+                  <>
+                    나는 어떤 {PRODUCT.codeName}일까요?
+                  </>
+                ) : (
+                  <>
+                    나의 {PRODUCT.codeName}를
+                    <br />
+                    찾아보세요
+                  </>
+                )}
               </h2>
               <p
                 style={{
@@ -267,220 +289,243 @@ export function LandingScreen({
               </p>
             </div>
 
-            {/* 카피 ↔ CTA 사이 숨 쉬는 공간 */}
-            <div style={{ flexShrink: 0, height: 'clamp(48px, 9vh, 112px)' }} aria-hidden />
-
-            <div style={{ display: 'grid', gap: '22px' }}>
-              {canChooseIncomplete ? (
-                <div
-                  style={{
-                    display: 'grid',
-                    gap: '12px',
-                    borderRadius: '18px',
-                    border: '1px solid rgba(167,243,208,0.95)',
-                    background: 'rgba(236,253,245,0.72)',
-                    padding: '16px',
-                  }}
-                >
-                  <p
+            {/* 주 CTA — 짧은 화면에서는 위쪽, 빈 곳 클릭 시 여기로 스크롤 */}
+            <div
+              ref={ctaRef}
+              style={{
+                flex: isShortViewport ? '0 0 auto' : '1 1 auto',
+                minHeight: isShortViewport ? undefined : '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: isShortViewport ? 'flex-start' : 'center',
+                paddingTop: isShortViewport ? '10px' : 0,
+              }}
+            >
+              <div style={{ width: '100%', display: 'grid', gap: '14px', justifyItems: 'stretch' }}>
+                {canChooseIncomplete ? (
+                  <div
                     style={{
-                      margin: 0,
-                      fontSize: '15px',
-                      fontWeight: 800,
-                      color: '#014725',
-                      wordBreak: 'keep-all',
-                      lineHeight: 1.5,
+                      display: 'grid',
+                      gap: '12px',
+                      borderRadius: '18px',
+                      border: '1px solid rgba(167,243,208,0.95)',
+                      background: 'rgba(236,253,245,0.72)',
+                      padding: '16px',
                     }}
                   >
-                    이전에 하던 분석이 있어요. 이어서 할까요, 처음부터 다시 할까요?
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#047857', wordBreak: 'keep-all' }}>
-                    처음부터는 약관 동의 화면부터 다시 시작합니다.
-                  </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: '15px',
+                        fontWeight: 800,
+                        color: '#014725',
+                        wordBreak: 'keep-all',
+                        lineHeight: 1.5,
+                        textAlign: 'center',
+                      }}
+                    >
+                      이전에 하던 분석이 있어요.
+                      <br />
+                      이어서 할까요, 처음부터 다시 할까요?
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#047857', wordBreak: 'keep-all', textAlign: 'center' }}>
+                      처음부터는 약관 동의 화면부터 다시 시작합니다.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onResumeIncomplete}
+                      style={{
+                        display: 'inline-flex',
+                        width: '100%',
+                        height: '54px',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        borderRadius: '16px',
+                        border: 'none',
+                        background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                        color: '#ffffff',
+                        fontSize: '16px',
+                        fontWeight: 800,
+                        boxShadow: '0 12px 24px rgba(1,71,37,0.28)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      이어서 할래요
+                      <ChevronRight size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onStartFresh}
+                      style={{
+                        display: 'inline-flex',
+                        width: '100%',
+                        height: '48px',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '14px',
+                        border: '1px solid rgba(167,243,208,0.95)',
+                        background: '#ffffff',
+                        color: '#014725',
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      처음부터 할래요
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={onResumeIncomplete}
+                    onClick={onStart}
                     style={{
                       display: 'inline-flex',
                       width: '100%',
-                      height: '54px',
+                      height: '62px',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      borderRadius: '18px',
+                      border: 'none',
+                      background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                      color: '#ffffff',
+                      fontSize: '17px',
+                      fontWeight: 800,
+                      boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <span style={{ textAlign: 'center' }}>
+                      {unifiedForMember
+                        ? '미션 이어하기'
+                        : hasExistingCode
+                          ? CTA.viewResult
+                          : CTA.diagnosisStart}
+                    </span>
+                    <ChevronRight size={20} />
+                  </button>
+                )}
+
+                {showQuickResult && (
+                  <button
+                    type="button"
+                    onClick={onQuickResult}
+                    style={{
+                      display: 'inline-flex',
+                      width: '100%',
+                      height: '50px',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
                       borderRadius: '16px',
-                      border: 'none',
-                      background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                      color: '#ffffff',
-                      fontSize: '16px',
-                      fontWeight: 800,
-                      boxShadow: '0 12px 24px rgba(1,71,37,0.28)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    이어서 할래요
-                    <ChevronRight size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onStartFresh}
-                    style={{
-                      display: 'inline-flex',
-                      width: '100%',
-                      height: '48px',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '14px',
-                      border: '1px solid rgba(167,243,208,0.95)',
-                      background: '#ffffff',
-                      color: '#014725',
+                      border: '1px solid rgba(167,243,208,0.92)',
+                      background: 'rgba(236,253,245,0.88)',
+                      color: '#047857',
                       fontSize: '14px',
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
                   >
-                    처음부터 할래요
+                    <Clock3 size={16} />
+                    지난 결과 · 오늘의 미션 보기 &gt;
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onStart}
-                  style={{
-                    display: 'inline-flex',
-                    width: '100%',
-                    height: '62px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    borderRadius: '18px',
-                    border: 'none',
-                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                    color: '#ffffff',
-                    fontSize: '17px',
-                    fontWeight: 800,
-                    boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span>
-                    {unifiedForMember
-                      ? '내 코드 · 오늘의 관리 이어서 하기'
-                      : hasExistingCode
-                        ? CTA.viewResult
-                        : CTA.diagnosisStart}
-                  </span>
-                  <ChevronRight size={20} />
-                </button>
-              )}
-
-              {showQuickResult && (
-                <button
-                  type="button"
-                  onClick={onQuickResult}
-                  style={{
-                    display: 'inline-flex',
-                    width: '100%',
-                    height: '50px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(167,243,208,0.92)',
-                    background: 'rgba(236,253,245,0.88)',
-                    color: '#047857',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Clock3 size={16} />
-                  지난 결과 · 오늘의 미션 보기 &gt;
-                </button>
-              )}
-
-              {(onAccount || (import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn)) && (
-                <div
-                  style={{
-                    display: 'grid',
-                    gap: '12px',
-                    paddingTop: '4px',
-                  }}
-                >
-                  {isLoggedIn && normalizedBodyCode && (
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        justifySelf: 'start',
-                        borderRadius: '999px',
-                        background: 'rgba(236,253,245,0.95)',
-                        border: '1px solid rgba(167,243,208,0.92)',
-                        padding: '7px 11px',
-                        color: '#047857',
-                        fontSize: '12px',
-                        fontWeight: 900,
-                      }}
-                    >
-                      최근 코드
-                      <span style={{ color: '#111827' }}>{normalizedBodyCode}</span>
-                    </div>
-                  )}
-                  {onAccount && (
-                    <button
-                      type="button"
-                      onClick={onAccount}
-                      style={{
-                        display: 'inline-flex',
-                        width: '100%',
-                        height: '50px',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        borderRadius: '14px',
-                        border: '1px solid rgba(110,231,183,0.95)',
-                        background: '#ffffff',
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        color: '#374151',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isLoggedIn ? <LayoutDashboard size={16} /> : <ChevronRight size={16} />}
-                      {accountActionLabel}
-                    </button>
-                  )}
-                  {import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn && (
-                    <button
-                      type="button"
-                      onClick={onPreviewSignedIn}
-                      style={{
-                        padding: 0,
-                        border: 'none',
-                        background: 'transparent',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#014725',
-                        textDecoration: 'underline',
-                        textUnderlineOffset: '3px',
-                        cursor: 'pointer',
-                        justifySelf: 'center',
-                      }}
-                    >
-                      임시: 가입 후 화면 미리보기
-                    </button>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            {(onAccount || (import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn)) && (
+              <div
+                style={{
+                  display: 'grid',
+                  gap: '12px',
+                  flexShrink: 0,
+                  justifyItems: 'center',
+                }}
+              >
+                {isLoggedIn && normalizedBodyCode && (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      justifySelf: 'start',
+                      borderRadius: '999px',
+                      background: 'rgba(236,253,245,0.95)',
+                      border: '1px solid rgba(167,243,208,0.92)',
+                      padding: '7px 11px',
+                      color: '#047857',
+                      fontSize: '12px',
+                      fontWeight: 900,
+                    }}
+                  >
+                    최근 코드
+                    <span style={{ color: '#111827' }}>{normalizedBodyCode}</span>
+                  </div>
+                )}
+                {onAccount && (
+                  <button
+                    type="button"
+                    onClick={onAccount}
+                    style={{
+                      display: 'inline-flex',
+                      width: '100%',
+                      height: '50px',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      borderRadius: '14px',
+                      border: '1px solid rgba(110,231,183,0.95)',
+                      background: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#374151',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isLoggedIn ? <LayoutDashboard size={16} /> : <ChevronRight size={16} />}
+                    {accountActionLabel}
+                  </button>
+                )}
+                {import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn && (
+                  <button
+                    type="button"
+                    onClick={onPreviewSignedIn}
+                    style={{
+                      padding: 0,
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#014725',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '3px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    임시: 가입 후 화면 미리보기
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <p style={{ marginTop: '14px', flexShrink: 0, textAlign: 'center', fontSize: '12px', color: '#6b7280' }}>
+        <p
+          style={{
+            marginTop: '14px',
+            flexShrink: 0,
+            textAlign: 'center',
+            fontSize: '12px',
+            color: '#6b7280',
+          }}
+        >
           Powered by Mebody • Designed for Mebody
         </p>
       </div>
-      <ScrollIndicator containerRef={scrollRef} bottomOffset="30px" />
+      <ScrollIndicator containerRef={scrollRef} targetRef={ctaRef} bottomOffset="30px" />
     </div>
   );
 }

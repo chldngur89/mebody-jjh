@@ -1,14 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { isInAppBrowser, preferredScrollBehavior } from '../lib/viewport';
 
 interface ScrollIndicatorProps {
-  containerRef: React.RefObject<HTMLElement | null>;
+  containerRef: RefObject<HTMLElement | null>;
+  /** 있으면 화살표 클릭 시 이 요소로 스크롤합니다. */
+  targetRef?: RefObject<HTMLElement | null>;
   bottomOffset?: string;
   threshold?: number;
 }
 
-export function ScrollIndicator({ containerRef, bottomOffset = '24px', threshold = 20 }: ScrollIndicatorProps) {
+export function ScrollIndicator({
+  containerRef,
+  targetRef,
+  bottomOffset = '24px',
+  threshold = 20,
+}: ScrollIndicatorProps) {
   const [show, setShow] = useState(false);
   const calmMotion = isInAppBrowser();
 
@@ -44,6 +51,14 @@ export function ScrollIndicator({ containerRef, bottomOffset = '24px', threshold
   const scrollDown = () => {
     const container = containerRef.current;
     if (!container) return;
+    const target = targetRef?.current;
+    if (target) {
+      const cRect = container.getBoundingClientRect();
+      const tRect = target.getBoundingClientRect();
+      const nextTop = container.scrollTop + (tRect.top - cRect.top) - 12;
+      container.scrollTo({ top: Math.max(0, nextTop), behavior: preferredScrollBehavior() });
+      return;
+    }
     container.scrollTo({
       top: Math.min(container.scrollTop + Math.max(120, container.clientHeight * 0.55), container.scrollHeight),
       behavior: preferredScrollBehavior(),
@@ -53,7 +68,7 @@ export function ScrollIndicator({ containerRef, bottomOffset = '24px', threshold
   return (
     <button
       type="button"
-      aria-label="아래로 스크롤"
+      aria-label="버튼 쪽으로 스크롤"
       onClick={scrollDown}
       className={calmMotion ? undefined : 'animate-bounce'}
       style={{

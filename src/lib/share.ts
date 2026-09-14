@@ -35,7 +35,13 @@ export function isShareableBodyCode(code: unknown): code is string {
 }
 
 export function buildShareUrl(bodyCode: string): string {
-  const url = new URL(`${shareBaseUrl()}/`)
+  const base = shareBaseUrl()
+  // 프로덕션: OG 미리보기 엔드포인트 → 봇은 og 태그, 사람은 SPA 공유 랜딩으로.
+  // 로컬 Vite 에는 /api 가 없으므로 SPA 쿼리로 둡니다.
+  if (!import.meta.env.DEV && isShareableBodyCode(bodyCode)) {
+    return `${base}/api/share-og?code=${encodeURIComponent(bodyCode)}`
+  }
+  const url = new URL(`${base}/`)
   url.searchParams.set('ref', SHARE_REF)
   if (isShareableBodyCode(bodyCode)) url.searchParams.set('code', bodyCode)
   return url.toString()
@@ -47,16 +53,27 @@ export interface SharePayload {
   summaryLine?: string
   /** 예: C · L · L · F — 목 중앙, ... 링크에는 넣지 않고 공유 문구에만 씁니다. */
   tendencyLine?: string
+  /** body_code_content.share_title — 있으면 조합 제목 대신 사용 */
+  shareTitle?: string
+  /** body_code_content.share_description */
+  shareDescription?: string
 }
 
-export function buildShareTitle({ bodyCode, characterName }: SharePayload): string {
+export function buildShareTitle({ bodyCode, characterName, shareTitle }: SharePayload): string {
+  const fromDb = shareTitle?.trim()
+  if (fromDb) return fromDb
   return `내 ${PRODUCT.codeName}는 ${bodyCode} ${characterName}`
 }
 
 export function buildShareText(payload: SharePayload): string {
+  const detail =
+    payload.shareDescription?.trim() ||
+    payload.tendencyLine?.trim() ||
+    payload.summaryLine?.trim() ||
+    '32문항으로 목·어깨·골반·유연성 사용 습관을 확인했어요.'
   const lines = [
     `${buildShareTitle(payload)}.`,
-    payload.tendencyLine?.trim() || payload.summaryLine?.trim() || '32문항으로 목·어깨·골반·유연성 사용 습관을 확인했어요.',
+    detail,
     '너는 어떤 유형인지 궁금해요.',
   ]
   return lines.filter(Boolean).join('\n')
@@ -64,6 +81,7 @@ export function buildShareText(payload: SharePayload): string {
 
 export function buildShareDescription(payload: SharePayload): string {
   return (
+    payload.shareDescription?.trim() ||
     payload.tendencyLine?.trim() ||
     payload.summaryLine?.trim() ||
     '32문항으로 확인한 내 몸 사용 습관. 너는 어떤 유형일까?'

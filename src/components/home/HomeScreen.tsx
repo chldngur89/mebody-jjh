@@ -1,10 +1,10 @@
 /**
  * 홈 탭 — 시안(mebody_V1_routine_timeline_reward.html)의 result 페이지 구성.
  *
- *   hero-card        코드 + 아이덴티티 배지 + 캐릭터
- *   01               나의 움직임 경향 (한 줄 이해)
+ *   hero-card        코드 + 아이덴티티 + 캐릭터 (body_code_content)
+ *   01               identity_summary (+ keywords)
  *   02               4축 상세 — .axis-row 게이지
- *   03               지금 가장 먼저 해보세요 → 공통 스트레칭(미션 탭)
+ *   03               지금 가장 먼저 → strategy_* / journey_title (미션 탭)
  *   04               자세 사용 설명서(유튜브) + 상품 2개 + 광고 + direction-card
  *
  * 데이터는 useResultData 가 전부 준비합니다(기존 ResultScreen 로직 그대로).
@@ -88,10 +88,18 @@ export function HomeScreen({
   }
 
   const primaryAxis = data.axisRows[0];
+  const axisCodeLine =
+    data.axisDetails.length > 0 ? data.axisDetails.map((d) => d.code).join(' · ') : data.bodyCode;
   const tendencyLine =
-    data.axisDetails.length > 0
-      ? `${data.axisDetails.map((d) => d.code).join(' · ')} — ${data.summaryLine}`
-      : data.summaryLine;
+    data.axisDetails.length > 0 ? `${axisCodeLine} — ${data.summaryLine}` : data.summaryLine;
+  const careTitle = data.strategyTitle || '매일 하는 공통 스트레칭';
+  const careSummary =
+    data.strategySummary ||
+    '목 → 어깨 → 골반 → 하체를 순서대로. 코드에 따라 달라지는 건 순서가 아니라 세트 수예요.';
+  const careChip = data.journeyTitle
+    ? data.journeyTitle
+    : `1순위 ${primaryAxis?.title ?? '관리'}`;
+  const careMinutes = data.recommendedStartMinutes;
 
   return (
     <div style={{ display: 'grid', gap: '14px' }}>
@@ -114,24 +122,31 @@ export function HomeScreen({
             {data.bodyCode}
           </div>
           <Chip tone="solid">{data.characterName}</Chip>
+          {data.identityTitle && (
+            <p style={{ margin: '10px 0 0', color: BRAND.green, fontSize: '14px', fontWeight: 800, wordBreak: 'keep-all' }}>
+              {data.identityTitle}
+            </p>
+          )}
           <p style={{ margin: '12px 0 0', color: BRAND.muted, fontSize: '14px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {data.summaryLine}
           </p>
-          {data.axisDetails.length > 0 && (
-            <div
-              style={{
-                marginTop: '12px',
-                background: SURFACE.subtle,
-                borderRadius: '14px',
-                padding: '12px 14px',
-                fontSize: '13px',
-                lineHeight: 1.65,
-                color: BRAND.text,
-                wordBreak: 'keep-all',
-                textAlign: 'left',
-              }}
-            >
-              {tendencyLine}
+          {data.identityKeywords.length > 0 && (
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+              {data.identityKeywords.map((keyword) => (
+                <span
+                  key={keyword}
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: BRAND.muted,
+                    background: SURFACE.subtle,
+                    borderRadius: '999px',
+                    padding: '5px 10px',
+                  }}
+                >
+                  {keyword}
+                </span>
+              ))}
             </div>
           )}
 
@@ -161,21 +176,25 @@ export function HomeScreen({
             characterName={data.characterName}
             summaryLine={data.summaryLine}
             tendencyLine={tendencyLine}
+            shareTitle={data.shareTitle ?? undefined}
+            shareDescription={data.shareDescription ?? undefined}
           />
         </div>
       </Card>
 
-      {/* ── 03 지금 가장 먼저 해보세요 = 공통 스트레칭 ──────────────── */}
+      {/* ── 03 지금 가장 먼저 해보세요 = care strategy + 미션 진입 ── */}
       <Card tone="green" padding="20px">
         <SectionHeading kicker="미션" title="지금 가장 먼저 해보세요" inverse />
-        <Chip tone="onGreen">1순위 {primaryAxis?.title ?? '관리'}</Chip>
+        <Chip tone="onGreen">{careChip}</Chip>
         <h3 style={{ fontSize: '23px', margin: '12px 0 8px', fontWeight: 800, wordBreak: 'keep-all' }}>
-          매일 하는 공통 스트레칭
+          {careTitle}
         </h3>
         <p style={{ margin: 0, color: 'rgba(255,255,255,.78)', fontSize: '14px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
-          목 → 어깨 → 골반 → 하체를 순서대로. 코드에 따라 달라지는 건 순서가 아니라 세트 수예요.
+          {careSummary}
         </p>
-        <div style={{ marginTop: '12px', fontSize: '12px', color: 'rgba(255,255,255,.7)' }}>◷ 약 15분 · 5단계</div>
+        <div style={{ marginTop: '12px', fontSize: '12px', color: 'rgba(255,255,255,.7)' }}>
+          ◷ 약 {careMinutes}분부터 · 미션에서 이어하기
+        </div>
         <CTA variant="light" onClick={onStartCare}>
           {COPY_CTA.missionNow} <ChevronRight size={18} />
         </CTA>

@@ -375,13 +375,13 @@ export function getBodyCodeKeywords(code: string) {
 }
 
 export const characterNames: Record<string, string> = {
-  FRRS: '암사가는 잠금 로봇',
+  FRRS: '꽈악 잠금 로봇',
   FRRF: '기대면 흐르는 젤리인간',
-  FRLS: '되배기 금속 스프링',
+  FRLS: '꽈배기 금속 스프링',
   FRLF: '회전 많은 풍선인형',
   FLRS: '으쓱 고정 목각병정',
-  FLRF: '리듬은 좋은데 금방 시치는 갈대',
-  FLLS: '한쪽에 박힌 발톱',
+  FLRF: '리듬 타는 갈대',
+  FLLS: '한쪽에 박힌 말뚝',
   FLLF: '녹아내리는 소프트콘',
   CRRS: '닻',
   CRRF: '오뚝이',

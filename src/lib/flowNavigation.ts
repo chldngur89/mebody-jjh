@@ -6,6 +6,8 @@ export interface FlowRoute {
   tab: FlowTab;
   resultId?: string;
   bodyCode?: string;
+  /** 공유 수신 중이면 랜딩 URL 에 ref=share&code 를 유지합니다(새로고침 대비). */
+  shareCode?: string;
   questionIndex?: number;
   diagnosisId?: string;
   authSuccess?: Screen;
@@ -23,6 +25,7 @@ export function readFlowEntry(state: unknown, session: string): FlowEntry | unde
   if (route.questionIndex !== undefined && (!Number.isInteger(route.questionIndex) || route.questionIndex < 0 || route.questionIndex > 31)) return;
   if (route.diagnosisId !== undefined && typeof route.diagnosisId !== 'string') return;
   if (route.bodyCode !== undefined && (typeof route.bodyCode !== 'string' || !/^[FC][RL][RL][SF]$/.test(route.bodyCode))) return;
+  if (route.shareCode !== undefined && (typeof route.shareCode !== 'string' || !/^[FC][RL][RL][SF]$/.test(route.shareCode))) return;
   if (route.authSuccess !== undefined && !SCREENS.includes(route.authSuccess)) return;
   return entry;
 }
@@ -37,10 +40,13 @@ export function flowUrl(route: FlowRoute, href: string) {
   // QA entry parameters must not force a stale screen after a reload.
   url.searchParams.delete('ui');
   url.searchParams.delete('mode');
-  // 공유 링크 파라미터는 첫 진입에서 한 번만 읽습니다.
-  // 남겨두면 진단 도중 새로고침해도 계속 "친구가 공유했어요" 가 붙습니다.
   url.searchParams.delete('ref');
   url.searchParams.delete('code');
+  // 공유 수신 랜딩만 ref/code 유지 — 진단 중 새로고침에 친구 카드가 붙지 않게 합니다.
+  if (route.screen === 'landing' && route.shareCode) {
+    url.searchParams.set('ref', 'share');
+    url.searchParams.set('code', route.shareCode);
+  }
   if (route.resultId) url.searchParams.set('result', route.resultId);
   else url.searchParams.delete('result');
   return `${url.pathname}${url.search}${url.hash}`;

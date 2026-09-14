@@ -108,6 +108,8 @@ CREATE INDEX IF NOT EXISTS idx_responses_created ON public.questionnaire_respons
 CREATE INDEX IF NOT EXISTS questionnaire_responses_user_id_idx ON public.questionnaire_responses USING btree (user_id, completed_at DESC);
 
 -- ===== body_code_content =====
+-- Home/공유 identity·share + care strategy 단일 출처 (코드당 1행).
+-- 상세 가이드 문서는 body_code_result_sections 를 쓴다.
 CREATE TABLE IF NOT EXISTS public.body_code_content (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   body_code varchar(4) NOT NULL,
@@ -120,10 +122,29 @@ CREATE TABLE IF NOT EXISTS public.body_code_content (
   lifestyle_tips jsonb DEFAULT '[]'::jsonb,
   exercises jsonb DEFAULT '[]'::jsonb,
   health_products jsonb DEFAULT '[]'::jsonb,
+  identity_title text,
+  identity_summary text,
+  identity_keywords jsonb DEFAULT '[]'::jsonb NOT NULL,
+  share_title text,
+  share_description text,
+  strategy_key text,
+  strategy_title text,
+  strategy_summary text,
+  primary_axis text,
+  secondary_axis text,
+  primary_goal text,
+  secondary_goal text,
+  starter_focus jsonb DEFAULT '[]'::jsonb NOT NULL,
+  progression_focus jsonb DEFAULT '[]'::jsonb NOT NULL,
+  journey_slug text,
+  journey_title text,
+  recommended_start_minutes int DEFAULT 5 NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
   CONSTRAINT body_code_content_body_code_key UNIQUE (body_code),
-  CONSTRAINT body_code_content_pkey PRIMARY KEY (id)
+  CONSTRAINT body_code_content_pkey PRIMARY KEY (id),
+  CONSTRAINT body_code_content_recommended_start_minutes_check
+    CHECK (recommended_start_minutes BETWEEN 3 AND 15)
 );
 
 -- ===== body_code_next_page =====

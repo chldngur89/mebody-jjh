@@ -3,6 +3,9 @@
  *
  * 홈(HomeScreen)을 시안 디자인으로 새로 쓰면서, 계산 규칙은 손대지 않고
  * 화면만 갈아끼우기 위해 분리합니다. 축 계산·폴백·유튜브 파싱은 동일합니다.
+ *
+ * 첫 화면/공유 카피는 body_code_content.identity_* / share_* 단일 출처.
+ * body_code_result_sections 는 코드 플랜 전용 — Home 에서는 읽지 않습니다.
  */
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
@@ -170,12 +173,20 @@ const DEFAULT_STORE_ITEMS: StoreItem[] = [
 ];
 
 function pickSummaryLine(content: BodyCodeContent | null): string {
+  const fromIdentity = content?.identity_summary?.trim();
+  if (fromIdentity) return fromIdentity;
+
   const fromDescription = content?.description
     ?.split(/[.\n]/)
     .map((sentence) => sentence.trim())
     .find(Boolean);
 
   return fromDescription || `현재 몸이 가장 자주 쓰는 사용 패턴을 기준으로 ${PRODUCT.codeName}를 정리했습니다.`;
+}
+
+function asStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? '').trim()).filter(Boolean);
 }
 
 function getAxisSentence(content: BodyCodeContent | null, key: AxisKey, fallback: string) {
@@ -346,7 +357,16 @@ export interface ResultData {
   bodyCode: string;
   characterName: string;
   characterImage: string;
+  /** identity_title — 유형 부제 */
+  identityTitle: string | null;
   summaryLine: string;
+  identityKeywords: string[];
+  shareTitle: string | null;
+  shareDescription: string | null;
+  strategyTitle: string | null;
+  strategySummary: string | null;
+  journeyTitle: string | null;
+  recommendedStartMinutes: number;
   axisRows: AxisRow[];
   axisDetails: Array<{ key: AxisKey; code: string; title: string; description: string }>;
   youtubeVideos: YoutubeVideo[];
@@ -486,6 +506,17 @@ export function useResultData(
   const characterName = content?.character_name || characterNames[bodyCode] || `나의 ${PRODUCT.codeName}`;
   const characterImage = resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls);
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
+  const identityTitle = content?.identity_title?.trim() || null;
+  const identityKeywords = asStringList(content?.identity_keywords);
+  const shareTitle = content?.share_title?.trim() || null;
+  const shareDescription = content?.share_description?.trim() || null;
+  const strategyTitle = content?.strategy_title?.trim() || null;
+  const strategySummary = content?.strategy_summary?.trim() || null;
+  const journeyTitle = content?.journey_title?.trim() || null;
+  const recommendedStartMinutes =
+    typeof content?.recommended_start_minutes === 'number' && content.recommended_start_minutes > 0
+      ? content.recommended_start_minutes
+      : 5;
 
   const axisRows = useMemo<AxisRow[]>(() => {
     if (!axisPercent) return [];
@@ -531,6 +562,8 @@ export function useResultData(
 
   return {
     isLoading, error, result, content, bodyCode, characterName, characterImage,
-    summaryLine, axisRows, axisDetails, youtubeVideos, storeItems, rewardBalance, handleImageError,
+    identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
+    strategyTitle, strategySummary, journeyTitle, recommendedStartMinutes,
+    axisRows, axisDetails, youtubeVideos, storeItems, rewardBalance, handleImageError,
   };
 }

@@ -39,6 +39,25 @@ export interface BodyCodeContent {
     name: string
     desc: string
   }>
+  /** 결과 첫 화면 부제(유형명) */
+  identity_title?: string | null
+  /** Home 본문 요약 — sections 2/3 대신 단일 출처 */
+  identity_summary?: string | null
+  identity_keywords?: string[] | null
+  share_title?: string | null
+  share_description?: string | null
+  strategy_key?: string | null
+  strategy_title?: string | null
+  strategy_summary?: string | null
+  primary_axis?: string | null
+  secondary_axis?: string | null
+  primary_goal?: string | null
+  secondary_goal?: string | null
+  starter_focus?: string[] | null
+  progression_focus?: string[] | null
+  journey_slug?: string | null
+  journey_title?: string | null
+  recommended_start_minutes?: number | null
 }
 
 const OPTIONAL_RESPONSE_COLUMNS = [
@@ -203,6 +222,23 @@ function getFallbackBodyCodeContent(bodyCode: string): BodyCodeContent {
     lifestyle_tips: [],
     exercises: [],
     health_products: [],
+    identity_title: null,
+    identity_summary: null,
+    identity_keywords: [],
+    share_title: null,
+    share_description: null,
+    strategy_key: null,
+    strategy_title: null,
+    strategy_summary: null,
+    primary_axis: null,
+    secondary_axis: null,
+    primary_goal: null,
+    secondary_goal: null,
+    starter_focus: [],
+    progression_focus: [],
+    journey_slug: null,
+    journey_title: null,
+    recommended_start_minutes: 5,
   }
 }
 

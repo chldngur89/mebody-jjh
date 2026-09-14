@@ -19,23 +19,39 @@ import {
   type SharePayload,
 } from '../../lib/share'
 import { isKakaoShareConfigured, preloadKakao, shareToKakao } from '../../lib/kakao'
+import { isInAppBrowser } from '../../lib/viewport'
 
 export interface ResultShareCardProps {
   bodyCode: string
   characterName: string
   summaryLine?: string
   tendencyLine?: string
+  shareTitle?: string
+  shareDescription?: string
   /** true 이면 바깥 Card 없이 내용만 렌더합니다(hero 와 한 박스로 합칠 때). */
   embedded?: boolean
 }
 
-const TOAST_MS = 2200
+/** 복사 성공 후 URL 을 읽고 다시 고를 시간을 줍니다. */
+const TOAST_MS_COPY = 8000
+const TOAST_MS_DEFAULT = 2800
+
+function shortShareUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.host}${parsed.pathname}${parsed.search}`.replace(/\/\?/, '?')
+  } catch {
+    return url
+  }
+}
 
 export function ResultShareCard({
   bodyCode,
   characterName,
   summaryLine,
   tendencyLine,
+  shareTitle,
+  shareDescription,
   embedded = false,
 }: ResultShareCardProps) {
   const [toast, setToast] = useState<string | null>(null)
@@ -60,14 +76,23 @@ export function ResultShareCard({
 
   if (!shareable) return null
 
-  const payload: SharePayload = { bodyCode, characterName, summaryLine, tendencyLine }
+  const payload: SharePayload = {
+    bodyCode,
+    characterName,
+    summaryLine,
+    tendencyLine,
+    shareTitle,
+    shareDescription,
+  }
   const kakaoReady = isKakaoShareConfigured()
   const nativeReady = canNativeShare()
+  /** 인앱(카톡 등)에서는 OS 공유·clipboard 가 자주 막혀 카카오를 1순위로 둡니다. */
+  const preferKakao = kakaoReady && isInAppBrowser()
 
-  const showToast = (message: string) => {
+  const showToast = (message: string, ms = TOAST_MS_DEFAULT) => {
     setToast(message)
     if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => setToast(null), TOAST_MS)
+    timerRef.current = setTimeout(() => setToast(null), ms)
   }
 
   const run = async (channel: ShareChannel) => {
@@ -80,15 +105,19 @@ export function ResultShareCard({
         const url = buildShareUrl(bodyCode)
         const copied = await copyShareLink(url)
         trackShareOutcome('copy', bodyCode, copied ? 'shared' : 'failed')
-        setManualUrl(copied ? null : url)
-        showToast(copied ? '링크를 복사했어요' : '복사가 막혀 있어요. 아래 주소를 눌러 직접 복사해 주세요')
+        setManualUrl(url)
+        showToast(
+          copied
+            ? `공유 링크를 복사했어요\n${shortShareUrl(url)}`
+            : '복사가 막혀 있어요. 아래 주소를 길게 눌러 복사해 주세요',
+          TOAST_MS_COPY,
+        )
         return
       }
 
       const outcome = channel === 'kakao' ? await shareToKakao(payload) : await shareNative(payload)
       trackShareOutcome(channel, bodyCode, outcome)
 
-      // 사용자가 공유창을 닫은 것(cancelled)은 오류가 아니라서 아무 말도 하지 않습니다.
       if (outcome === 'failed') showToast('공유를 마치지 못했어요. 링크 복사를 써 주세요')
       else if (outcome === 'unsupported') {
         showToast(channel === 'kakao' ? '카카오 공유를 아직 쓸 수 없어요' : '이 기기에서는 공유창을 열 수 없어요')
@@ -120,38 +149,60 @@ export function ResultShareCard({
           wordBreak: 'keep-all',
         }}
       >
-        코드와 캐릭터가 전달되요
+        코드·캐릭터·경향만 전달돼요
+        <br />
+        <span style={{ fontWeight: 600 }}>개인 점수·응답은 포함되지 않아요</span>
       </p>
 
-      {kakaoReady && (
-        <CTA
-          variant="outline"
-          onClick={() => void run('kakao')}
-          disabled={busy !== null}
-          style={{ marginTop: '14px' }}
-        >
-          카카오톡으로 공유
-        </CTA>
+      {preferKakao ? (
+        <>
+          <CTA onClick={() => void run('kakao')} disabled={busy !== null} style={{ marginTop: '14px' }}>
+            카카오톡으로 공유
+          </CTA>
+          <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
+            <ShareActionButton
+              label="링크 복사"
+              icon={<Link2 size={15} strokeWidth={2.4} />}
+              onClick={() => void run('copy')}
+              disabled={busy !== null}
+            />
+            {nativeReady && (
+              <ShareActionButton label="다른 앱으로 공유" onClick={() => void run('native')} disabled={busy !== null} />
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {kakaoReady && (
+            <CTA
+              variant="outline"
+              onClick={() => void run('kakao')}
+              disabled={busy !== null}
+              style={{ marginTop: '14px' }}
+            >
+              카카오톡으로 공유
+            </CTA>
+          )}
+          <div
+            style={{
+              display: 'grid',
+              gap: '8px',
+              marginTop: kakaoReady ? '8px' : '14px',
+            }}
+          >
+            {nativeReady && (
+              <ShareActionButton label="공유하기" onClick={() => void run('native')} disabled={busy !== null} />
+            )}
+            <ShareActionButton
+              label="링크 복사"
+              icon={<Link2 size={15} strokeWidth={2.4} />}
+              onClick={() => void run('copy')}
+              disabled={busy !== null}
+              primary
+            />
+          </div>
+        </>
       )}
-
-      <div
-        style={{
-          display: 'grid',
-          gap: '8px',
-          marginTop: kakaoReady ? '8px' : '14px',
-        }}
-      >
-        {nativeReady && (
-          <ShareActionButton label="공유하기" onClick={() => void run('native')} disabled={busy !== null} />
-        )}
-        <ShareActionButton
-          label="링크 복사"
-          icon={<Link2 size={15} strokeWidth={2.4} />}
-          onClick={() => void run('copy')}
-          disabled={busy !== null}
-          primary
-        />
-      </div>
 
       {toast && (
         <div
@@ -163,9 +214,11 @@ export function ResultShareCard({
             borderRadius: '12px',
             padding: '10px 12px',
             fontSize: '13px',
+            lineHeight: 1.55,
             color: BRAND.text,
-            wordBreak: 'keep-all',
+            wordBreak: 'break-all',
             textAlign: 'left',
+            whiteSpace: 'pre-wrap',
           }}
         >
           {toast}
@@ -257,6 +310,10 @@ function ShareActionButton({
         fontFamily: 'inherit',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.55 : 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '7px',
       }
 
   return (

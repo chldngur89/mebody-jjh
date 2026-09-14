@@ -69,7 +69,7 @@ export function useFlowHistory(route: FlowRoute, restore: (route: FlowRoute) => 
     previous.current = route;
     restoring.current = false;
     replaceNext.current = false;
-  }, [route.screen, route.tab, route.resultId, route.questionIndex, route.diagnosisId, route.authSuccess, route.bodyCode, ready]);
+  }, [route.screen, route.tab, route.resultId, route.questionIndex, route.diagnosisId, route.authSuccess, route.bodyCode, route.shareCode, ready]);
 
   return {
     back(fallback: FlowRoute) {
