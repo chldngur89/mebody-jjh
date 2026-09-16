@@ -1,9 +1,10 @@
-import { ChevronRight, Clock3, LayoutDashboard, Sparkles } from 'lucide-react';
+import { ChevronRight, Clock3, LayoutDashboard } from 'lucide-react';
 import { BRAND_PAGE_BG } from '../theme/brand';
 import { CTA, PRODUCT } from '../theme/copy';
 import { useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
+import { BrandMark } from './ui';
 import { ScrollIndicator } from './ScrollIndicator';
 import { SharePreviewCard } from './SharePreviewCard';
 
@@ -24,7 +25,6 @@ interface LandingScreenProps {
   userDisplayName?: string;
   latestBodyCode?: string;
   onAccount?: () => void;
-  onPreviewSignedIn?: () => void;
   /** 공유 링크(?ref=share&code=FRRS) — 공개 미리보기 카드용. 개인 결과는 열지 않습니다. */
   sharedCode?: string;
 }
@@ -40,7 +40,6 @@ export function LandingScreen({
   isLoggedIn = false,
   latestBodyCode,
   onAccount,
-  onPreviewSignedIn,
   sharedCode,
 }: LandingScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
@@ -88,7 +87,7 @@ export function LandingScreen({
         maxHeight: isDesktopMockup ? undefined : landingHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -148,12 +147,12 @@ export function LandingScreen({
               border: '1px solid rgba(255,255,255,0.4)',
               background: 'rgba(255,255,255,0.72)',
               padding: '9px 16px',
-              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#014725" />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>{PRODUCT.mark}</span>
+            <BrandMark size={16} color="#014725" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#014725' }}>{PRODUCT.mark}</span>
           </div>
 
           {onAccount && (
@@ -164,11 +163,12 @@ export function LandingScreen({
                 borderRadius: '999px',
                 border: '1px solid rgba(255,255,255,0.4)',
                 background: 'rgba(255,255,255,0.72)',
+                minHeight: '44px',
                 padding: '9px 16px',
-                fontSize: '12px',
+                fontSize: '0.8125rem',
                 fontWeight: 700,
-                color: '#374151',
-                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+                color: '#2C5544',
+                boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
                 backdropFilter: 'blur(12px)',
                 cursor: 'pointer',
               }}
@@ -187,7 +187,7 @@ export function LandingScreen({
             overflow: isShortViewport ? 'visible' : 'hidden',
             borderRadius: '28px',
             background: 'rgba(255,255,255,0.78)',
-            boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
+            boxShadow: '0 24px 48px rgba(1, 71, 37, 0.12)',
             backdropFilter: 'blur(20px)',
           }}
         >
@@ -213,7 +213,7 @@ export function LandingScreen({
                 }}
               >
                 <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={isShortViewport ? 30 : 40} color="#ffffff" strokeWidth={2.6} />
+                  <BrandMark size={isShortViewport ? 34 : 44} color="#FFFFF3" />
                 </div>
                 <div
                   style={{
@@ -231,7 +231,7 @@ export function LandingScreen({
               <h1
                 style={{
                   marginBottom: isShortViewport ? '12px' : '22px',
-                  fontSize: isShortViewport ? '40px' : '52px',
+                  fontSize: isShortViewport ? '2.5rem' : '3.25rem',
                   lineHeight: 0.96,
                   fontWeight: 800,
                   letterSpacing: '-0.04em',
@@ -246,17 +246,21 @@ export function LandingScreen({
 
               {sharedCode && (
                 <div style={{ width: '100%', margin: '0 0 18px' }}>
-                  <SharePreviewCard bodyCode={sharedCode} onStartDiagnosis={onStart} />
+                  <SharePreviewCard
+                    bodyCode={sharedCode}
+                    myBodyCode={normalizedBodyCode}
+                    onStartDiagnosis={onStart}
+                  />
                 </div>
               )}
 
               <h2
                 style={{
                   marginBottom: '12px',
-                  fontSize: '22px',
+                  fontSize: '1.375rem',
                   lineHeight: 1.35,
                   fontWeight: 850,
-                  color: '#111827',
+                  color: '#014725',
                   wordBreak: 'keep-all',
                   letterSpacing: '-0.03em',
                   textAlign: 'center',
@@ -264,7 +268,7 @@ export function LandingScreen({
               >
                 {sharedCode ? (
                   <>
-                    나는 어떤 {PRODUCT.codeName}일까요?
+                    나는 어떤 {PRODUCT.codeName} 일까요?
                   </>
                 ) : (
                   <>
@@ -276,9 +280,9 @@ export function LandingScreen({
               </h2>
               <p
                 style={{
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   lineHeight: 1.7,
-                  color: '#4b5563',
+                  color: '#3D6B54',
                   wordBreak: 'keep-all',
                   textAlign: 'center',
                 }}
@@ -317,7 +321,7 @@ export function LandingScreen({
                     <p
                       style={{
                         margin: 0,
-                        fontSize: '15px',
+                        fontSize: '0.9375rem',
                         fontWeight: 800,
                         color: '#014725',
                         wordBreak: 'keep-all',
@@ -327,10 +331,10 @@ export function LandingScreen({
                     >
                       이전에 하던 분석이 있어요.
                       <br />
-                      이어서 할까요, 처음부터 다시 할까요?
+                      이어서 분석할까요?
                     </p>
-                    <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.55, color: '#047857', wordBreak: 'keep-all', textAlign: 'center' }}>
-                      처음부터는 약관 동의 화면부터 다시 시작합니다.
+                    <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.55, color: '#047857', wordBreak: 'keep-all', textAlign: 'center' }}>
+                      처음부터 하면 약관 동의부터 다시 시작합니다.
                     </p>
                     <button
                       type="button"
@@ -338,7 +342,7 @@ export function LandingScreen({
                       style={{
                         display: 'inline-flex',
                         width: '100%',
-                        height: '54px',
+                        height: '58px',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
@@ -346,13 +350,13 @@ export function LandingScreen({
                         border: 'none',
                         background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                         color: '#ffffff',
-                        fontSize: '16px',
+                        fontSize: '1.0625rem',
                         fontWeight: 800,
                         boxShadow: '0 12px 24px rgba(1,71,37,0.28)',
                         cursor: 'pointer',
                       }}
                     >
-                      이어서 할래요
+                      {CTA.resumeAnalysis}
                       <ChevronRight size={18} />
                     </button>
                     <button
@@ -361,19 +365,19 @@ export function LandingScreen({
                       style={{
                         display: 'inline-flex',
                         width: '100%',
-                        height: '48px',
+                        height: '44px',
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: '14px',
                         border: '1px solid rgba(167,243,208,0.95)',
                         background: '#ffffff',
                         color: '#014725',
-                        fontSize: '14px',
+                        fontSize: '0.8125rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                       }}
                     >
-                      처음부터 할래요
+                      {CTA.startFresh}
                     </button>
                   </div>
                 ) : (
@@ -391,7 +395,7 @@ export function LandingScreen({
                       border: 'none',
                       background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                       color: '#ffffff',
-                      fontSize: '17px',
+                      fontSize: '1.0625rem',
                       fontWeight: 800,
                       boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
                       cursor: 'pointer',
@@ -424,7 +428,7 @@ export function LandingScreen({
                       border: '1px solid rgba(167,243,208,0.92)',
                       background: 'rgba(236,253,245,0.88)',
                       color: '#047857',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
@@ -436,7 +440,7 @@ export function LandingScreen({
               </div>
             </div>
 
-            {(onAccount || (import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn)) && (
+            {onAccount && (
               <div
                 style={{
                   display: 'grid',
@@ -457,12 +461,12 @@ export function LandingScreen({
                       border: '1px solid rgba(167,243,208,0.92)',
                       padding: '7px 11px',
                       color: '#047857',
-                      fontSize: '12px',
+                      fontSize: '0.8125rem',
                       fontWeight: 900,
                     }}
                   >
                     최근 코드
-                    <span style={{ color: '#111827' }}>{normalizedBodyCode}</span>
+                    <span style={{ color: '#014725' }}>{normalizedBodyCode}</span>
                   </div>
                 )}
                 {onAccount && (
@@ -479,33 +483,14 @@ export function LandingScreen({
                       borderRadius: '14px',
                       border: '1px solid rgba(110,231,183,0.95)',
                       background: '#ffffff',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: 700,
-                      color: '#374151',
+                      color: '#2C5544',
                       cursor: 'pointer',
                     }}
                   >
                     {isLoggedIn ? <LayoutDashboard size={16} /> : <ChevronRight size={16} />}
                     {accountActionLabel}
-                  </button>
-                )}
-                {import.meta.env.DEV && !isLoggedIn && onPreviewSignedIn && (
-                  <button
-                    type="button"
-                    onClick={onPreviewSignedIn}
-                    style={{
-                      padding: 0,
-                      border: 'none',
-                      background: 'transparent',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: '#014725',
-                      textDecoration: 'underline',
-                      textUnderlineOffset: '3px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    임시: 가입 후 화면 미리보기
                   </button>
                 )}
               </div>
@@ -518,11 +503,11 @@ export function LandingScreen({
             marginTop: '14px',
             flexShrink: 0,
             textAlign: 'center',
-            fontSize: '12px',
-            color: '#6b7280',
+            fontSize: '0.8125rem',
+            color: '#4A6B58',
           }}
         >
-          Powered by Mebody • Designed for Mebody
+          {PRODUCT.codeWithGuide}
         </p>
       </div>
       <ScrollIndicator containerRef={scrollRef} targetRef={ctaRef} bottomOffset="30px" />

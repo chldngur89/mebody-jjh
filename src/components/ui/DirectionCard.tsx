@@ -27,11 +27,11 @@ export function DirectionCard({
   return (
     <section style={{ background: BRAND.green, color: '#ffffff', borderRadius: `${BRAND_RADIUS}px`, padding: '20px' }}>
       {kicker && (
-        <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.08em', color: 'rgba(255,255,255,.78)', marginBottom: '6px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.08em', color: 'rgba(255,255,255,.78)', marginBottom: '6px' }}>
           {kicker}
         </div>
       )}
-      <h2 style={{ fontSize: '20px', letterSpacing: '-0.4px', fontWeight: 800, margin: '6px 0 0', wordBreak: 'keep-all' }}>{title}</h2>
+      <h2 style={{ fontSize: '1.25rem', letterSpacing: '-0.4px', fontWeight: 800, margin: '6px 0 0', wordBreak: 'keep-all' }}>{title}</h2>
       <ol style={{ listStyle: 'none', padding: 0, margin: '10px 0 0' }}>
         {steps.map((step, index) => (
           <li key={index} style={{ display: 'flex', gap: '11px', margin: '13px 0' }}>
@@ -46,15 +46,15 @@ export function DirectionCard({
                 display: 'grid',
                 placeItems: 'center',
                 fontWeight: 900,
-                fontSize: '13px',
+                fontSize: '0.8125rem',
               }}
             >
               {index + 1}
             </span>
             <div style={{ minWidth: 0 }}>
-              <b style={{ fontSize: '15px', wordBreak: 'keep-all' }}>{step.title}</b>
+              <b style={{ fontSize: '0.9375rem', wordBreak: 'keep-all' }}>{step.title}</b>
               {step.desc && (
-                <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,.75)', fontSize: '12px', lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,.75)', fontSize: '0.8125rem', lineHeight: 1.5, wordBreak: 'keep-all' }}>
                   {step.desc}
                 </p>
               )}

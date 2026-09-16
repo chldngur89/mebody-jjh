@@ -57,7 +57,7 @@ const FALLBACK_PLANS: MembershipPlan[] = [
   {
     code: 'basic_monthly',
     name: 'mebody 멤버십',
-    description: '14일 관리 무제한 · 광고 없이 이용 · 적립 2배 · 상품 구매 5% 적립',
+    description: '14일 루틴 무제한 · 광고 없이 이용 · 적립 2배 · 상품 구매 5% 적립',
     billing_cycle: 'monthly',
     price_krw: 5900,
     is_active: true,

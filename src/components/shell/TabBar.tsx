@@ -24,6 +24,7 @@ const TABS: Array<{ key: AppTab; label: string; Icon: typeof Home }> = [
 export function TabBar({ active, onChange }: { active: AppTab; onChange: (tab: AppTab) => void }) {
   return (
     <nav
+      aria-label="주요 화면"
       style={{
         // 시안과 동일하게 뷰포트 기준으로 고정합니다.
         // absolute 로 두면 부모 높이가 콘텐츠를 따라 늘어날 때 화면 밖으로 밀립니다.
@@ -34,7 +35,10 @@ export function TabBar({ active, onChange }: { active: AppTab; onChange: (tab: A
         width: `min(${SHELL.maxWidth}px, 100%)`,
         // 네이티브에서 AdMob 배너가 화면 맨 아래에 뜨므로 그 높이만큼 올라갑니다.
         bottom: 'var(--mebody-ad-inset, 0px)',
-        height: `${SHELL.tabBarHeight}px`,
+        // 홈 인디케이터에 탭이 깔리지 않도록 아래쪽 안전영역만큼 키우고 그만큼 패딩을 준다.
+        // (box-sizing: border-box 이므로 버튼이 놓이는 안쪽 높이는 tabBarHeight 그대로)
+        height: 'var(--mebody-tabbar-h)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         background: SHELL.tabBarBg,
         backdropFilter: 'blur(8px)',
         borderTop: SHELL.tabBarBorder,
@@ -56,7 +60,7 @@ export function TabBar({ active, onChange }: { active: AppTab; onChange: (tab: A
               background: 'transparent',
               color: on ? BRAND.green : SHELL.tabInactive,
               fontWeight: on ? 900 : 600,
-              fontSize: '11px',
+              fontSize: '0.75rem',
               fontFamily: 'inherit',
               display: 'grid',
               placeItems: 'center',
@@ -65,8 +69,8 @@ export function TabBar({ active, onChange }: { active: AppTab; onChange: (tab: A
               cursor: 'pointer',
             }}
           >
-            <Icon size={20} strokeWidth={on ? 2.6 : 2} />
-            <small style={{ fontSize: '11px' }}>{label}</small>
+            <Icon size={20} strokeWidth={on ? 2.2 : 2} fill={on ? BRAND.green : 'none'} />
+            <span>{label}</span>
           </button>
         );
       })}

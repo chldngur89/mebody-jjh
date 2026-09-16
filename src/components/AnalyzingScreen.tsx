@@ -57,7 +57,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
         maxHeight: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
@@ -93,7 +93,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
           <h2
             className="font-bold text-gray-900 mb-3"
             style={{
-              fontSize: '27px',
+              fontSize: '1.6875rem',
               lineHeight: 1.34,
               letterSpacing: '-0.045em',
               wordBreak: 'keep-all',

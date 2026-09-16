@@ -85,14 +85,14 @@ function MissionCard({
             width: '28px',
             height: '28px',
             borderRadius: '10px',
-            border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#cbd5e1'}`,
+            border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#6F8C7B'}`,
             background: isCompleted ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
             boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.85)',
           }}
         />
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '11px', fontWeight: 900, color: AXIS_GREEN_THEME.text }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text }}>
               {missionTypeLabel(mission.mission_type)}
             </span>
             <span
@@ -101,25 +101,25 @@ function MissionCard({
                 background: '#ffffff',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
                 padding: '3px 8px',
-                fontSize: '10px',
+                fontSize: '0.6875rem',
                 lineHeight: 1,
                 fontWeight: 900,
-                color: '#7c8794',
+                color: '#587761',
               }}
             >
               {formatDuration(mission.planned_duration_sec)}
             </span>
           </div>
-          <div style={{ fontSize: '17px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+          <div style={{ fontSize: '1.0625rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
             {content?.display_name ?? mission.content_key}
           </div>
           {content?.target_muscle && (
-            <div style={{ marginTop: '5px', fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>
+            <div style={{ marginTop: '5px', fontSize: '0.8125rem', fontWeight: 700, color: '#4A6B58' }}>
               타겟 근육: {content.target_muscle}
             </div>
           )}
         </div>
-        {open ? <ChevronUp size={18} color="#7c8794" /> : <ChevronDown size={18} color="#7c8794" />}
+        {open ? <ChevronUp size={18} color="#587761" /> : <ChevronDown size={18} color="#587761" />}
       </button>
 
       {open && content && (
@@ -134,14 +134,14 @@ function MissionCard({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '9px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                   {content.release_title}
                 </div>
-                <div style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
+                <div style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
                   {content.release_tool} · {content.release_duration_sec ?? 90}초
                 </div>
               </div>
-              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '13px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
+              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>
                 {splitSteps(content.release_content).map((step, stepIndex) => (
                   <li key={stepIndex}>{step}</li>
                 ))}
@@ -159,14 +159,14 @@ function MissionCard({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '9px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                   {content.stretch_title}
                 </div>
-                <div style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
+                <div style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
                   {content.stretch_duration_sec ?? 30}초 × {content.sets ?? 3}세트
                 </div>
               </div>
-              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '13px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
+              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>
                 {splitSteps(content.stretch_content).map((step, stepIndex) => (
                   <li key={stepIndex}>{step}</li>
                 ))}
@@ -181,9 +181,9 @@ function MissionCard({
                 background: 'rgba(255,251,235,0.88)',
                 border: '1px solid rgba(245,158,11,0.22)',
                 padding: '12px',
-                fontSize: '12px',
+                fontSize: '0.8125rem',
                 lineHeight: 1.6,
-                color: '#92400e',
+                color: '#7A5500',
                 wordBreak: 'keep-all',
               }}
             >
@@ -206,7 +206,7 @@ function MissionCard({
                 border: 'none',
                 background: isCompleted ? 'rgba(228,244,240,0.9)' : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                 color: isCompleted ? '#014725' : '#ffffff',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 800,
                 fontFamily: 'inherit',
                 cursor: 'pointer',
@@ -254,38 +254,38 @@ export function JourneyTodayScreen({
             type="button"
             onClick={onBack}
             style={{
-              width: '38px',
-              height: '38px',
+              width: '44px',
+              height: '44px',
               borderRadius: '999px',
               border: '1px solid rgba(255,255,255,0.42)',
               background: 'rgba(255,255,255,0.74)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#374151',
+              color: '#2C5544',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827' }}>오늘의 미션</h1>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>오늘의 미션</h1>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {state.isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>불러오는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>불러오는 중...</div>
         ) : !user ? (
-          <JourneyNotice>저니는 로그인 후 이용할 수 있습니다.</JourneyNotice>
+          <JourneyNotice>14일 루틴은 로그인 후 이용할 수 있습니다.</JourneyNotice>
         ) : state.unavailable ? (
           <JourneyNotice>
-            저니 데이터를 아직 사용할 수 없습니다. 관리자에게 <code>db/journey</code> 마이그레이션 적용을 요청해 주세요.
+            14일 루틴을 아직 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.
           </JourneyNotice>
         ) : !state.journey ? (
           <>
-            <JourneyNotice>진행 중인 저니가 없습니다. 결과 화면에서 14일 관리를 시작할 수 있습니다.</JourneyNotice>
+            <JourneyNotice>진행 중인 14일 루틴이 없습니다. 결과 화면에서 시작할 수 있습니다.</JourneyNotice>
             {onStartJourney && (
               <button
                 type="button"
@@ -296,13 +296,13 @@ export function JourneyTodayScreen({
                   border: 'none',
                   background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                   color: '#ffffff',
-                  fontSize: '15px',
+                  fontSize: '0.9375rem',
                   fontWeight: 800,
                   fontFamily: 'inherit',
                   cursor: 'pointer',
                 }}
               >
-                저니 소개 보기
+                14일 루틴 소개 보기
               </button>
             )}
           </>
@@ -312,21 +312,21 @@ export function JourneyTodayScreen({
               style={{
                 borderRadius: '28px',
                 background: 'rgba(255,255,255,0.84)',
-                boxShadow: '0 22px 46px rgba(15, 23, 42, 0.10)',
+                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
                 backdropFilter: 'blur(20px)',
                 padding: '20px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
                     DAY {state.dayNo} / {totalDays}
                   </div>
-                  <div style={{ fontSize: '26px', lineHeight: 1.1, fontWeight: 900, color: '#111827' }}>
+                  <div style={{ fontSize: '1.625rem', lineHeight: 1.1, fontWeight: 900, color: '#014725' }}>
                     {state.progress}%
                   </div>
                 </div>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: state.progress > 0 ? AXIS_GREEN_THEME.text : '#6b7280' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: state.progress > 0 ? AXIS_GREEN_THEME.text : '#4A6B58' }}>
                   {state.missions.length > 0 ? `${completedCount} / ${state.missions.length} 완료` : '오늘 미션 없음'}
                 </div>
               </div>
@@ -360,10 +360,10 @@ export function JourneyTodayScreen({
                         textAlign: 'left',
                       }}
                     >
-                      <div style={{ fontSize: '14px', fontWeight: 900, color: selected ? '#014725' : '#111827' }}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 900, color: selected ? '#014725' : '#014725' }}>
                         {option.label}
                       </div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#7c8794', marginTop: '2px' }}>{option.desc}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#587761', marginTop: '2px' }}>{option.desc}</div>
                     </button>
                   )
                 })}
@@ -371,10 +371,10 @@ export function JourneyTodayScreen({
               <div
                 style={{
                   marginTop: '8px',
-                  fontSize: '11px',
+                  fontSize: '0.75rem',
                   lineHeight: 1.5,
                   fontWeight: state.replanNotice ? 800 : 400,
-                  color: state.replanNotice === 'changed' ? '#014725' : '#9ca3af',
+                  color: state.replanNotice === 'changed' ? '#014725' : '#6F8C7B',
                   wordBreak: 'keep-all',
                 }}
               >
@@ -401,12 +401,12 @@ export function JourneyTodayScreen({
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 900, color: '#014725', marginBottom: '4px' }}>내 적립금</div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#4b5563', wordBreak: 'keep-all' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#014725', marginBottom: '4px' }}>내 적립금</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#3D6B54', wordBreak: 'keep-all' }}>
                     미션마다 적립 · 14일 완주까지 최대 50원 보너스
                   </div>
                 </div>
-                <div style={{ flexShrink: 0, fontSize: '20px', fontWeight: 900, color: '#014725' }}>
+                <div style={{ flexShrink: 0, fontSize: '1.25rem', fontWeight: 900, color: '#014725' }}>
                   {state.rewardBalance}원
                 </div>
               </div>
@@ -425,7 +425,7 @@ export function JourneyTodayScreen({
                 }}
               >
                 <RotateCcw size={18} color="#014725" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div style={{ fontSize: '13px', lineHeight: 1.65, color: '#014725', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, color: '#014725', wordBreak: 'keep-all' }}>
                   오랜만이에요. 오늘은 부담을 줄인 짧은 복귀 미션 하나만 준비했습니다.
                 </div>
               </div>
@@ -462,7 +462,7 @@ export function JourneyTodayScreen({
                   border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                   background: '#ffffff',
                   color: '#014725',
-                  fontSize: '15px',
+                  fontSize: '0.9375rem',
                   fontWeight: 800,
                   fontFamily: 'inherit',
                   cursor: 'pointer',

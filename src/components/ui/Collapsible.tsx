@@ -89,7 +89,7 @@ export function Collapsible({
             <span
               style={{
                 display: 'block',
-                fontSize: dense ? '10px' : '11px',
+                fontSize: dense ? '0.6875rem' : '0.75rem',
                 fontWeight: 900,
                 color: danger ? DANGER.kicker : BRAND.green,
                 letterSpacing: '0.08em',
@@ -102,7 +102,7 @@ export function Collapsible({
           <span
             style={{
               display: 'block',
-              fontSize: dense ? '15px' : '17px',
+              fontSize: dense ? '0.9375rem' : '1.0625rem',
               fontWeight: 800,
               letterSpacing: '-0.3px',
               color: danger ? DANGER.kicker : undefined,
@@ -114,7 +114,7 @@ export function Collapsible({
         {hint && (
           <span
             style={{
-              fontSize: dense ? '10px' : '11px',
+              fontSize: dense ? '0.6875rem' : '0.75rem',
               color: danger ? DANGER.hintColor : BRAND.muted,
               background: danger ? DANGER.hintBg : SURFACE.subtle,
               borderRadius: '999px',

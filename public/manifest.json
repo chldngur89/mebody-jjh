@@ -1,16 +1,35 @@
 {
-  "name": "mebody | Mebody Code · 체형코드(몸Bti)",
+  "name": "mebody | mebody Code · 자세·체형 셀프 체크",
   "short_name": "mebody",
-  "description": "Mebody Code(체형코드(몸Bti))를 찾고, 나에게 맞는 개인화 웰니스 가이드를 받아보세요.",
+  "description": "mebody Code(자세·체형 셀프 체크)를 찾고, 나에게 맞는 개인화 웰니스 가이드를 받아보세요.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#10b981",
+  "background_color": "#FFFFF3",
+  "theme_color": "#014725",
   "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

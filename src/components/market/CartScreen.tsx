@@ -165,8 +165,8 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
         <PageTitle eyebrow="ORDER" title="주문 완료" />
         <Card tone="green">
           <CheckCircle2 size={30} />
-          <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '12px 0 8px' }}>결제가 완료되었습니다</h2>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '14px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: '12px 0 8px' }}>결제가 완료되었습니다</h2>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {krw(done.total)}원을 결제했습니다.
             {done.earned > 0 && ` 멤버십 적립 ${krw(done.earned)}원이 쌓였습니다.`}
           </p>
@@ -175,7 +175,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
           </CTA>
         </Card>
         <Card>
-          <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.7, color: BRAND.muted, wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.7, color: BRAND.muted, wordBreak: 'keep-all' }}>
             주문 내역은 <b>내 상태 → 주문 내역</b>에서 확인하실 수 있습니다.
           </p>
         </Card>
@@ -198,7 +198,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
             background: 'transparent',
             padding: '2px 0',
             color: BRAND.muted,
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: 'pointer',
@@ -211,11 +211,11 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
 
       {loading ? (
         <Card>
-          <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>불러오는 중...</p>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>불러오는 중...</p>
         </Card>
       ) : rows.length === 0 ? (
         <Card>
-          <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.7, color: BRAND.muted }}>
+          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.7, color: BRAND.muted }}>
             담은 상품이 없습니다. 마켓에서 필요한 관리 도구를 담아보세요.
           </p>
           <CTA variant="outline" onClick={onContinueShopping}>
@@ -253,16 +253,16 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 800, wordBreak: 'keep-all' }}>{product.name}</div>
-                    <div style={{ fontSize: '13px', fontWeight: 900, color: BRAND.green, marginTop: '3px' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 800, wordBreak: 'keep-all' }}>{product.name}</div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: BRAND.green, marginTop: '3px' }}>
                       {krw((product.price ?? 0) * line.quantity)}원
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <QtyButton label="수량 줄이기" onClick={() => setLines(setQuantity(line.productId, line.quantity - 1))}>
                       <Minus size={13} />
                     </QtyButton>
-                    <span style={{ minWidth: '20px', textAlign: 'center', fontSize: '13px', fontWeight: 900 }}>
+                    <span style={{ minWidth: '20px', textAlign: 'center', fontSize: '0.8125rem', fontWeight: 900 }}>
                       {line.quantity}
                     </span>
                     <QtyButton label="수량 늘리기" onClick={() => setLines(setQuantity(line.productId, line.quantity + 1))}>
@@ -280,7 +280,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
           <Card>
             <SectionHeading kicker="배송지" title={address ? '배송받을 곳' : '배송지 등록'} />
             {!user ? (
-              <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>로그인하면 배송지를 저장할 수 있습니다.</p>
+              <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>로그인하면 배송지를 저장할 수 있습니다.</p>
             ) : addresses.length > 0 && !showAddressForm ? (
               <div style={{ display: 'grid', gap: '8px' }}>
                 {addresses.map((a) => (
@@ -300,10 +300,10 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                       <Truck size={14} color={BRAND.green} />
-                      <b style={{ fontSize: '13px' }}>{a.recipient}</b>
-                      <span style={{ fontSize: '11.5px', color: BRAND.muted }}>{a.phone}</span>
+                      <b style={{ fontSize: '0.8125rem' }}>{a.recipient}</b>
+                      <span style={{ fontSize: '0.75rem', color: BRAND.muted }}>{a.phone}</span>
                     </div>
-                    <p style={{ margin: '5px 0 0', fontSize: '12px', lineHeight: 1.5, color: BRAND.muted, wordBreak: 'keep-all' }}>
+                    <p style={{ margin: '5px 0 0', fontSize: '0.8125rem', lineHeight: 1.5, color: BRAND.muted, wordBreak: 'keep-all' }}>
                       ({a.postcode}) {a.address1} {a.address2 ?? ''}
                     </p>
                   </button>
@@ -315,7 +315,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
                     border: 0,
                     background: 'transparent',
                     color: BRAND.green,
-                    fontSize: '12.5px',
+                    fontSize: '0.8125rem',
                     fontWeight: 800,
                     fontFamily: 'inherit',
                     cursor: 'pointer',
@@ -359,9 +359,9 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
                 onChange={(e) => setUseReward(Number(e.target.value))}
                 style={{ width: '100%', accentColor: BRAND.green }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: BRAND.muted }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: BRAND.muted }}>
                 <span>0원</span>
-                <b style={{ color: BRAND.green, fontSize: '13px' }}>{krw(applied)}원 사용</b>
+                <b style={{ color: BRAND.green, fontSize: '0.8125rem' }}>{krw(applied)}원 사용</b>
                 <span>{krw(maxReward)}원</span>
               </div>
             </Card>
@@ -381,24 +381,24 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
                 paddingTop: '12px',
               }}
             >
-              <span style={{ fontSize: '13px', fontWeight: 800 }}>최종 결제</span>
-              <strong style={{ fontSize: '23px', fontWeight: 900, color: BRAND.green }}>{krw(total)}원</strong>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800 }}>최종 결제</span>
+              <strong style={{ fontSize: '1.4375rem', fontWeight: 900, color: BRAND.green }}>{krw(total)}원</strong>
             </div>
             {cashback > 0 && (
-              <p style={{ margin: '6px 0 0', fontSize: '12px', fontWeight: 800, color: BRAND.green, textAlign: 'right' }}>
+              <p style={{ margin: '6px 0 0', fontSize: '0.8125rem', fontWeight: 800, color: BRAND.green, textAlign: 'right' }}>
                 결제 후 {krw(cashback)}원 적립 예정
               </p>
             )}
 
             {billing?.devMode && (
-              <p style={{ margin: '12px 0 0', fontSize: '11.5px', lineHeight: 1.6, color: '#7A5500', background: '#FFF8E8', border: '1px solid #F0DCA8', borderRadius: '12px', padding: '10px' }}>
+              <p style={{ margin: '12px 0 0', fontSize: '0.75rem', lineHeight: 1.6, color: '#7A5500', background: '#FFF8E8', border: '1px solid #F0DCA8', borderRadius: '12px', padding: '10px' }}>
                 지금은 <b>테스트 결제</b>입니다. 실제로 돈이 빠져나가지 않습니다.
               </p>
             )}
             {!canPay && (
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                 <Info size={15} color={BRAND.muted} style={{ flexShrink: 0, marginTop: '1px' }} />
-                <p style={{ margin: 0, fontSize: '11.5px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+                <p style={{ margin: 0, fontSize: '0.75rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
                   {billing?.serverMissing
                     ? '결제 서버가 아직 연결되지 않았습니다.'
                     : '상품 결제 수단을 준비 중입니다. 담아두시면 준비 후 바로 결제하실 수 있어요.'}
@@ -406,7 +406,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
               </div>
             )}
             {error && (
-              <p style={{ margin: '12px 0 0', fontSize: '12px', lineHeight: 1.6, color: '#8E3A32', background: '#FDF2F1', border: '1px solid #F3CFCB', borderRadius: '12px', padding: '10px' }}>
+              <p style={{ margin: '12px 0 0', fontSize: '0.8125rem', lineHeight: 1.6, color: '#8E3A32', background: '#FDF2F1', border: '1px solid #F3CFCB', borderRadius: '12px', padding: '10px' }}>
                 {error}
               </p>
             )}
@@ -427,9 +427,10 @@ function QtyButton({ children, onClick, label }: { children: React.ReactNode; on
       type="button"
       onClick={onClick}
       aria-label={label}
+      className="mebody-hit-y"
       style={{
-        width: '26px',
-        height: '26px',
+        width: '32px',
+        height: '32px',
         borderRadius: '8px',
         border: `1px solid ${SURFACE.hairline}`,
         background: '#ffffff',
@@ -446,7 +447,7 @@ function QtyButton({ children, onClick, label }: { children: React.ReactNode; on
 
 function Row({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '5px 0' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', padding: '5px 0' }}>
       <span style={{ color: BRAND.muted, fontWeight: 700 }}>{label}</span>
       <span style={{ fontWeight: 800, color: accent ? BRAND.green : BRAND.text }}>{value}</span>
     </div>
@@ -466,7 +467,7 @@ function Field({
 }) {
   return (
     <label style={{ display: 'grid', gap: '5px' }}>
-      <span style={{ fontSize: '11.5px', fontWeight: 900, color: BRAND.muted }}>{label}</span>
+      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: BRAND.muted }}>{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -476,9 +477,8 @@ function Field({
           borderRadius: '12px',
           border: `1px solid ${SURFACE.hairline}`,
           padding: '0 12px',
-          fontSize: '13px',
+          fontSize: '0.8125rem',
           fontFamily: 'inherit',
-          outline: 'none',
           background: '#ffffff',
         }}
       />

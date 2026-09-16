@@ -1,29 +1,28 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type UIEvent } from 'react';
-import { BRAND_PAGE_BG } from '../theme/brand';
+import { BRAND_PAGE_BG, SURFACE } from '../theme/brand';
 import { CTA, PRODUCT } from '../theme/copy';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
-import { ScrollIndicator } from './ScrollIndicator';
+import { AxisIntroDemo } from './AxisIntroDemo';
 
 interface DiagnosisIntroScreenProps {
   onBack?: () => void;
   onBegin: () => void;
 }
 
-const INTRO_AXES_IMAGE = '/intro-axes.png';
-
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   return Boolean(target.closest('button, a, input, label, textarea, select, [role="button"]'));
 }
 
-export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
+export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const screenHeight = isDesktopMockup ? '100%' : 'var(--mebody-app-height)';
+  /** 화면이 짧으면 축 설명 줄을 접어 헤드라인과 CTA 사이를 줄입니다. */
+  const isShortViewport = useMediaQuery('(max-height: 760px)');
 
   const [canBegin, setCanBegin] = useState(false);
-  const [needsScroll, setNeedsScroll] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,7 +37,6 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
     const content = contentRef.current;
     if (!content) return;
     const scrollable = content.scrollHeight > content.clientHeight + 12;
-    setNeedsScroll(scrollable);
     if (!scrollable) {
       setCanBegin(true);
       return;
@@ -100,7 +98,7 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
         maxHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -153,7 +151,7 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
             overflow: 'hidden',
             borderRadius: '24px',
             background: 'rgba(255,255,255,0.96)',
-            boxShadow: '0 18px 40px rgba(15, 23, 42, 0.1)',
+            boxShadow: '0 18px 40px rgba(1, 71, 37, 0.1)',
             position: 'relative',
           }}
         >
@@ -168,16 +166,41 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               minHeight: 0,
             }}
           >
-            <div style={{ marginBottom: '14px', textAlign: 'center' }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#014725', marginBottom: '8px' }}>
-                측정 축 · {PRODUCT.codeGuide}
+            <div style={{ marginBottom: '14px', textAlign: 'center', position: 'relative' }}>
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  aria-label="뒤로"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '999px',
+                    border: '1px solid #E1E9DA',
+                    background: '#ffffff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    padding: 0,
+                    zIndex: 2,
+                  }}
+                >
+                  <ArrowLeft size={18} color="#2C5544" />
+                </button>
+              )}
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.04em', color: '#014725', marginBottom: '8px' }}>
+                측정 축 · {PRODUCT.codeName}
               </div>
               <h1
                 style={{
-                  fontSize: isDesktopMockup ? '24px' : '21px',
+                  fontSize: isDesktopMockup ? '1.5rem' : '1.3125rem',
                   lineHeight: 1.3,
                   fontWeight: 850,
-                  color: '#111827',
+                  color: '#014725',
                   marginBottom: '8px',
                   wordBreak: 'keep-all',
                   letterSpacing: '-0.04em',
@@ -187,28 +210,35 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
                 <br />
                 나의 {PRODUCT.codeName}를 계산합니다
               </h1>
-              <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+            </div>
+
+            {/* 안내 문구는 제목과 4축 사이에서 자기 칸을 갖습니다 —
+                제목에 붙여 두면 어디까지가 제목인지 눈으로 갈라지지 않았습니다. */}
+            <div
+              style={{
+                marginBottom: '12px',
+                borderRadius: '14px',
+                background: SURFACE.subtle,
+                padding: isShortViewport ? '10px 12px' : '12px 14px',
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '0.8125rem',
+                  lineHeight: 1.55,
+                  color: '#3D6B54',
+                  textAlign: 'center',
+                  wordBreak: 'keep-all',
+                }}
+              >
                 정답을 맞히는 방식이 아니라, 지금 몸이 더 가깝게 느끼는 방향을 선택해주면 됩니다.
               </p>
             </div>
 
-            <img
-              src={INTRO_AXES_IMAGE}
-              alt="축 1 목 위치, 축 2 어깨 높이, 축 3 골반 회전, 축 4 하체 유연성"
-              onLoad={refreshScrollState}
-              draggable={false}
-              style={{
-                display: 'block',
-                width: '100%',
-                height: 'auto',
-                maxWidth: '420px',
-                margin: '0 auto',
-                borderRadius: '18px',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                pointerEvents: 'none',
-              }}
-            />
+            <div style={{ maxWidth: '420px', margin: '0 auto' }}>
+              <AxisIntroDemo compact={isShortViewport} />
+            </div>
 
             <div
               style={{
@@ -219,8 +249,8 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
                 padding: '14px',
               }}
             >
-              <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#466e65', textAlign: 'center', wordBreak: 'keep-all' }}>
-                같은 자세를 오래 유지할수록 몸의 사용 패턴이 더 선명하게 드러납니다.
+              <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#466e65', textAlign: 'center', wordBreak: 'keep-all' }}>
+                같은 자세를 오래 유지할수록 일상에서 쓰는 몸 습관이 더 잘 드러납니다.
                 <br />
                 지금 몸이 자주 쓰는 방향을 떠올리며 답해주세요.
               </p>
@@ -229,37 +259,6 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
             <div ref={bottomRef} style={{ height: '16px' }} />
           </div>
 
-          <ScrollIndicator containerRef={contentRef} bottomOffset="118px" />
-
-          {!canBegin && needsScroll && (
-            <button
-              type="button"
-              onClick={scrollToBottom}
-              style={{
-                position: 'absolute',
-                left: '50%',
-                bottom: '118px',
-                transform: 'translateX(-50%)',
-                zIndex: 21,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderRadius: '999px',
-                border: '1px solid rgba(1, 71, 37, 0.18)',
-                background: 'rgba(255,255,255,0.96)',
-                padding: '8px 14px',
-                color: '#014725',
-                fontSize: '12px',
-                fontWeight: 800,
-                boxShadow: '0 10px 22px rgba(15, 23, 42, 0.12)',
-                cursor: 'pointer',
-              }}
-            >
-              <ChevronDown size={14} strokeWidth={3} />
-              아래로 스크롤 · 화면을 탭하세요
-            </button>
-          )}
-
           <div
             style={{
               padding: '12px 16px 14px',
@@ -267,6 +266,20 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               boxShadow: '0 -14px 24px rgba(255,255,255,0.88)',
             }}
           >
+            {/* 버튼 바로 위에 둡니다. 스크롤 끝에 두면 이 바에 가려 잘렸습니다. */}
+            <p
+              style={{
+                margin: '0 0 8px',
+                fontSize: '0.75rem',
+                lineHeight: 1.45,
+                fontWeight: 700,
+                color: canBegin ? '#014725' : '#587761',
+                textAlign: 'center',
+                wordBreak: 'keep-all',
+              }}
+            >
+              {canBegin ? '준비됐습니다. 아래 버튼을 눌러 분석을 시작해주세요.' : '아래로 조금만 더 내리면 분석 버튼이 열립니다.'}
+            </p>
             <button
               type="button"
               onClick={canBegin ? onBegin : scrollToBottom}
@@ -282,9 +295,9 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
                 border: 'none',
                 background: canBegin
                   ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)'
-                  : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)',
-                color: canBegin ? '#ffffff' : '#94a3b8',
-                fontSize: '16px',
+                  : 'linear-gradient(90deg, #E1E9DA 0%, #C8D6C4 100%)',
+                color: canBegin ? '#ffffff' : '#587761',
+                fontSize: '1rem',
                 fontWeight: 800,
                 boxShadow: canBegin ? '0 14px 28px rgba(1,71,37,0.25)' : 'none',
                 cursor: 'pointer',
@@ -293,19 +306,6 @@ export function DiagnosisIntroScreen({ onBegin }: DiagnosisIntroScreenProps) {
               {canBegin ? CTA.diagnosisStart : CTA.introLocked}
               <ArrowRight size={18} />
             </button>
-            {!canBegin && (
-              <p
-                style={{
-                  marginTop: '8px',
-                  textAlign: 'center',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: '#94a3b8',
-                }}
-              >
-                아무 곳이나 탭하면 아래로 내려가며, 끝까지 보면 시작할 수 있어요
-              </p>
-            )}
           </div>
         </div>
       </div>

@@ -110,7 +110,7 @@ export async function shareToKakao(payload: SharePayload): Promise<ShareOutcome>
         imageUrl: `${shareBaseUrl()}/og-image.png?v=20260909`,
         link,
       },
-      buttons: [{ title: `나도 ${PRODUCT.codeGuide} 해보기`, link }],
+      buttons: [{ title: `나도 ${PRODUCT.codeName} 해보기`, link }],
     })
     return 'shared'
   } catch (error) {

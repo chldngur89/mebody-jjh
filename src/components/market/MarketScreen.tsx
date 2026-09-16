@@ -5,7 +5,7 @@
  *   · 타임 특가(카운트다운) · 베스트 셀링 그리드
  *
  * 시안의 하단탭·장바구니 FAB 는 우리 셸의 TabBar 가 이미 담당하므로 넣지 않습니다.
- * 색·라운드·그림자는 기존 토큰만 씁니다(#004628 / #FAFAF0 / #fffef8 / radius 22) —
+ * 색·라운드·그림자는 기존 토큰만 씁니다(#014725 / #FFFFF3 / #FFFFFF / radius 22) —
  * 시안도 같은 규칙으로 만들어졌습니다.
  *
  * 상품은 `products` 테이블에서 옵니다. 현재 3행뿐이라 시안의 카테고리 8개 중
@@ -48,7 +48,7 @@ function ProductImage({ url, height = 110 }: { url?: string; height?: number }) 
       {url ? (
         <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <span style={{ fontSize: '11px', color: '#B4C0B6' }}>제품 이미지</span>
+        <span style={{ fontSize: '0.75rem', color: '#B4C0B6' }}>제품 이미지</span>
       )}
     </div>
   );
@@ -112,10 +112,11 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
 
   return (
     <div style={{ display: 'grid', gap: '14px' }}>
-      <PageTitle eyebrow="MEBODY MARKET" title="마켓" lead="셀프케어와 운동에 필요한 도구를 한곳에서." />
+      <PageTitle eyebrow="mebody 마켓" title="마켓" lead="셀프케어와 운동에 필요한 도구를 한곳에서." />
 
       {/* 검색바 */}
       <div
+        className="mebody-field"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -136,7 +137,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
             border: 0,
             outline: 'none',
             background: 'transparent',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             color: BRAND.text,
             fontFamily: 'inherit',
             minWidth: 0,
@@ -155,12 +156,12 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
         }}
       >
         <Chip tone="onGreen">{bodyCode ? `${bodyCode} 맞춤 추천` : '맞춤 추천'}</Chip>
-        <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '12px 0 6px', lineHeight: 1.3, wordBreak: 'keep-all' }}>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: '12px 0 6px', lineHeight: 1.3, wordBreak: 'keep-all' }}>
           루틴에 필요한
           <br />
           관리 도구
         </h2>
-        <p style={{ margin: 0, color: '#D9E6DE', fontSize: '13px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+        <p style={{ margin: 0, color: '#D9E6DE', fontSize: '0.8125rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
           {isPaid
             ? '멤버십이라 구매하시면 결제액의 5%가 적립됩니다.'
             : '멤버십에 가입하면 구매액의 5%가 적립됩니다.'}
@@ -177,7 +178,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
               fontWeight: 900,
               borderRadius: '12px',
               padding: '10px 14px',
-              fontSize: '13px',
+              fontSize: '0.8125rem',
               fontFamily: 'inherit',
               cursor: 'pointer',
               display: 'inline-flex',
@@ -220,13 +221,13 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                     background: on ? 'rgba(255,255,255,0.18)' : SURFACE.subtle,
                     display: 'grid',
                     placeItems: 'center',
-                    fontSize: '15px',
+                    fontSize: '0.9375rem',
                     color: on ? '#ffffff' : BRAND.green,
                   }}
                 >
                   {c.icon}
                 </span>
-                <small style={{ fontSize: '11px', fontWeight: 800, color: on ? '#ffffff' : BRAND.text }}>
+                <small style={{ fontSize: '0.75rem', fontWeight: 800, color: on ? '#ffffff' : BRAND.text }}>
                   {c.label}
                 </small>
               </button>
@@ -238,20 +239,20 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
       {/* 상품 그리드 — 시안의 베스트 셀링 */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0 2px 10px' }}>
-          <h2 style={{ fontSize: '17px', fontWeight: 800, margin: 0 }}>
+          <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, margin: 0 }}>
             {active ? CATEGORIES.find((c) => c.key === active)?.label : '전체 상품'}
           </h2>
-          <small style={{ fontSize: '12px', color: BRAND.muted }}>{visible.length}개</small>
+          <small style={{ fontSize: '0.8125rem', color: BRAND.muted }}>{visible.length}개</small>
         </div>
 
         {loadError ? (<Card><p role="alert">상품을 불러오지 못했습니다.</p><button type="button" onClick={() => setAttempt((n) => n + 1)}>다시 시도</button></Card>) : loading ? (
           <Card>
-            <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>상품을 불러오는 중...</p>
+            <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>상품을 불러오는 중...</p>
           </Card>
         ) : visible.length === 0 ? (
           <Card>
-            <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>
-              {query ? '검색 결과가 없습니다.' : '준비 중인 카테고리입니다.'}
+            <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>
+              {query ? '검색 결과가 없습니다. 다른 이름으로 찾아보세요.' : '이 카테고리는 준비 중입니다. 다른 카테고리를 살펴보세요.'}
             </p>
           </Card>
         ) : (
@@ -270,20 +271,20 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                   }}
                 >
                   <ProductImage url={product.imageUrl || undefined} />
-                  <small style={{ color: BRAND.muted, fontSize: '11px' }}>
-                    {CATEGORIES.find((c) => c.key === product.category)?.label ?? 'MEBODY STORE'}
+                  <small style={{ color: BRAND.muted, fontSize: '0.75rem' }}>
+                    {CATEGORIES.find((c) => c.key === product.category)?.label ?? 'mebody 스토어'}
                   </small>
-                  <h3 style={{ fontSize: '14px', margin: '5px 0', fontWeight: 800, wordBreak: 'keep-all' }}>
+                  <h3 style={{ fontSize: '0.875rem', margin: '5px 0', fontWeight: 800, wordBreak: 'keep-all' }}>
                     {product.name}
                   </h3>
-                  <p style={{ fontSize: '11px', color: BRAND.muted, lineHeight: 1.5, minHeight: '34px', margin: 0, wordBreak: 'keep-all' }}>
+                  <p style={{ fontSize: '0.75rem', color: BRAND.muted, lineHeight: 1.5, minHeight: '34px', margin: 0, wordBreak: 'keep-all' }}>
                     {product.description}
                   </p>
-                  <strong style={{ fontSize: '14px', color: BRAND.green, display: 'block', marginTop: '6px' }}>
+                  <strong style={{ fontSize: '0.875rem', color: BRAND.green, display: 'block', marginTop: '6px' }}>
                     {formatPrice(product.price)}
                   </strong>
                   {cashback > 0 && (
-                    <div style={{ marginTop: '4px', fontSize: '11px', fontWeight: 800, color: BRAND.green }}>
+                    <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 800, color: BRAND.green }}>
                       멤버십 {cashback.toLocaleString()}원 적립
                     </div>
                   )}
@@ -292,6 +293,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                     disabled={product.price === null}
                     aria-label={`${product.name} 담기`}
                     title={product.price === null ? '가격 준비 중' : '장바구니에 담기'}
+                    className="mebody-hit"
                     onClick={() => {
                       addToCart(product.id);
                       setJustAdded(product.id);
@@ -332,7 +334,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
             color: '#ffffff',
             borderRadius: '14px',
             padding: '14px 16px',
-            fontSize: '15px',
+            fontSize: '0.9375rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: 'pointer',
@@ -345,7 +347,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
           <ShoppingCart size={17} /> 장바구니 {inCart}개 보기 <ChevronRight size={16} />
         </button>
       ) : (
-        <p style={{ margin: 0, fontSize: '11px', lineHeight: 1.6, color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
+        <p style={{ margin: 0, fontSize: '0.75rem', lineHeight: 1.6, color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
           담아두시면 장바구니에서 배송지와 적립금을 정하고 결제하실 수 있습니다.
         </p>
       )}

@@ -27,6 +27,7 @@ export function TopBar({ onBrandClick, right }: { onBrandClick?: () => void; rig
     >
       <button
         type="button"
+        className="mebody-hit"
         onClick={onBrandClick}
         style={{
           border: 0,
@@ -34,7 +35,7 @@ export function TopBar({ onBrandClick, right }: { onBrandClick?: () => void; rig
           padding: 0,
           color: BRAND.green,
           fontWeight: 800,
-          fontSize: '20px',
+          fontSize: '1.25rem',
           letterSpacing: '-0.5px',
           fontFamily: 'inherit',
           cursor: onBrandClick ? 'pointer' : 'default',

@@ -28,11 +28,12 @@ export function CTA({
   const base: CSSProperties = {
     border: 0,
     borderRadius: '14px',
+    minHeight: '44px',
     padding: '14px 16px',
     width: '100%',
     marginTop: '16px',
     fontWeight: 800,
-    fontSize: '15px',
+    fontSize: '0.9375rem',
     fontFamily: 'inherit',
     display: 'inline-flex',
     alignItems: 'center',
@@ -67,7 +68,7 @@ export function TextLink({ children, onClick }: { children: ReactNode; onClick?:
         padding: '8px 0 0',
         color: BRAND.green,
         fontWeight: 800,
-        fontSize: '13px',
+        fontSize: '0.8125rem',
         fontFamily: 'inherit',
         cursor: 'pointer',
       }}

@@ -49,7 +49,7 @@ export function CookieConsentBanner({
   privacyUrl = '/privacy.html',
   /**
    * 하단 5탭 셸 위에 떠 있는가.
-   * true 면 탭바(72px) 높이만큼 더 올려서 홈·미션·루틴·마켓·내상태를 가리지 않게 합니다.
+   * true 면 탭바 높이(--mebody-tabbar-h, 안전영역 포함)만큼 더 올려서 탭을 가리지 않게 합니다.
    */
   aboveTabBar = false,
 }: {
@@ -66,7 +66,7 @@ export function CookieConsentBanner({
   if (consent) return null;
 
   // 네이티브 AdMob 배너(--mebody-ad-inset) → 그 위에 탭바 → 그 위에 이 안내문 순서로 쌓입니다.
-  const lift = aboveTabBar ? `${SHELL.tabBarHeight + 10}px` : '12px';
+  const lift = aboveTabBar ? 'calc(var(--mebody-tabbar-h) + 10px)' : '12px';
 
   return (
     <div
@@ -86,7 +86,7 @@ export function CookieConsentBanner({
         border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
         background: 'rgba(255,255,255,0.97)',
         backdropFilter: 'blur(12px)',
-        boxShadow: '0 12px 30px rgba(15,23,42,0.16)',
+        boxShadow: '0 12px 30px rgba(1, 71, 37, 0.16)',
         padding: '12px 14px',
         display: 'flex',
         alignItems: 'center',
@@ -94,8 +94,8 @@ export function CookieConsentBanner({
       }}
     >
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: '12px', fontWeight: 900, color: '#111827' }}>쿠키 사용 안내</div>
-        <p style={{ fontSize: '11px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all', margin: '3px 0 0' }}>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>쿠키 사용 안내</div>
+        <p style={{ fontSize: '0.75rem', lineHeight: 1.5, color: '#4A6B58', wordBreak: 'keep-all', margin: '3px 0 0' }}>
           무료 이용 시 광고 목적 쿠키를 함께 씁니다. 거부해도 그대로 이용할 수 있어요.{' '}
           <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#014725', fontWeight: 800 }}>
             자세히
@@ -107,13 +107,13 @@ export function CookieConsentBanner({
           type="button"
           onClick={() => decide('rejected')}
           style={{
-            height: '34px',
+            minHeight: '44px',
             padding: '0 11px',
             borderRadius: '10px',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
             background: '#ffffff',
-            color: '#4b5563',
-            fontSize: '12px',
+            color: '#3D6B54',
+            fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: 'pointer',
@@ -126,13 +126,13 @@ export function CookieConsentBanner({
           type="button"
           onClick={() => decide('accepted')}
           style={{
-            height: '34px',
+            minHeight: '44px',
             padding: '0 13px',
             borderRadius: '10px',
             border: 'none',
             background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
             color: '#ffffff',
-            fontSize: '12px',
+            fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: 'pointer',

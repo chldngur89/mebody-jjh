@@ -1,4 +1,4 @@
-/** MEBODY V1 — 32문항 snapshot */
+/** mebody V1 — 32문항 snapshot */
 export const V1_QUESTION_SET = 'mebody_v1_32' as const
 
 export type V1QuestionAnswerType = 'single' | 'multi'

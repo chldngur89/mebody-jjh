@@ -34,7 +34,7 @@ import {
   type ResultGuideSection,
 } from '../api/content';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
-import { PRODUCT } from '../theme/copy';
+import { CTA, PRODUCT } from '../theme/copy';
 import { characterNames, getAxisScoreBreakdown, type AnswerMap } from '../utils/bodyCodeCalculator';
 import { buildCareRoutine, formatRoutineDuration, type CareRoutine } from '../utils/careRoutine';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../utils/characterImages';
@@ -231,7 +231,7 @@ function renderBold(text: string) {
   const parts = text.split(/\*\*(.*?)\*\*/g);
   return parts.map((part, index) =>
     index % 2 === 1 ? (
-      <strong key={index} style={{ fontWeight: 700, color: '#111827' }}>
+      <strong key={index} style={{ fontWeight: 700, color: '#014725' }}>
         {part}
       </strong>
     ) : (
@@ -249,7 +249,7 @@ function renderReadableText(text: string) {
   const blocks = paragraphs.length ? paragraphs : [text];
 
   return (
-    <div style={{ display: 'grid', gap: '13px', fontSize: '14px', lineHeight: 1.82, color: '#4b5563', wordBreak: 'keep-all' }}>
+    <div style={{ display: 'grid', gap: '13px', fontSize: '0.875rem', lineHeight: 1.82, color: '#3D6B54', wordBreak: 'keep-all' }}>
       {blocks.map((block, blockIndex) => {
         const lines = block
           .split('\n')
@@ -770,6 +770,7 @@ export interface CodePlanJourneyProgress {
   totalDays: number;
   completed: number;
   total: number;
+  yesterdayIncomplete?: boolean;
   onOpen?: () => void;
 }
 
@@ -886,10 +887,10 @@ function InstructionBlock({ title, meta, text }: { title: string; meta: string; 
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
-        <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>{title}</div>
-        <div style={{ flexShrink: 0, fontSize: '12px', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>{meta}</div>
+        <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>{title}</div>
+        <div style={{ flexShrink: 0, fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>{meta}</div>
       </div>
-      <ol style={{ display: 'grid', gap: '7px', paddingLeft: '18px', fontSize: '13px', lineHeight: 1.65, color: '#4b5563', wordBreak: 'keep-all' }}>
+      <ol style={{ display: 'grid', gap: '7px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>
         {steps.map((step, index) => (
           <li key={`${title}-${index}`}>{step.replace(/^\d+\.\s*/, '')}</li>
         ))}
@@ -931,7 +932,7 @@ function ActionDetailOverlay({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        background: 'rgba(15,23,42,0.34)',
+        background: 'rgba(1, 31, 17, 0.34)',
         backdropFilter: 'blur(14px)',
         padding: '18px',
       }}
@@ -949,7 +950,7 @@ function ActionDetailOverlay({
           borderRadius: '30px',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(236,253,245,0.98) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
-          boxShadow: '0 28px 80px rgba(15,23,42,0.24)',
+          boxShadow: '0 28px 80px rgba(1, 31, 17, 0.24)',
           overflow: 'hidden',
         }}
       >
@@ -964,8 +965,8 @@ function ActionDetailOverlay({
         >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', marginBottom: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>COMMON STRETCH</div>
-            <h2 style={{ fontSize: '24px', lineHeight: 1.18, letterSpacing: '-0.045em', fontWeight: 900, color: '#111827' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>COMMON STRETCH</div>
+            <h2 style={{ fontSize: '1.5rem', lineHeight: 1.18, letterSpacing: '-0.045em', fontWeight: 900, color: '#014725' }}>
               {title}
             </h2>
           </div>
@@ -973,15 +974,15 @@ function ActionDetailOverlay({
             type="button"
             onClick={closeOverlay}
             style={{
-              width: '38px',
-              height: '38px',
+              width: '44px',
+              height: '44px',
               borderRadius: '999px',
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
               background: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#374151',
+              color: '#2C5544',
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -1000,7 +1001,7 @@ function ActionDetailOverlay({
                 background: '#ffffff',
                 border: `1px solid ${itemIndex === 0 ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                 padding: '17px',
-                boxShadow: '0 14px 30px rgba(15, 23, 42, 0.06)',
+                boxShadow: '0 14px 30px rgba(1, 71, 37, 0.06)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
@@ -1017,8 +1018,8 @@ function ActionDetailOverlay({
                   }}
                 />
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '5px' }}>{item.title}</div>
-                  <h3 style={{ fontSize: '18px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '5px' }}>{item.title}</div>
+                  <h3 style={{ fontSize: '1.125rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                     {item.displayName}
                   </h3>
                 </div>
@@ -1028,13 +1029,13 @@ function ActionDetailOverlay({
                 {contents.map((content) => (
                   <div key={content.content_key}>
                     <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '5px' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '5px' }}>
                         {content.direction === 'both' ? '양쪽' : content.direction === 'right' ? '오른쪽' : content.direction === 'left' ? '왼쪽' : '공통'}
                       </div>
-                      <h4 style={{ fontSize: '17px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                      <h4 style={{ fontSize: '1.0625rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                         {content.display_name}
                       </h4>
-                      <div style={{ marginTop: '8px', display: 'inline-flex', borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '6px 10px', fontSize: '12px', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
+                      <div style={{ marginTop: '8px', display: 'inline-flex', borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '6px 10px', fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
                         타겟 근육: {content.target_muscle}
                       </div>
                     </div>
@@ -1060,9 +1061,9 @@ function ActionDetailOverlay({
                           background: 'rgba(255,251,235,0.88)',
                           border: '1px solid rgba(245,158,11,0.22)',
                           padding: '12px',
-                          fontSize: '12px',
+                          fontSize: '0.8125rem',
                           lineHeight: 1.6,
-                          color: '#92400e',
+                          color: '#7A5500',
                           wordBreak: 'keep-all',
                         }}
                       >
@@ -1107,15 +1108,15 @@ export function JourneyEntryCard({
         padding: '20px 18px',
       }}
     >
-      <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+      <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
         {hasActiveJourney ? `IN PROGRESS · DAY ${dayNo ?? 1} / ${totalDays ?? 14}` : 'NEXT'}
       </div>
-      <h2 style={{ fontSize: '19px', fontWeight: 900, color: '#111827', marginBottom: '8px' }}>
-        {hasActiveJourney ? '오늘의 내 코드 미션이 준비됐습니다' : '내 코드에 맞는 14일 미션 시작하기'}
+      <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: '#014725', marginBottom: '8px' }}>
+        {hasActiveJourney ? '오늘의 내 코드 미션이 준비됐습니다' : '내 코드에 맞는 14일 루틴 시작하기'}
       </h2>
-      <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#4b5563', wordBreak: 'keep-all', marginBottom: '14px' }}>
+      <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all', marginBottom: '14px' }}>
         {hasActiveJourney
-          ? '진행 중인 14일 관리가 있습니다. 바로 오늘 미션으로 이어집니다.'
+          ? '진행 중인 14일 루틴이 있습니다. 바로 오늘 미션으로 이어집니다.'
           : '위 공통 스트레칭과 별개로, 내 코드와 관리 우선순위에 맞춘 미션이 하루 한 가지씩 배정됩니다.'}
       </p>
       <button
@@ -1132,13 +1133,13 @@ export function JourneyEntryCard({
           border: 'none',
           background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
           color: '#ffffff',
-          fontSize: '15px',
+          fontSize: '0.9375rem',
           fontWeight: 800,
           fontFamily: 'inherit',
           cursor: 'pointer',
         }}
       >
-        {hasActiveJourney ? '오늘의 내 코드 미션 하러 가기' : '14일 관리 시작하기'}
+        {hasActiveJourney ? '오늘의 내 코드 미션 하러 가기' : CTA.missionStart}
         <ChevronRight size={18} />
       </button>
     </section>
@@ -1236,7 +1237,7 @@ function RoutineStepTimer({
           border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
           background: 'rgba(1,71,37,0.08)',
           color: '#014725',
-          fontSize: '13px',
+          fontSize: '0.8125rem',
           fontWeight: 900,
           fontFamily: 'inherit',
           cursor: 'pointer',
@@ -1265,10 +1266,10 @@ function RoutineStepTimer({
         <div
           aria-live="polite"
           style={{
-            fontSize: '26px',
+            fontSize: '1.625rem',
             lineHeight: 1,
             fontWeight: 900,
-            color: started ? '#014725' : '#9ca3af',
+            color: started ? '#014725' : '#6F8C7B',
             fontVariantNumeric: 'tabular-nums',
           }}
         >
@@ -1284,18 +1285,18 @@ function RoutineStepTimer({
           }}
           style={{
             display: 'inline-flex',
-            height: '40px',
+            minHeight: '44px',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '6px',
             borderRadius: '999px',
             border: 'none',
             background: startBlocked
-              ? '#d1d5db'
+              ? '#C8D6C4'
               : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
             padding: '0 18px',
             color: '#ffffff',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             fontWeight: 900,
             fontFamily: 'inherit',
             cursor: startBlocked ? 'not-allowed' : 'pointer',
@@ -1334,9 +1335,9 @@ function RoutineStepTimer({
           border: 'none',
           background: 'transparent',
           padding: '4px',
-          fontSize: '12px',
+          fontSize: '0.8125rem',
           fontWeight: 800,
-          color: '#9ca3af',
+          color: '#6F8C7B',
           fontFamily: 'inherit',
           cursor: 'pointer',
         }}
@@ -1635,9 +1636,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
             }}
           >
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '7px' }}>COMMON</div>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: '#111827', marginBottom: '6px' }}>매일 하는 공통 스트레칭</div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#6b7280' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '7px' }}>COMMON</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#014725', marginBottom: '6px' }}>매일 하는 공통 스트레칭</div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#4A6B58' }}>
                 총 {routineTotalLabel} · {routineStepCount}단계
                 {useAxisRoutine ? ' · 목에서 하체 순서' : ' 구성'}
               </div>
@@ -1652,7 +1653,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     background: routineCompleted ? 'rgba(1,71,37,0.10)' : '#ffffff',
                     border: `1px solid ${routineCompleted ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                     padding: '4px 10px',
-                    fontSize: '11px',
+                    fontSize: '0.75rem',
                     fontWeight: 900,
                     color: '#014725',
                   }}
@@ -1668,7 +1669,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                 </div>
               )}
             </div>
-            {routineOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
+            {routineOpen ? <ChevronUp size={18} color="#4A6B58" /> : <ChevronDown size={18} color="#4A6B58" />}
           </button>
           {routineOpen && (
             <div style={{ borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '18px 20px 22px', display: 'grid', gap: '18px' }}>
@@ -1680,14 +1681,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       background: 'rgba(228,244,240,0.86)',
                       border: `1px solid ${AXIS_GREEN_THEME.border}`,
                       padding: '13px 15px',
-                      fontSize: '12px',
+                      fontSize: '0.8125rem',
                       lineHeight: 1.65,
                       fontWeight: 700,
                       color: '#014725',
                       wordBreak: 'keep-all',
                     }}
                   >
-                    누구나 4축(목 → 어깨 → 골반 → 하체)을 같은 순서로 전부 합니다. 코드에 따라 달라지는 건 순서가 아니라 세트 수예요. 내 코드에 맞는 개별 미션은 14일 관리에서 하루 한 가지씩 따로 나갑니다.
+                    누구나 4축(목 → 어깨 → 골반 → 하체)을 같은 순서로 전부 합니다. 코드에 따라 달라지는 건 순서가 아니라 세트 수예요. 내 코드에 맞는 개별 미션은 14일 루틴에서 하루 한 가지씩 따로 나갑니다.
                   </div>
                   {data.careRoutine.steps.map((step) => {
                     const stepKey = `${step.kind}-${step.order}`;
@@ -1717,16 +1718,16 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                             <CheckCircle2 size={18} color="#014725" style={{ flexShrink: 0 }} />
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b7280', marginBottom: '3px' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58', marginBottom: '3px' }}>
                                 STEP {step.order}
                                 {step.axisLabel ? ` · ${step.axisLabel}` : ''}
                               </div>
-                              <div style={{ fontSize: '15px', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                              <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                                 {step.title} — 완료
                               </div>
                             </div>
                           </div>
-                          <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: '#6b7280' }}>다시 보기</span>
+                          <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58' }}>다시 보기</span>
                         </button>
                       );
                     }
@@ -1743,7 +1744,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '7px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 900, color: AXIS_GREEN_THEME.text }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text }}>
                               STEP {step.order}
                               {step.axisLabel ? ` · ${step.axisLabel}` : ''}
                             </span>
@@ -1754,7 +1755,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                                   background: 'rgba(1,71,37,0.10)',
                                   border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                                   padding: '3px 8px',
-                                  fontSize: '10px',
+                                  fontSize: '0.6875rem',
                                   lineHeight: 1,
                                   fontWeight: 900,
                                   color: '#014725',
@@ -1764,49 +1765,49 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '19px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                          <div style={{ fontSize: '1.1875rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                             {step.title}
                           </div>
                         </div>
-                        <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '13px', fontWeight: 900, color: '#014725' }}>
+                        <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>
                           {formatRoutineDuration(step.durationSec)}
                         </div>
                       </div>
 
                       {step.kind === 'finish' ? (
-                        <div style={{ fontSize: '15px', lineHeight: 1.75, color: '#4b5563', wordBreak: 'keep-all' }}>{step.desc}</div>
+                        <div style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>{step.desc}</div>
                       ) : (
                         <>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
                             {step.targetMuscle && (
-                              <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '11px', fontWeight: 800, color: '#4b5563' }}>
+                              <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 800, color: '#3D6B54' }}>
                                 타겟: {step.targetMuscle}
                               </span>
                             )}
                             {step.tool && (
-                              <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '11px', fontWeight: 800, color: '#4b5563' }}>
+                              <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 800, color: '#3D6B54' }}>
                                 도구: {step.tool}
                               </span>
                             )}
                           </div>
                           <div style={{ display: 'grid', gap: '10px' }}>
                             <div>
-                              <div style={{ fontSize: '12px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '6px' }}>
+                              <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '6px' }}>
                                 이완 {step.releaseSec}초
                               </div>
                               <ActionImage url={step.releaseImageUrl} alt={`${step.title} 이완 동작`} />
-                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '14px', lineHeight: 1.7, color: '#4b5563', wordBreak: 'keep-all' }}>
+                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all' }}>
                                 {(step.releaseSteps ?? []).map((line, index) => (
                                   <li key={index}>{line}</li>
                                 ))}
                               </ol>
                             </div>
                             <div>
-                              <div style={{ fontSize: '12px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '6px' }}>
+                              <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '6px' }}>
                                 스트레칭 {step.stretchSec}초 × {step.sets}세트
                               </div>
                               <ActionImage url={step.stretchImageUrl} alt={`${step.title} 스트레칭 동작`} />
-                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '14px', lineHeight: 1.7, color: '#4b5563', wordBreak: 'keep-all' }}>
+                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all' }}>
                                 {(step.stretchSteps ?? []).map((line, index) => (
                                   <li key={index}>{line}</li>
                                 ))}
@@ -1821,9 +1822,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                                 background: 'rgba(255,251,235,0.88)',
                                 border: '1px solid rgba(245,158,11,0.22)',
                                 padding: '11px 12px',
-                                fontSize: '12px',
+                                fontSize: '0.8125rem',
                                 lineHeight: 1.6,
-                                color: '#92400e',
+                                color: '#7A5500',
                                 wordBreak: 'keep-all',
                               }}
                             >
@@ -1888,15 +1889,15 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                           <CheckCircle2 size={18} color="#014725" style={{ flexShrink: 0 }} />
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b7280', marginBottom: '3px' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58', marginBottom: '3px' }}>
                               STEP {index + 1}
                             </div>
-                            <div style={{ fontSize: '15px', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                            <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                               {exercise.title} — 완료
                             </div>
                           </div>
                         </div>
-                        <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 800, color: '#6b7280' }}>다시 보기</span>
+                        <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58' }}>다시 보기</span>
                       </button>
                     );
                   }
@@ -1912,16 +1913,16 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
                       <div>
-                        <div style={{ fontSize: '11px', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '7px' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '7px' }}>
                           STEP {index + 1}
                         </div>
-                        <div style={{ fontSize: '19px', lineHeight: 1.35, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>{exercise.title}</div>
+                        <div style={{ fontSize: '1.1875rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>{exercise.title}</div>
                       </div>
-                      <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '13px', fontWeight: 900, color: '#014725' }}>
+                      <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>
                         {exercise.durationMinutes}분
                       </div>
                     </div>
-                    <div style={{ fontSize: '15px', lineHeight: 1.75, color: '#4b5563', wordBreak: 'keep-all' }}>{exercise.desc}</div>
+                    <div style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>{exercise.desc}</div>
                     <RoutineStepTimer
                       key={`${routineStorageKey}:legacy-${index}:${exercise.durationMinutes}`}
                       storageKey={`${routineStorageKey}:timer:legacy-${index}:${exercise.durationMinutes}`}
@@ -1949,7 +1950,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   );
                 })
               ) : (
-                <div style={{ fontSize: '14px', lineHeight: 1.6, color: '#6b7280', paddingTop: '4px', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#4A6B58', paddingTop: '4px', wordBreak: 'keep-all' }}>
                   아직 연결된 루틴이 없습니다.
                 </div>
               )}
@@ -1972,20 +1973,20 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     ) : (
                       <CheckCircle2 size={30} color="#014725" style={{ margin: '0 auto 8px' }} />
                     )}
-                    <div style={{ fontSize: '17px', fontWeight: 900, color: '#014725', marginBottom: '5px' }}>
+                    <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725', marginBottom: '5px' }}>
                       {rewardRolling
                         ? '주사위를 굴리는 중...'
                         : rewardAmount != null
                           ? `주사위 ${rewardDice} · ${rewardAmount}원 적립!`
                           : '오늘의 공통 스트레칭 성공!'}
                     </div>
-                    <div style={{ fontSize: '13px', lineHeight: 1.65, fontWeight: 700, color: '#3f6553', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, fontWeight: 700, color: '#3f6553', wordBreak: 'keep-all' }}>
                       {rewardAmount != null && !rewardRolling
                         ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
                         : `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
                     </div>
                     {rewardNotice && (
-                      <div style={{ marginTop: '10px', fontSize: '12px', lineHeight: 1.6, fontWeight: 700, color: '#6b7280', wordBreak: 'keep-all' }}>
+                      <div style={{ marginTop: '10px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
                         {rewardNotice}
                       </div>
                     )}
@@ -2001,7 +2002,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '8px',
-                          fontSize: '13px',
+                          fontSize: '0.8125rem',
                           fontWeight: 900,
                           color: '#014725',
                         }}
@@ -2026,7 +2027,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                             border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                             background: '#ffffff',
                             color: '#014725',
-                            fontSize: '13px',
+                            fontSize: '0.8125rem',
                             fontWeight: 900,
                             fontFamily: 'inherit',
                             cursor: bonusRolling ? 'default' : 'pointer',
@@ -2036,13 +2037,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           <Gift size={15} />
                           {bonusRolling ? '광고 보는 중...' : '광고 보고 한 번 더 굴리기'}
                         </button>
-                        <div style={{ marginTop: '6px', fontSize: '11px', lineHeight: 1.5, color: '#9ca3af', wordBreak: 'keep-all' }}>
+                        <div style={{ marginTop: '6px', fontSize: '0.75rem', lineHeight: 1.5, color: '#6F8C7B', wordBreak: 'keep-all' }}>
                           선택입니다. 보지 않으셔도 위의 적립은 그대로예요.
                         </div>
                       </div>
                     ) : null}
                     {bonusNotice && (
-                      <div style={{ marginTop: '8px', fontSize: '12px', lineHeight: 1.6, fontWeight: 700, color: '#6b7280', wordBreak: 'keep-all' }}>
+                      <div style={{ marginTop: '8px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
                         {bonusNotice}
                       </div>
                     )}
@@ -2058,9 +2059,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         border: `1px solid ${AXIS_GREEN_THEME.border}`,
                         background: '#ffffff',
                         padding: '8px 14px',
-                        fontSize: '12px',
+                        fontSize: '0.8125rem',
                         fontWeight: 800,
-                        color: '#6b7280',
+                        color: '#4A6B58',
                         fontFamily: 'inherit',
                         cursor: 'pointer',
                       }}
@@ -2084,7 +2085,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       border: routineAllDone ? 'none' : `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                       background: routineAllDone ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#ffffff',
                       color: routineAllDone ? '#ffffff' : '#014725',
-                      fontSize: '15px',
+                      fontSize: '0.9375rem',
                       fontWeight: 900,
                       fontFamily: 'inherit',
                       boxShadow: routineAllDone ? '0 14px 28px rgba(1,71,37,0.22)' : 'none',
@@ -2111,12 +2112,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
         style={{
           borderRadius: '30px',
           background: 'rgba(255,255,255,0.84)',
-          boxShadow: '0 22px 46px rgba(15, 23, 42, 0.10)',
+          boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
           backdropFilter: 'blur(20px)',
           padding: '18px',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '12px' }}>코드 상태 창</div>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '12px' }}>코드 상태 창</div>
         <div style={{ display: 'grid', gridTemplateColumns: '96px 1fr', gap: '15px', alignItems: 'center' }}>
           <div style={{ minWidth: 0 }}>
             <div
@@ -2130,7 +2131,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
-                boxShadow: '0 14px 26px rgba(15, 23, 42, 0.08)',
+                boxShadow: '0 14px 26px rgba(1, 71, 37, 0.08)',
                 marginBottom: '9px',
               }}
             >
@@ -2142,12 +2143,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   onError={() => data.handleImageError(data.characterImage)}
                 />
               ) : (
-                <div style={{ fontSize: '28px', fontWeight: 900, color: '#014725' }}>{data.bodyCode}</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#014725' }}>{data.bodyCode}</div>
               )}
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', lineHeight: 1, fontWeight: 900, letterSpacing: '-0.04em', color: '#111827', marginBottom: '5px' }}>{data.bodyCode}</div>
-              <div style={{ fontSize: '12px', lineHeight: 1.35, fontWeight: 800, color: '#374151', wordBreak: 'keep-all' }}>{data.characterName}</div>
+              <div style={{ fontSize: '1.5rem', lineHeight: 1, fontWeight: 900, letterSpacing: '-0.04em', color: '#014725', marginBottom: '5px' }}>{data.bodyCode}</div>
+              <div style={{ fontSize: '0.8125rem', lineHeight: 1.35, fontWeight: 800, color: '#2C5544', wordBreak: 'keep-all' }}>{data.characterName}</div>
             </div>
           </div>
 
@@ -2155,16 +2156,16 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
             {data.axisRows.map((row) => (
               <div key={row.key}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '5px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 900, color: '#111827' }}>{row.labelLeft}</div>
-                  <div style={{ fontSize: '12px', fontWeight: 900, color: '#111827' }}>{row.labelRight}</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>{row.labelLeft}</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>{row.labelRight}</div>
                 </div>
                 <div style={{ display: 'flex', height: '12px', borderRadius: '999px', overflow: 'hidden', background: '#eef4f2' }}>
                   <div style={{ width: `${row.percentLeft}%`, background: AXIS_GREEN_THEME.soft }} />
                   <div style={{ width: `${row.percentRight}%`, background: AXIS_GREEN_THEME.primary }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#7c8794' }}>{row.percentLeft}%</div>
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#7c8794' }}>{row.percentRight}%</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761' }}>{row.percentLeft}%</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761' }}>{row.percentRight}%</div>
                 </div>
               </div>
             ))}
@@ -2180,8 +2181,8 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
             padding: '16px 18px',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 900, color: '#014725', marginBottom: '7px' }}>한 줄 이해</div>
-          <div style={{ fontSize: '15px', lineHeight: 1.65, fontWeight: 800, color: '#111827', wordBreak: 'keep-all' }}>{data.summaryLine}</div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725', marginBottom: '7px' }}>한 줄 이해</div>
+          <div style={{ fontSize: '0.9375rem', lineHeight: 1.65, fontWeight: 800, color: '#014725', wordBreak: 'keep-all' }}>{data.summaryLine}</div>
         </div>
       </section>
 
@@ -2204,22 +2205,22 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
           cursor: data.actionPlan.detailContents.length > 0 ? 'pointer' : 'default',
         }}
       >
-        <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '8px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '8px' }}>
           {journeyProgress
             ? `MY CODE MISSION · DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}`
             : 'COMMON STRETCH'}
         </div>
-        <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#111827', marginBottom: '6px' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#014725', marginBottom: '6px' }}>
           {journeyProgress ? `${data.bodyCode ?? '내'} 코드 미션 수행률` : '공통 스트레칭 진행률'}
         </h2>
-        <p style={{ fontSize: '13px', lineHeight: 1.6, fontWeight: 700, color: '#6b7280', marginBottom: '14px', wordBreak: 'keep-all' }}>
+        <p style={{ fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', marginBottom: '14px', wordBreak: 'keep-all' }}>
           {journeyProgress
-            ? '14일 관리에서 내 코드에 맞춰 하루 한 가지씩 배정되는 미션입니다.'
-            : '공통 스트레칭은 누구나 같은 4축을 합니다. 내 코드에 맞는 미션은 14일 관리에서 따로 나갑니다.'}
+            ? '14일 루틴에서 내 코드에 맞춰 하루 한 가지씩 배정되는 미션입니다.'
+            : '공통 스트레칭은 누구나 같은 4축을 합니다. 내 코드에 맞는 미션은 14일 루틴에서 따로 나갑니다.'}
         </p>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '40px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>{displayProgress}%</div>
-          <div style={{ fontSize: '13px', fontWeight: 800, color: displayProgress > 0 ? AXIS_GREEN_THEME.text : '#6b7280' }}>{missionStatus}</div>
+          <div style={{ fontSize: '2.5rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>{displayProgress}%</div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: displayProgress > 0 ? AXIS_GREEN_THEME.text : '#4A6B58' }}>{missionStatus}</div>
         </div>
         <div style={{ height: '14px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden' }}>
           <div
@@ -2243,8 +2244,8 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>COMMON · STEP 1</div>
-            <h2 style={{ fontSize: '20px', lineHeight: 1.2, fontWeight: 900, color: '#111827' }}>공통 스트레칭 · 먼저 할 두 가지</h2>
+            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>COMMON · STEP 1</div>
+            <h2 style={{ fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, color: '#014725' }}>공통 스트레칭 · 먼저 할 두 가지</h2>
           </div>
 
           <div style={{ display: 'grid', gap: '10px' }}>
@@ -2281,7 +2282,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       textAlign: 'left',
                       fontFamily: 'inherit',
                       cursor: data.actionPlan.detailContents.length > 0 ? 'pointer' : 'default',
-                      boxShadow: index === 0 ? '0 12px 24px rgba(15, 23, 42, 0.05)' : 'none',
+                      boxShadow: index === 0 ? '0 12px 24px rgba(1, 71, 37, 0.05)' : 'none',
                     }}
                   >
                     <div
@@ -2290,14 +2291,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         width: '28px',
                         height: '28px',
                         borderRadius: '10px',
-                        border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#cbd5e1'}`,
+                        border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#6F8C7B'}`,
                         background: isCompleted ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
                         boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.85)',
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px', flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 900, color: index === 0 ? '#6b7280' : AXIS_GREEN_THEME.text }}>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: index === 0 ? '#4A6B58' : AXIS_GREEN_THEME.text }}>
                           {item.title}
                         </div>
                         <div
@@ -2306,24 +2307,24 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                             background: isCompleted ? 'rgba(1,71,37,0.12)' : '#ffffff',
                             border: `1px solid ${isCompleted ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                             padding: '4px 8px',
-                            fontSize: '10px',
+                            fontSize: '0.6875rem',
                             lineHeight: 1,
                             fontWeight: 900,
-                            color: isCompleted ? '#014725' : '#7c8794',
+                            color: isCompleted ? '#014725' : '#587761',
                           }}
                         >
                           {statusLabel}
                         </div>
                       </div>
-                      <div style={{ fontSize: '17px', lineHeight: 1.36, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '1.0625rem', lineHeight: 1.36, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
                         {item.displayName}
                       </div>
                     </div>
                     <div style={{ display: 'grid', justifyItems: 'end', gap: '8px', flexShrink: 0 }}>
                       {typeof item.percent === 'number' && (
-                        <div style={{ fontSize: '12px', fontWeight: 900, color: '#7c8794' }}>{item.percent}%</div>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#587761' }}>{item.percent}%</div>
                       )}
-                      {data.actionPlan.detailContents.length > 0 && <ChevronRight size={18} color="#7c8794" />}
+                      {data.actionPlan.detailContents.length > 0 && <ChevronRight size={18} color="#587761" />}
                     </div>
                   </button>
                 );
@@ -2335,9 +2336,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   background: 'rgba(244,251,249,0.96)',
                   border: `1px solid ${AXIS_GREEN_THEME.border}`,
                   padding: '14px',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   lineHeight: 1.6,
-                  color: '#6b7280',
+                  color: '#4A6B58',
                   wordBreak: 'keep-all',
                 }}
               >
@@ -2373,10 +2374,10 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
             }}
           >
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>GUIDE</div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>나의 {PRODUCT.codeName} 가이드 보기</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>GUIDE</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#014725' }}>나의 {PRODUCT.codeName} 가이드 보기</div>
             </div>
-            {guideOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
+            {guideOpen ? <ChevronUp size={18} color="#4A6B58" /> : <ChevronDown size={18} color="#4A6B58" />}
           </button>
           {guideOpen && (
             <div style={{ borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '16px 18px 20px', display: 'grid', gap: '12px' }}>
@@ -2391,13 +2392,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       padding: '18px',
                     }}
                   >
-                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>{block.caption}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>{block.title}</div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>{block.caption}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#014725', marginBottom: '10px', wordBreak: 'keep-all' }}>{block.title}</div>
                     {renderReadableText(block.content)}
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: '14px', lineHeight: 1.6, color: '#6b7280', paddingTop: '4px', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#4A6B58', paddingTop: '4px', wordBreak: 'keep-all' }}>
                   아직 연결된 가이드가 없습니다.
                 </div>
               )}

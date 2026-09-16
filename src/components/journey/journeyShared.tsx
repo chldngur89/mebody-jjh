@@ -1,5 +1,5 @@
 /**
- * MEBODY Journey — 화면 공용 데이터/토큰
+ * mebody Journey — 화면 공용 데이터/토큰
  *
  * 기존 코드 플랜과 같은 시각 언어(AXIS_GREEN_THEME)와 같은 콘텐츠 소스를 씁니다.
  * 미션 본문은 immediate_action_content 를 그대로 조회합니다.
@@ -219,7 +219,7 @@ export function JourneyScreenShell({
         maxHeight: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: JOURNEY_BACKGROUND,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -292,9 +292,9 @@ export function JourneyPrimaryButton({
         gap: '8px',
         borderRadius: '16px',
         border: 'none',
-        background: disabled ? '#cbd5e1' : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+        background: disabled ? '#6F8C7B' : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
         color: '#ffffff',
-        fontSize: '15px',
+        fontSize: '0.9375rem',
         fontWeight: 800,
         fontFamily: 'inherit',
         boxShadow: disabled ? 'none' : '0 14px 28px rgba(1,71,37,0.22)',
@@ -315,9 +315,9 @@ export function JourneyNotice({ children }: { children: React.ReactNode }) {
         border: `1px solid ${AXIS_GREEN_THEME.border}`,
         background: 'rgba(244,251,249,0.96)',
         padding: '16px',
-        fontSize: '14px',
+        fontSize: '0.875rem',
         lineHeight: 1.7,
-        color: '#4b5563',
+        color: '#3D6B54',
         wordBreak: 'keep-all',
       }}
     >

@@ -1,41 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
 import type { User } from '@supabase/supabase-js';
-import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Smartphone, Sparkles, UserRound } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Smartphone, UserRound } from 'lucide-react';
 import { requestPasswordReset, signOutAccount, upsertProfileFromUser } from '../api/account';
 import { signInWithApproval, signUpWithIdentifier } from '../api/signup';
 import { detectKind, formatPhone, resolveLoginEmail, type IdentifierKind } from '../lib/identifier';
+import { authErrorMessage } from '../lib/authErrorMessage';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { CTA, PRODUCT } from '../theme/copy';
+import { BrandMark, ConsentCheckbox, LegalConsentLabel } from './ui';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
 
 interface AuthScreenProps {
   user: User | null;
   initialMode?: 'signin' | 'signup';
+  /** save-result: 휴대폰으로 결과 보관에 맞춘 안내 */
+  purpose?: 'default' | 'save-result';
   onBack?: () => void;
   onSignedIn?: (user: User) => void | Promise<void>;
   onGoMembership?: () => void;
 }
 
-/** Supabase 가 돌려주는 영어 오류를 화면에 쓸 문장으로 바꿉니다. */
+/** 화면에는 우리 문장만 나갑니다. 영어 원문은 콘솔에만 남습니다 — lib/authErrorMessage.ts */
 function translateAuthError(err: unknown, kind: IdentifierKind): string {
-  const raw = String((err as Error)?.message ?? '');
-  const text = raw.toLowerCase();
-  const label = kind === 'phone' ? '휴대폰 번호' : '이메일';
-
-  if (text.includes('invalid login credentials')) return `${label} 또는 비밀번호가 올바르지 않습니다.`;
-  if (text.includes('email not confirmed')) return '가입 확인이 아직 끝나지 않았습니다. 확인 메일의 링크를 열어주세요.';
-  if (text.includes('already registered') || text.includes('already been registered')) {
-    return '이미 가입된 계정입니다. 로그인으로 진행해주세요.';
-  }
-  // 길이 제한은 서버 설정이 정합니다. Supabase 가 자기 정책으로 거절하면 그 길이를 그대로 보여줍니다.
-  const tooShort = raw.match(/at least (\d+) characters/i);
-  if (tooShort) return `비밀번호는 ${tooShort[1]}자 이상으로 입력해주세요.`;
-  return raw || '인증 처리 중 오류가 발생했습니다.';
+  return authErrorMessage(err, '인증 처리 중 오류가 발생했습니다.', kind === 'phone' ? '휴대폰 번호' : '이메일');
 }
 
-export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, onGoMembership }: AuthScreenProps) {
+export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', onBack, onSignedIn, onGoMembership }: AuthScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const screenHeight = isDesktopMockup ? '100%' : 'var(--mebody-app-height)';
 
@@ -49,17 +41,24 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** 회원가입은 두 동의를 모두 받기 전에는 제출할 수 없습니다. */
+  const [agreeService, setAgreeService] = useState(false);
+  const [agreeLegal, setAgreeLegal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const passwordMismatch =
     mode === 'signup' && passwordConfirm.length > 0 && password !== passwordConfirm;
+  /** 회원가입에서만 동의가 필요합니다. 로그인은 이미 동의한 계정입니다. */
+  const consentPending = mode === 'signup' && !(agreeService && agreeLegal);
+  const submitBlocked = loading || passwordMismatch || consentPending;
 
   useEffect(() => {
-    setMode(initialMode);
+    setMode(purpose === 'save-result' ? 'signup' : initialMode);
     setError(null);
     setMessage(null);
     setPasswordConfirm('');
-  }, [initialMode]);
+    if (purpose === 'save-result') setIdentifierKind('phone');
+  }, [initialMode, purpose]);
 
   const completeSignedIn = async (signedInUser: User, displayNameForSignup?: string) => {
     await upsertProfileFromUser(signedInUser, displayNameForSignup);
@@ -83,6 +82,10 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
       }
       if (password !== passwordConfirm) {
         setError('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      if (!agreeService || !agreeLegal) {
+        setError('아래 두 가지 동의에 모두 체크해주세요.');
         return;
       }
     }
@@ -137,7 +140,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
       await signOutAccount();
       setMessage('로그아웃되었습니다.');
     } catch (err) {
-      setError((err as Error)?.message ?? '로그아웃 중 오류가 발생했습니다.');
+      setError(authErrorMessage(err, '로그아웃 중 오류가 발생했습니다.'));
     } finally {
       setLoading(false);
     }
@@ -163,7 +166,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
       await requestPasswordReset(trimmedEmail);
       setMessage('비밀번호 재설정 메일을 보냈습니다. 메일함에서 링크를 확인해주세요.');
     } catch (err) {
-      setError((err as Error)?.message ?? '비밀번호 재설정 메일 발송에 실패했습니다.');
+      setError(authErrorMessage(err, '비밀번호 재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해주세요.'));
     } finally {
       setLoading(false);
     }
@@ -178,7 +181,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
         minHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: '0 24px 60px rgba(15, 23, 42, 0.13)',
+        boxShadow: '0 24px 60px rgba(1, 71, 37, 0.13)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -235,12 +238,12 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
               border: '1px solid rgba(255,255,255,0.28)',
               background: 'rgba(255,255,255,0.62)',
               padding: '8px 16px',
-              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.10)',
+              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.10)',
               backdropFilter: 'blur(12px)',
             }}
           >
-            <Sparkles size={18} color="#014725" />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#1f2937' }}>{PRODUCT.mark}</span>
+            <BrandMark size={16} color="#014725" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#014725' }}>{PRODUCT.mark}</span>
           </div>
 
           {onBack && (
@@ -254,11 +257,12 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                 borderRadius: '999px',
                 border: '1px solid rgba(255,255,255,0.28)',
                 background: 'rgba(255,255,255,0.62)',
+                minHeight: '44px',
                 padding: '8px 14px',
-                color: '#374151',
-                fontSize: '12px',
+                color: '#2C5544',
+                fontSize: '0.8125rem',
                 fontWeight: 600,
-                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.10)',
+                boxShadow: '0 10px 20px rgba(1, 71, 37, 0.10)',
                 backdropFilter: 'blur(12px)',
                 cursor: 'pointer',
               }}
@@ -280,7 +284,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
             overflowY: 'auto',
             borderRadius: '24px',
             background: 'rgba(255,255,255,0.74)',
-            boxShadow: '0 20px 46px rgba(15, 23, 42, 0.12)',
+            boxShadow: '0 20px 46px rgba(1, 71, 37, 0.12)',
             backdropFilter: 'blur(20px)',
             padding: '22px',
             paddingBottom: 'calc(22px + env(safe-area-inset-bottom))',
@@ -288,8 +292,21 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
         >
           <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>{user ? 'ACCOUNT' : '회원가입하고 결과 저장하기'}</div>
-            <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2, color: '#1f2937' }}>로그인 / 회원가입</h1>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, letterSpacing: '0.04em', color: '#014725', marginBottom: '6px' }}>
+              {user
+                ? '계정'
+                : purpose === 'save-result'
+                  ? '휴대폰으로 결과 보관'
+                  : '결과 저장을 위해 가입하기'}
+            </div>
+            <h1 style={{ fontSize: '1.625rem', fontWeight: 800, lineHeight: 1.2, color: '#014725' }}>
+              {purpose === 'save-result' && !user ? '번호만으로 빠르게 저장' : '로그인 / 회원가입'}
+            </h1>
+            {purpose === 'save-result' && !user && (
+              <p style={{ margin: '10px 0 0', fontSize: '0.875rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                010 번호를 입력하면 결과만 계정에 연결해요. 이메일 없이도 다음에 다시 볼 수 있습니다.
+              </p>
+            )}
           </div>
 
           {user ? (
@@ -302,24 +319,24 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                   padding: '16px',
                 }}
               >
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#047857', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#047857', fontSize: '0.875rem', fontWeight: 700, marginBottom: '8px' }}>
                   <CheckCircle2 size={16} />
                   로그인 상태
                 </div>
-                <p style={{ fontSize: '14px', color: '#064e3b', wordBreak: 'break-all' }}>{user.email}</p>
+                <p style={{ fontSize: '0.875rem', color: '#064e3b', wordBreak: 'break-all' }}>{user.email}</p>
               </div>
 
               <div
                 style={{
                   borderRadius: '16px',
-                  border: '1px solid rgba(229,231,235,0.9)',
-                  background: 'linear-gradient(135deg, rgba(249,250,251,0.88) 0%, rgba(243,244,246,0.88) 100%)',
+                  border: '1px solid rgba(225, 233, 218,0.9)',
+                  background: 'linear-gradient(135deg, rgba(247, 250, 244,0.88) 0%, rgba(240, 244, 236,0.88) 100%)',
                   padding: '16px',
                 }}
               >
-                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>NEXT STEP</div>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>재방문 자동 결과 / 멤버십 연결</h2>
-                <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>NEXT STEP</div>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#014725', marginBottom: '8px' }}>재방문 자동 결과 / 멤버십 연결</h2>
+                <p style={{ fontSize: '0.875rem', lineHeight: 1.65, color: '#2C5544', wordBreak: 'keep-all' }}>
                   재방문 시 최근 결과로 바로 진입할 수 있고, 멤버십 결제를 통해 심화 리포트를 사용할 수 있습니다.
                 </p>
                 {onGoMembership && (
@@ -337,7 +354,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                       border: 'none',
                       background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                       color: '#ffffff',
-                      fontSize: '15px',
+                      fontSize: '0.9375rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
@@ -359,10 +376,10 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                   justifyContent: 'center',
                   gap: '8px',
                   borderRadius: '12px',
-                  border: '1px solid rgba(209,213,219,1)',
+                  border: '1px solid rgba(200, 214, 196,1)',
                   background: 'rgba(255,255,255,0.84)',
-                  color: '#374151',
-                  fontSize: '14px',
+                  color: '#2C5544',
+                  fontSize: '0.875rem',
                   fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.6 : 1,
@@ -377,13 +394,13 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
               <div
                 style={{
                   borderRadius: '16px',
-                  border: '1px solid rgba(229,231,235,0.9)',
-                  background: 'linear-gradient(135deg, rgba(249,250,251,0.88) 0%, rgba(243,244,246,0.88) 100%)',
+                  border: '1px solid rgba(225, 233, 218,0.9)',
+                  background: 'linear-gradient(135deg, rgba(247, 250, 244,0.88) 0%, rgba(240, 244, 236,0.88) 100%)',
                   padding: '16px',
                 }}
               >
-                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>WELCOME</div>
-                <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#374151', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>WELCOME</div>
+                <p style={{ fontSize: '0.875rem', lineHeight: 1.65, color: '#2C5544', wordBreak: 'keep-all' }}>
                   로그인하면 결과가 계정에 연결되어, 다음 방문에서 바로 결과를 확인할 수 있습니다.
                 </p>
               </div>
@@ -392,9 +409,9 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                 style={{
                   display: 'flex',
                   borderRadius: '12px',
-                  background: 'rgba(243,244,246,0.92)',
+                  background: 'rgba(240, 244, 236,0.92)',
                   padding: '4px',
-                  border: '1px solid rgba(229,231,235,0.95)',
+                  border: '1px solid rgba(225, 233, 218,0.95)',
                 }}
               >
                 <button
@@ -402,19 +419,21 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                   onClick={() => {
                     setMode('signin');
                     setPasswordConfirm('');
+                    setAgreeService(false);
+                    setAgreeLegal(false);
                     setError(null);
                     setMessage(null);
                   }}
                   style={{
                     flex: 1,
-                    height: '38px',
+                    minHeight: '44px',
                     borderRadius: '10px',
                     border: 'none',
                     background: mode === 'signin' ? '#ffffff' : 'transparent',
-                    color: mode === 'signin' ? '#111827' : '#6b7280',
-                    fontSize: '14px',
+                    color: mode === 'signin' ? '#014725' : '#4A6B58',
+                    fontSize: '0.875rem',
                     fontWeight: 700,
-                    boxShadow: mode === 'signin' ? '0 4px 10px rgba(15,23,42,0.08)' : 'none',
+                    boxShadow: mode === 'signin' ? '0 4px 10px rgba(1, 71, 37, 0.08)' : 'none',
                     cursor: 'pointer',
                   }}
                 >
@@ -425,19 +444,21 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                   onClick={() => {
                     setMode('signup');
                     setPasswordConfirm('');
+                    setAgreeService(false);
+                    setAgreeLegal(false);
                     setError(null);
                     setMessage(null);
                   }}
                   style={{
                     flex: 1,
-                    height: '38px',
+                    minHeight: '44px',
                     borderRadius: '10px',
                     border: 'none',
                     background: mode === 'signup' ? '#ffffff' : 'transparent',
-                    color: mode === 'signup' ? '#111827' : '#6b7280',
-                    fontSize: '14px',
+                    color: mode === 'signup' ? '#014725' : '#4A6B58',
+                    fontSize: '0.875rem',
                     fontWeight: 700,
-                    boxShadow: mode === 'signup' ? '0 4px 10px rgba(15,23,42,0.08)' : 'none',
+                    boxShadow: mode === 'signup' ? '0 4px 10px rgba(1, 71, 37, 0.08)' : 'none',
                     cursor: 'pointer',
                   }}
                 >
@@ -445,35 +466,41 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                 </button>
               </div>
 
-              <div
+              <form
+                noValidate
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleSubmit();
+                }}
                 style={{
                   display: 'grid',
                   gap: '10px',
                   borderRadius: '16px',
-                  border: '1px solid rgba(229,231,235,0.9)',
+                  border: '1px solid rgba(225, 233, 218,0.9)',
                   background: 'rgba(255,255,255,0.86)',
                   padding: '16px',
                 }}
               >
                 <label style={{ display: 'block' }}>
-                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>
                     이메일 혹은 핸드폰 번호 넣어주세요
                   </span>
                   <div
+                    className="mebody-field"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
                       padding: '0 12px',
                       height: '46px',
-                      border: '1px solid rgba(209,213,219,1)',
+                      border: '1px solid rgba(200, 214, 196,1)',
                       borderRadius: '12px',
-                      background: 'rgba(249,250,251,0.98)',
+                      background: 'rgba(247, 250, 244,0.98)',
                     }}
                   >
                     {identifierKind === 'phone'
-                      ? <Smartphone size={16} color="#6b7280" />
-                      : <Mail size={16} color="#6b7280" />}
+                      ? <Smartphone size={16} color="#4A6B58" />
+                      : <Mail size={16} color="#4A6B58" />}
                     <input
                       type={identifierKind === 'phone' ? 'tel' : 'email'}
                       inputMode={identifierKind === 'phone' ? 'numeric' : 'email'}
@@ -493,17 +520,18 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                       }}
                       placeholder="email@example.com 또는 010-1234-5678"
                       autoComplete={identifierKind === 'phone' ? 'tel' : 'email'}
+                      required
                       style={{
                         width: '100%',
                         border: 'none',
                         outline: 'none',
                         background: 'transparent',
-                        fontSize: '16px',
-                        color: '#111827',
+                        fontSize: '1rem',
+                        color: '#014725',
                       }}
                     />
                   </div>
-                  <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.5, color: '#6b7280' }}>
+                  <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8125rem', lineHeight: 1.5, color: '#4A6B58' }}>
                     {mode === 'signup'
                       ? '확인 절차 없이 바로 가입됩니다. 다음에도 같은 이메일 또는 번호로 로그인해주세요.'
                       : '가입할 때 쓴 이메일이나 번호를 그대로 입력해주세요.'}
@@ -511,20 +539,21 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                 </label>
 
                 <label style={{ display: 'block' }}>
-                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>비밀번호</span>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>비밀번호</span>
                   <div
+                    className="mebody-field"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
                       padding: '0 12px',
                       height: '46px',
-                      border: '1px solid rgba(209,213,219,1)',
+                      border: '1px solid rgba(200, 214, 196,1)',
                       borderRadius: '12px',
-                      background: 'rgba(249,250,251,0.98)',
+                      background: 'rgba(247, 250, 244,0.98)',
                     }}
                   >
-                    <Lock size={16} color="#6b7280" />
+                    <Lock size={16} color="#4A6B58" />
                     <input
                       type="password"
                       value={password}
@@ -534,13 +563,14 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                       }}
                       placeholder="원하는 비밀번호"
                       autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                      required
                       style={{
                         width: '100%',
                         border: 'none',
                         outline: 'none',
                         background: 'transparent',
-                        fontSize: '16px',
-                        color: '#111827',
+                        fontSize: '1rem',
+                        color: '#014725',
                       }}
                     />
                   </div>
@@ -548,22 +578,23 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
 
                 {mode === 'signup' && (
                   <label style={{ display: 'block' }}>
-                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>
                       비밀번호 확인
                     </span>
                     <div
+                      className="mebody-field"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '0 12px',
                         height: '46px',
-                        border: passwordMismatch ? '1px solid #dc2626' : '1px solid rgba(209,213,219,1)',
+                        border: passwordMismatch ? '1px solid #8E3A32' : '1px solid rgba(200, 214, 196,1)',
                         borderRadius: '12px',
-                        background: 'rgba(249,250,251,0.98)',
+                        background: 'rgba(247, 250, 244,0.98)',
                       }}
                     >
-                      <Lock size={16} color={passwordMismatch ? '#dc2626' : '#6b7280'} />
+                      <Lock size={16} color={passwordMismatch ? '#8E3A32' : '#4A6B58'} />
                       <input
                         type="password"
                         value={passwordConfirm}
@@ -576,18 +607,19 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                         }}
                         placeholder="비밀번호를 한 번 더 입력"
                         autoComplete="new-password"
+                        required
                         style={{
                           width: '100%',
                           border: 'none',
                           outline: 'none',
                           background: 'transparent',
-                          fontSize: '16px',
-                          color: '#111827',
+                          fontSize: '1rem',
+                          color: '#014725',
                         }}
                       />
                     </div>
                     {passwordMismatch && (
-                      <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.45, color: '#dc2626', fontWeight: 700 }}>
+                      <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8125rem', lineHeight: 1.45, color: '#8E3A32', fontWeight: 700 }}>
                         비밀번호가 일치하지 않습니다.
                       </span>
                     )}
@@ -596,20 +628,21 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
 
                 {mode === 'signup' && (
                   <label style={{ display: 'block' }}>
-                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>이름(선택)</span>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>이름(선택)</span>
                     <div
+                      className="mebody-field"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '0 12px',
                         height: '46px',
-                        border: '1px solid rgba(209,213,219,1)',
+                        border: '1px solid rgba(200, 214, 196,1)',
                         borderRadius: '12px',
-                        background: 'rgba(249,250,251,0.98)',
+                        background: 'rgba(247, 250, 244,0.98)',
                       }}
                     >
-                      <UserRound size={16} color="#6b7280" />
+                      <UserRound size={16} color="#4A6B58" />
                       <input
                         type="text"
                         value={displayName}
@@ -624,18 +657,28 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                           border: 'none',
                           outline: 'none',
                           background: 'transparent',
-                          fontSize: '16px',
-                          color: '#111827',
+                          fontSize: '1rem',
+                          color: '#014725',
                         }}
                       />
                     </div>
                   </label>
                 )}
 
+                {mode === 'signup' && (
+                  <div style={{ display: 'grid', gap: '8px', marginTop: '2px' }}>
+                    <ConsentCheckbox checked={agreeService} onChange={setAgreeService}>
+                      {PRODUCT.codeName}는 의료 진단이 아닌 웰니스 셀프 체크임을 이해했습니다.
+                    </ConsentCheckbox>
+                    <ConsentCheckbox checked={agreeLegal} onChange={setAgreeLegal}>
+                      <LegalConsentLabel />
+                    </ConsentCheckbox>
+                  </div>
+                )}
+
                 <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading || passwordMismatch}
+                  type="submit"
+                  disabled={submitBlocked}
                   style={{
                     display: 'inline-flex',
                     width: '100%',
@@ -646,15 +689,20 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                     border: 'none',
                     background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
                     color: '#ffffff',
-                    fontSize: '16px',
+                    fontSize: '1rem',
                     fontWeight: 700,
-                    cursor: loading || passwordMismatch ? 'not-allowed' : 'pointer',
-                    opacity: loading || passwordMismatch ? 0.6 : 1,
+                    cursor: submitBlocked ? 'not-allowed' : 'pointer',
+                    opacity: submitBlocked ? 0.6 : 1,
                     boxShadow: '0 10px 22px rgba(1,71,37,0.30)',
                   }}
                 >
                   {loading ? '처리 중...' : mode === 'signup' ? CTA.authSignup : CTA.authLogin}
                 </button>
+                {consentPending && (
+                  <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.5, color: '#4A6B58' }}>
+                    위 두 가지에 동의하면 가입할 수 있습니다.
+                  </p>
+                )}
 
                 {mode === 'signin' && (
                   <button
@@ -665,7 +713,7 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                       border: 'none',
                       background: 'transparent',
                       color: '#014725',
-                      fontSize: '12px',
+                      fontSize: '0.8125rem',
                       fontWeight: 800,
                       textDecoration: 'underline',
                       textUnderlineOffset: '3px',
@@ -678,23 +726,25 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
                 )}
 
                 {mode === 'signup' && (
-                  <p style={{ fontSize: '12px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all' }}>
+                  <p style={{ fontSize: '0.8125rem', lineHeight: 1.5, color: '#4A6B58', wordBreak: 'keep-all' }}>
                     회원가입이 완료되면 바로 로그인 상태로 다음 단계에 연결됩니다.
                   </p>
                 )}
-              </div>
+              </form>
             </div>
           )}
 
           {message && (
             <div
+              role="status"
+              aria-live="polite"
               style={{
                 marginTop: '14px',
                 borderRadius: '12px',
                 border: '1px solid rgba(167, 243, 208, 1)',
                 background: 'rgba(236, 253, 245, 0.95)',
                 color: '#047857',
-                fontSize: '13px',
+                fontSize: '0.8125rem',
                 padding: '12px 14px',
               }}
             >
@@ -703,13 +753,14 @@ export function AuthScreen({ user, initialMode = 'signin', onBack, onSignedIn, o
           )}
           {error && (
             <div
+              role="alert"
               style={{
                 marginTop: '14px',
                 borderRadius: '12px',
                 border: '1px solid rgba(254, 205, 211, 1)',
                 background: 'rgba(254, 242, 242, 0.95)',
-                color: '#b91c1c',
-                fontSize: '13px',
+                color: '#8E3A32',
+                fontSize: '0.8125rem',
                 padding: '12px 14px',
                 wordBreak: 'break-word',
               }}

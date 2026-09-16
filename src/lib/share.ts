@@ -1,7 +1,7 @@
 /**
  * 결과 공유 — 코드와 캐릭터 이름만 나갑니다.
  *
- * 공유 링크에 담는 것: ref=share, code=Mebody Code. 그게 전부입니다.
+ * 공유 링크에 담는 것: ref=share, code=mebody Code. 그게 전부입니다.
  * **result id 를 넣지 않습니다.** id 가 링크에 실리면 받은 사람이
  * get_questionnaire_response 로 원 사용자의 32문항 응답을 그대로 열 수 있습니다.
  * code 는 결과를 복원하는 열쇠가 아니라 "친구는 FRRS 였다" 는 말풍선 재료입니다.
@@ -57,6 +57,20 @@ export interface SharePayload {
   shareTitle?: string
   /** body_code_content.share_description */
   shareDescription?: string
+  /**
+   * 4축 상세 결과 — 공유 카드 이미지에 그립니다.
+   * 원점수가 아니라 이미 화면에 보이는 좌/우 치우침(%)만 넘깁니다.
+   */
+  axes?: ShareAxis[]
+}
+
+/** 공유 카드에 그릴 축 한 줄. resultData 의 AxisRow 에서 필요한 것만 가져옵니다. */
+export interface ShareAxis {
+  title: string
+  labelLeft: string
+  labelRight: string
+  /** 0~100. 클수록 왼쪽으로 치우침 */
+  percentLeft: number
 }
 
 export function buildShareTitle({ bodyCode, characterName, shareTitle }: SharePayload): string {

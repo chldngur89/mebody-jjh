@@ -1,5 +1,5 @@
 /**
- * MEBODY Journey — 재측정 전후 비교 (순수 함수)
+ * mebody Journey — 재측정 전후 비교 (순수 함수)
  *
  * questionnaire_responses.scoring_meta 의 axis/identity 를 대조합니다.
  *

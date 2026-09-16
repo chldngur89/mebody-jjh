@@ -1,13 +1,14 @@
 /**
  * 결과 공유 블록 — hero 카드 안에 붙이거나 단독 카드로 쓸 수 있습니다.
  *
- * 나가는 값은 몸BTI 코드와 캐릭터 이름뿐입니다. 문항 응답·축 점수·result id 는
+ * 나가는 값은 mebody Code와 캐릭터 이름뿐입니다. 문항 응답·축 점수·result id 는
  * 링크에도 문구에도 넣지 않습니다(근거: src/lib/share.ts 주석).
  */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { Link2 } from 'lucide-react'
+import { Image as ImageIcon, Link2 } from 'lucide-react'
 import { Card, CTA } from '../ui'
 import { BRAND, SURFACE } from '../../theme/brand'
+import { CTA as COPY_CTA } from '../../theme/copy'
 import { track, type ShareChannel } from '../../lib/analytics'
 import {
   buildShareUrl,
@@ -17,7 +18,9 @@ import {
   shareNative,
   trackShareOutcome,
   type SharePayload,
+  type ShareAxis,
 } from '../../lib/share'
+import { shareShareCardImage } from '../../lib/shareCardImage'
 import { isKakaoShareConfigured, preloadKakao, shareToKakao } from '../../lib/kakao'
 import { isInAppBrowser } from '../../lib/viewport'
 
@@ -28,6 +31,8 @@ export interface ResultShareCardProps {
   tendencyLine?: string
   shareTitle?: string
   shareDescription?: string
+  /** 4축 상세 결과 — 카드 이미지에 같이 그립니다. */
+  axes?: ShareAxis[]
   /** true 이면 바깥 Card 없이 내용만 렌더합니다(hero 와 한 박스로 합칠 때). */
   embedded?: boolean
 }
@@ -52,6 +57,7 @@ export function ResultShareCard({
   tendencyLine,
   shareTitle,
   shareDescription,
+  axes,
   embedded = false,
 }: ResultShareCardProps) {
   const [toast, setToast] = useState<string | null>(null)
@@ -83,6 +89,7 @@ export function ResultShareCard({
     tendencyLine,
     shareTitle,
     shareDescription,
+    axes,
   }
   const kakaoReady = isKakaoShareConfigured()
   const nativeReady = canNativeShare()
@@ -115,6 +122,15 @@ export function ResultShareCard({
         return
       }
 
+      if (channel === 'image') {
+        const outcome = await shareShareCardImage(payload)
+        trackShareOutcome('image', bodyCode, outcome)
+        if (outcome === 'shared') showToast('카드 이미지를 저장·공유했어요', TOAST_MS_COPY)
+        else if (outcome === 'failed') showToast('이미지를 만들지 못했어요. 링크 복사를 써 주세요')
+        else if (outcome === 'unsupported') showToast('이 기기에서는 이미지 공유를 쓸 수 없어요')
+        return
+      }
+
       const outcome = channel === 'kakao' ? await shareToKakao(payload) : await shareNative(payload)
       trackShareOutcome(channel, bodyCode, outcome)
 
@@ -132,7 +148,7 @@ export function ResultShareCard({
       <strong
         style={{
           display: 'block',
-          fontSize: '15px',
+          fontSize: '0.9375rem',
           fontWeight: 800,
           color: BRAND.text,
           letterSpacing: '-0.02em',
@@ -143,66 +159,41 @@ export function ResultShareCard({
       <p
         style={{
           margin: '6px 0 0',
-          fontSize: '12.5px',
+          fontSize: '0.8125rem',
           lineHeight: 1.5,
           color: BRAND.muted,
           wordBreak: 'keep-all',
         }}
       >
-        코드·캐릭터·경향만 전달돼요
+        카드 이미지로 보내거나, 링크로 앱에 초대할 수 있어요
         <br />
         <span style={{ fontWeight: 600 }}>개인 점수·응답은 포함되지 않아요</span>
       </p>
 
-      {preferKakao ? (
-        <>
-          <CTA onClick={() => void run('kakao')} disabled={busy !== null} style={{ marginTop: '14px' }}>
-            카카오톡으로 공유
-          </CTA>
-          <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
-            <ShareActionButton
-              label="링크 복사"
-              icon={<Link2 size={15} strokeWidth={2.4} />}
-              onClick={() => void run('copy')}
-              disabled={busy !== null}
-            />
-            {nativeReady && (
-              <ShareActionButton label="다른 앱으로 공유" onClick={() => void run('native')} disabled={busy !== null} />
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          {kakaoReady && (
-            <CTA
-              variant="outline"
-              onClick={() => void run('kakao')}
-              disabled={busy !== null}
-              style={{ marginTop: '14px' }}
-            >
-              카카오톡으로 공유
-            </CTA>
-          )}
-          <div
-            style={{
-              display: 'grid',
-              gap: '8px',
-              marginTop: kakaoReady ? '8px' : '14px',
-            }}
-          >
-            {nativeReady && (
-              <ShareActionButton label="공유하기" onClick={() => void run('native')} disabled={busy !== null} />
-            )}
-            <ShareActionButton
-              label="링크 복사"
-              icon={<Link2 size={15} strokeWidth={2.4} />}
-              onClick={() => void run('copy')}
-              disabled={busy !== null}
-              primary
-            />
-          </div>
-        </>
-      )}
+      <CTA onClick={() => void run('image')} disabled={busy !== null} style={{ marginTop: '14px' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+          <ImageIcon size={16} strokeWidth={2.4} />
+          {COPY_CTA.shareImage}
+        </span>
+      </CTA>
+
+      <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
+        {preferKakao && (
+          <ShareActionButton label="카카오톡으로 공유" onClick={() => void run('kakao')} disabled={busy !== null} />
+        )}
+        {!preferKakao && kakaoReady && (
+          <ShareActionButton label="카카오톡으로 공유" onClick={() => void run('kakao')} disabled={busy !== null} />
+        )}
+        {nativeReady && (
+          <ShareActionButton label="다른 앱으로 공유" onClick={() => void run('native')} disabled={busy !== null} />
+        )}
+        <ShareActionButton
+          label={COPY_CTA.shareLink}
+          icon={<Link2 size={15} strokeWidth={2.4} />}
+          onClick={() => void run('copy')}
+          disabled={busy !== null}
+        />
+      </div>
 
       {toast && (
         <div
@@ -213,7 +204,7 @@ export function ResultShareCard({
             background: SURFACE.subtle,
             borderRadius: '12px',
             padding: '10px 12px',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             lineHeight: 1.55,
             color: BRAND.text,
             wordBreak: 'break-all',
@@ -239,7 +230,7 @@ export function ResultShareCard({
             border: `1px solid ${SURFACE.hairline}`,
             borderRadius: '12px',
             padding: '11px 12px',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             fontFamily: 'inherit',
             color: BRAND.text,
             background: '#ffffff',
@@ -289,7 +280,7 @@ function ShareActionButton({
         padding: '13px 14px',
         color: '#ffffff',
         fontWeight: 800,
-        fontSize: '14px',
+        fontSize: '0.875rem',
         fontFamily: 'inherit',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.55 : 1,
@@ -306,7 +297,7 @@ function ShareActionButton({
         padding: '11px 12px',
         color: BRAND.green,
         fontWeight: 800,
-        fontSize: '13px',
+        fontSize: '0.8125rem',
         fontFamily: 'inherit',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.55 : 1,

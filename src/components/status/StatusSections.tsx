@@ -14,6 +14,7 @@ import type { User } from '@supabase/supabase-js';
 import { Package, Save, Truck } from 'lucide-react';
 import { fetchMySubscription, type UserSubscription } from '../../api/account';
 import { BillingError, cancelOrder, cancelSubscription } from '../../api/billing';
+import { confirmDialog } from '../../lib/confirmDialog';
 import { fetchMyOrders, type FulfillmentStatus, type MyOrder } from '../../api/orders';
 import {
   fetchMeasurementHistory,
@@ -42,9 +43,9 @@ function day(value: string | null | undefined): string {
 }
 
 const ORDER_STATUS: Record<MyOrder['status'], { label: string; color: string; bg: string }> = {
-  PENDING: { label: '결제 대기', color: '#8A6D1F', bg: '#FFF8E8' },
+  PENDING: { label: '결제 대기', color: '#7A5500', bg: '#FFF8E8' },
   PAID: { label: '결제 완료', color: '#046B41', bg: '#E8F5EE' },
-  CANCELED: { label: '취소됨', color: '#6B7280', bg: '#F3F4F6' },
+  CANCELED: { label: '취소됨', color: '#4A6B58', bg: '#F0F4EC' },
   FAILED: { label: '실패', color: '#8E3A32', bg: '#FDF2F1' },
 };
 
@@ -76,7 +77,7 @@ function FulfillmentTrack({ order }: { order: MyOrder }) {
                   background: done ? BRAND.green : SURFACE.hairline,
                 }}
               />
-              <span style={{ fontSize: '10px', fontWeight: done ? 900 : 700, color: done ? BRAND.green : BRAND.muted }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: done ? 900 : 700, color: done ? BRAND.green : BRAND.muted }}>
                 {FULFILLMENT[step].label}
               </span>
             </div>
@@ -86,7 +87,7 @@ function FulfillmentTrack({ order }: { order: MyOrder }) {
       {order.trackingNo && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px' }}>
           <Truck size={13} color={BRAND.muted} />
-          <span style={{ fontSize: '11.5px', color: BRAND.muted }}>
+          <span style={{ fontSize: '0.75rem', color: BRAND.muted }}>
             {order.trackingCarrier ?? '택배'} {order.trackingNo}
           </span>
         </div>
@@ -287,7 +288,7 @@ export function ProfileSection({ user }: { user: User }) {
           <p
             style={{
               margin: 0,
-              fontSize: '11.5px',
+              fontSize: '0.75rem',
               lineHeight: 1.45,
               fontWeight: 800,
               color: '#8E3A32',
@@ -343,7 +344,7 @@ export function ProfileSection({ user }: { user: User }) {
           />
         </div>
         {passwordMismatch && (
-          <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#8E3A32' }}>
+          <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 800, color: '#8E3A32' }}>
             비밀번호 확인이 일치하지 않습니다.
           </p>
         )}
@@ -353,7 +354,7 @@ export function ProfileSection({ user }: { user: User }) {
           <Field compact label="몸무게 (kg)" value={weight} onChange={setWeight} placeholder="65" inputMode="decimal" />
         </div>
 
-        <p style={{ margin: '2px 0 0', fontSize: '10.5px', lineHeight: 1.45, color: BRAND.muted, wordBreak: 'keep-all' }}>
+        <p style={{ margin: '2px 0 0', fontSize: '0.6875rem', lineHeight: 1.45, color: BRAND.muted, wordBreak: 'keep-all' }}>
           비밀번호는 바꿀 때만 입력하세요. 키·몸무게는 {PRODUCT.codeName} 계산에 쓰이지 않습니다.
         </p>
 
@@ -361,7 +362,7 @@ export function ProfileSection({ user }: { user: User }) {
           <p
             style={{
               margin: 0,
-              fontSize: '11.5px',
+              fontSize: '0.75rem',
               fontWeight: 800,
               color: notice.ok ? BRAND.green : '#8E3A32',
               wordBreak: 'keep-all',
@@ -374,7 +375,7 @@ export function ProfileSection({ user }: { user: User }) {
         <CTA
           onClick={() => void save()}
           disabled={saving || !loaded || passwordMismatch}
-          style={{ marginTop: '6px', padding: '11px 14px', fontSize: '14px', borderRadius: '12px', gap: '6px' }}
+          style={{ marginTop: '6px', padding: '11px 14px', fontSize: '0.875rem', borderRadius: '12px', gap: '6px' }}
         >
           <Save size={15} /> {saving ? '저장 중...' : '저장'}
         </CTA>
@@ -415,7 +416,12 @@ export function OrdersSection({
   }, [user.id, reloadKey, tick]);
 
   const cancel = async (order: MyOrder) => {
-    if (!window.confirm(`${krw(order.totalKrw)}원 주문을 취소할까요? 사용한 적립금은 돌려드리고, 지급된 구매 적립은 회수됩니다.`)) return;
+    const confirmed = await confirmDialog({
+      title: `${krw(order.totalKrw)}원 주문을 취소할까요?`,
+      body: '사용한 적립금은 돌려드리고, 지급된 구매 적립은 회수됩니다.',
+      confirmLabel: '주문 취소하기',
+    });
+    if (!confirmed) return;
     setBusyId(order.id);
     setNotice(null);
     try {
@@ -441,11 +447,11 @@ export function OrdersSection({
   return (
     <Collapsible kicker="마켓" title="주문 내역" hint={orders.length > 0 ? `${orders.length}건` : undefined}>
       {loading ? (
-        <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>불러오는 중...</p>
+        <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>불러오는 중...</p>
       ) : orders.length === 0 ? (
         <div style={{ display: 'grid', placeItems: 'center', gap: '8px', padding: '12px 0' }}>
           <Package size={22} color={BRAND.muted} />
-          <p style={{ margin: 0, fontSize: '12.5px', color: BRAND.muted, textAlign: 'center' }}>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted, textAlign: 'center' }}>
             아직 주문 내역이 없습니다.
           </p>
         </div>
@@ -466,7 +472,7 @@ export function OrdersSection({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                     <span
                       style={{
-                        fontSize: '10.5px',
+                        fontSize: '0.6875rem',
                         fontWeight: 900,
                         color: tone.color,
                         background: tone.bg,
@@ -476,23 +482,23 @@ export function OrdersSection({
                     >
                       {tone.label}
                     </span>
-                    <span style={{ fontSize: '11.5px', color: BRAND.muted }}>{day(order.createdAt)}</span>
+                    <span style={{ fontSize: '0.75rem', color: BRAND.muted }}>{day(order.createdAt)}</span>
                   </div>
                   {order.items.length > 0 && (
-                    <div style={{ fontSize: '12px', fontWeight: 800, marginTop: '5px', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 800, marginTop: '5px', wordBreak: 'keep-all' }}>
                       {order.items.map((i) => `${i.name} x${i.quantity}`).join(', ')}
                     </div>
                   )}
                   {order.rewardUsed > 0 && (
-                    <div style={{ fontSize: '11.5px', color: BRAND.muted, marginTop: '4px' }}>
+                    <div style={{ fontSize: '0.75rem', color: BRAND.muted, marginTop: '4px' }}>
                       적립금 {krw(order.rewardUsed)}원 사용
                     </div>
                   )}
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 900, color: BRAND.green }}>{krw(order.totalKrw)}원</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 900, color: BRAND.green }}>{krw(order.totalKrw)}원</div>
                   {order.subtotalKrw !== order.totalKrw && (
-                    <div style={{ fontSize: '11px', color: BRAND.muted, textDecoration: 'line-through' }}>
+                    <div style={{ fontSize: '0.75rem', color: BRAND.muted, textDecoration: 'line-through' }}>
                       {krw(order.subtotalKrw)}원
                     </div>
                   )}
@@ -513,7 +519,7 @@ export function OrdersSection({
                       color: BRAND.muted,
                       borderRadius: '10px',
                       padding: '7px 12px',
-                      fontSize: '12px',
+                      fontSize: '0.8125rem',
                       fontWeight: 800,
                       fontFamily: 'inherit',
                       cursor: 'pointer',
@@ -523,7 +529,7 @@ export function OrdersSection({
                   </button>
                 )}
                 {order.status === 'PAID' && !order.cancelable && (
-                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: BRAND.muted }}>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: BRAND.muted }}>
                     발송된 뒤에는 취소할 수 없습니다. 반품은 고객센터로 문의해주세요.
                   </p>
                 )}
@@ -534,7 +540,7 @@ export function OrdersSection({
             <p
               style={{
                 margin: '10px 0 0',
-                fontSize: '12px',
+                fontSize: '0.8125rem',
                 fontWeight: 800,
                 color: notice.ok ? BRAND.green : '#8E3A32',
                 wordBreak: 'keep-all',
@@ -575,7 +581,14 @@ export function MembershipSection({
   }, [reload]);
 
   const cancel = async () => {
-    if (!window.confirm('이용 기간이 끝나면 해지됩니다. 남은 기간은 그대로 이용하실 수 있어요. 해지할까요?')) return;
+    // 남은 기간은 그대로 쓰고 기간 만료 시 해지되는 — 되돌릴 수 있는 동작이라 붉은 버튼을 쓰지 않는다.
+    const confirmed = await confirmDialog({
+      title: '멤버십을 해지할까요?',
+      body: '남은 이용 기간은 그대로 쓰실 수 있고, 기간이 끝나면 해지됩니다.',
+      confirmLabel: '해지하기',
+      destructive: false,
+    });
+    if (!confirmed) return;
     setWorking(true);
     setNotice(null);
     try {
@@ -604,7 +617,7 @@ export function MembershipSection({
             value={day(subscription.current_period_end)}
           />
           {subscription.cancel_at_period_end ? (
-            <p style={{ margin: '4px 0 0', fontSize: '12px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
               해지 예약 상태입니다. 위 날짜까지는 그대로 이용하실 수 있습니다.
             </p>
           ) : (
@@ -618,7 +631,7 @@ export function MembershipSection({
                 border: 0,
                 background: 'transparent',
                 color: BRAND.muted,
-                fontSize: '12.5px',
+                fontSize: '0.8125rem',
                 fontWeight: 800,
                 fontFamily: 'inherit',
                 textDecoration: 'underline',
@@ -630,15 +643,15 @@ export function MembershipSection({
             </button>
           )}
           {notice && (
-            <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: notice.ok ? BRAND.green : '#8E3A32' }}>
+            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 800, color: notice.ok ? BRAND.green : '#8E3A32' }}>
               {notice.text}
             </p>
           )}
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '8px' }}>
-          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', lineHeight: 1.9, color: BRAND.muted }}>
-            <li>14일 관리 무제한</li>
+          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.9, color: BRAND.muted }}>
+            <li>14일 루틴 무제한</li>
             <li>광고 없이 이용</li>
             <li>미션 · 공통 스트레칭 적립 2배</li>
             <li>상품 구매 시 결제액의 5% 적립</li>
@@ -682,9 +695,9 @@ export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenR
       hint={visible.length > 0 ? `최근 ${visible.length}회` : undefined}
     >
       {loading ? (
-        <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>불러오는 중...</p>
+        <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>불러오는 중...</p>
       ) : visible.length === 0 ? (
-        <p style={{ margin: 0, fontSize: '12.5px', color: BRAND.muted }}>아직 완료한 측정이 없습니다.</p>
+        <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>아직 완료한 측정이 없습니다.</p>
       ) : (
         <div style={{ display: 'grid' }}>
           {visible.map((record, index) => {
@@ -726,16 +739,16 @@ export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenR
                     display: 'grid',
                     placeItems: 'center',
                     fontWeight: 900,
-                    fontSize: '13px',
+                    fontSize: '0.8125rem',
                   }}
                 >
                   {record.code || '----'}
                 </span>
                 <span style={{ minWidth: 0, flex: 1 }}>
-                  <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 800 }}>
+                  <span style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 800 }}>
                     {day(record.measuredAt)}
                     {index === 0 && (
-                      <span style={{ marginLeft: '6px', fontSize: '10.5px', fontWeight: 900, color: BRAND.green }}>
+                      <span style={{ marginLeft: '6px', fontSize: '0.6875rem', fontWeight: 900, color: BRAND.green }}>
                         최근
                       </span>
                     )}
@@ -743,7 +756,7 @@ export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenR
                   <span
                     style={{
                       display: 'block',
-                      fontSize: '11.5px',
+                      fontSize: '0.75rem',
                       color: BRAND.muted,
                       marginTop: '3px',
                       lineHeight: 1.5,
@@ -766,7 +779,7 @@ export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenR
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
       <span style={{ color: BRAND.muted, fontWeight: 700 }}>{label}</span>
       <span style={{ fontWeight: 800 }}>{value}</span>
     </div>
@@ -796,7 +809,7 @@ function Field({
 }) {
   return (
     <label style={{ display: 'grid', gap: compact ? '3px' : '5px', minWidth: 0 }}>
-      <span style={{ fontSize: compact ? '10.5px' : '11.5px', fontWeight: 900, color: BRAND.muted }}>{label}</span>
+      <span style={{ fontSize: compact ? '0.6875rem' : '0.75rem', fontWeight: 900, color: BRAND.muted }}>{label}</span>
       <input
         type={type}
         value={value}
@@ -809,11 +822,10 @@ function Field({
           boxSizing: 'border-box',
           height: compact ? '38px' : '42px',
           borderRadius: compact ? '10px' : '12px',
-          border: `1px solid ${invalid ? '#dc2626' : SURFACE.hairline}`,
+          border: `1px solid ${invalid ? '#8E3A32' : SURFACE.hairline}`,
           padding: compact ? '0 10px' : '0 12px',
-          fontSize: compact ? '12.5px' : '13px',
+          fontSize: compact ? '0.8125rem' : '0.8125rem',
           fontFamily: 'inherit',
-          outline: 'none',
           background: '#ffffff',
         }}
       />

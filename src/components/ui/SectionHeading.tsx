@@ -37,7 +37,7 @@ export function SectionHeading({
         </h2>
       </div>
       {hint && (
-        <span style={{ flexShrink: 0, fontSize: '11px', color: BRAND.muted, background: SURFACE.subtle, borderRadius: '999px', padding: '5px 8px' }}>
+        <span style={{ flexShrink: 0, fontSize: '0.75rem', color: BRAND.muted, background: SURFACE.subtle, borderRadius: '999px', padding: '5px 8px' }}>
           {hint}
         </span>
       )}

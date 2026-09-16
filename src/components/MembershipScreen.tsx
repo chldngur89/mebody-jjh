@@ -32,7 +32,7 @@ function cycleLabel(cycle: MembershipPlan['billing_cycle']): string {
 
 /** 무료와 멤버십의 차이. 화면 문구와 실제 규칙(034·035)이 어긋나지 않게 한곳에 둡니다. */
 const BENEFITS: Array<{ title: string; free: string; paid: string }> = [
-  { title: '14일 관리 루틴', free: '첫 1회 무료', paid: '무제한' },
+  { title: '14일 루틴', free: '첫 1회 무료', paid: '무제한' },
   { title: '광고', free: '있음', paid: '없음' },
   { title: '미션 · 공통 스트레칭 적립', free: '기본', paid: '2배' },
   { title: 'mebody 상품 구매', free: '-', paid: '결제액의 5% 적립' },
@@ -69,6 +69,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
       {onBack && (
         <button
           type="button"
+          className="mebody-hit"
           onClick={onBack}
           style={{
             justifySelf: 'start',
@@ -79,7 +80,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
             background: 'transparent',
             padding: '2px 0',
             color: BRAND.muted,
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: 'pointer',
@@ -96,17 +97,17 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
 
       {loading ? (
         <Card>
-          <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>멤버십 정보를 불러오는 중...</p>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>멤버십 정보를 불러오는 중...</p>
         </Card>
       ) : (
         <>
           {isSubscribed && mySubscription && (
             <Card tone="green">
               <Chip tone="onGreen">이용 중</Chip>
-              <h2 style={{ fontSize: '21px', fontWeight: 800, margin: '12px 0 6px', wordBreak: 'keep-all' }}>
+              <h2 style={{ fontSize: '1.3125rem', fontWeight: 800, margin: '12px 0 6px', wordBreak: 'keep-all' }}>
                 이미 멤버십 회원이세요
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '13px', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '0.8125rem', lineHeight: 1.6 }}>
                 {mySubscription.current_period_end
                   ? `${new Date(mySubscription.current_period_end).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}까지 이용하실 수 있습니다.`
                   : '이용 중입니다.'}
@@ -119,14 +120,14 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
             <Card>
               <SectionHeading kicker="플랜" title={plan.name} hint={`${cycleLabel(plan.billing_cycle)} 결제`} />
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
-                <strong style={{ fontSize: '32px', fontWeight: 900, color: BRAND.green, letterSpacing: '-1px' }}>
+                <strong style={{ fontSize: '2rem', fontWeight: 900, color: BRAND.green, letterSpacing: '-1px' }}>
                   {formatKrw(plan.price_krw)}원
                 </strong>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: BRAND.muted }}>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: BRAND.muted }}>
                   / {cycleLabel(plan.billing_cycle)}
                 </span>
               </div>
-              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.7, color: BRAND.muted, wordBreak: 'keep-all' }}>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.7, color: BRAND.muted, wordBreak: 'keep-all' }}>
                 {plan.description}
               </p>
               {!isSubscribed && (
@@ -154,7 +155,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                   gridTemplateColumns: '1.35fr .8fr .95fr',
                   gap: '8px',
                   padding: '0 2px 8px',
-                  fontSize: '11px',
+                  fontSize: '0.75rem',
                   fontWeight: 900,
                   color: BRAND.muted,
                 }}
@@ -175,13 +176,13 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
                     borderTop: i === 0 ? 'none' : `1px solid ${SURFACE.hairline}`,
                   }}
                 >
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, wordBreak: 'keep-all' }}>{b.title}</span>
-                  <span style={{ fontSize: '11.5px', color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 800, wordBreak: 'keep-all' }}>{b.title}</span>
+                  <span style={{ fontSize: '0.75rem', color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
                     {b.free}
                   </span>
                   <span
                     style={{
-                      fontSize: '11.5px',
+                      fontSize: '0.75rem',
                       fontWeight: 900,
                       color: BRAND.green,
                       textAlign: 'center',
@@ -205,7 +206,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
               ].map((line) => (
                 <li key={line} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                   <Check size={15} color={BRAND.green} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span style={{ fontSize: '12.5px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+                  <span style={{ fontSize: '0.8125rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
                     {line}
                   </span>
                 </li>
@@ -222,7 +223,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
               }}
             >
               <ShieldCheck size={15} color={BRAND.muted} style={{ flexShrink: 0, marginTop: '2px' }} />
-              <span style={{ fontSize: '11.5px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+              <span style={{ fontSize: '0.75rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
                 mebody 는 의료 진단이 아닌 웰니스 셀프 체크 서비스입니다.
               </span>
             </div>

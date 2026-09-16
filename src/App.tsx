@@ -20,7 +20,7 @@ const JourneyTodayScreen = lazy(() => lazyImportWithReload(() => import('./compo
 const JourneyMissionScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyMissionScreen').then(m => ({ default: m.JourneyMissionScreen }))));
 const JourneyReportScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyReportScreen').then(m => ({ default: m.JourneyReportScreen }))));
 const JourneyNextScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyNextScreen').then(m => ({ default: m.JourneyNextScreen }))));
-import { preloadQuestions, saveDraft, submitQuestionnaire, createLocalQuestionnaireResult, readLocalQuestionnaireResult, isLocalResultId, type Question } from './api/questionnaire';
+import { preloadQuestions, saveDraft, submitQuestionnaire, createLocalQuestionnaireResult, readLocalQuestionnaireResult, clearLocalQuestionnaireResults, isLocalResultId, type Question } from './api/questionnaire';
 import {
   attachQuestionnaireResultToUser,
   fetchLatestCompletedResultForUser,
@@ -52,7 +52,42 @@ import { withDeadline } from './lib/deadline';
 import { flowSession, useFlowHistory } from './utils/useFlowHistory';
 import { emptyQuestionnaireProgress, hasIncompleteProgress, readQuestionnaireProgress, persistQuestionnaireProgress } from './lib/questionnaireProgress';
 
-const SESSION_LAST_RESULT_KEY = 'mebody:sessionResultId';
+/**
+ * 비회원의 마지막 결과 id. **기기에** 남깁니다(localStorage).
+ * 이전 키는 'mebody:sessionResultId' + sessionStorage 였고, 탭을 닫으면 결과를 잃었습니다.
+ * 회원은 계정에 붙으므로(attachQuestionnaireResultToUser) 이 키를 쓰지 않습니다.
+ */
+const LAST_RESULT_KEY = 'mebody:lastResultId';
+const LEGACY_SESSION_LAST_RESULT_KEY = 'mebody:sessionResultId';
+
+/** localStorage 는 시크릿 모드에서 접근만으로도 throw 할 수 있습니다. */
+function readLastResultId(): string | undefined {
+  try {
+    const saved = window.localStorage.getItem(LAST_RESULT_KEY);
+    if (saved) return saved;
+  } catch { /* 저장 불가 환경 */ }
+  try {
+    // 이전 버전에서 넘어온 사용자 — 이번 방문 것은 살려 줍니다.
+    return window.sessionStorage.getItem(LEGACY_SESSION_LAST_RESULT_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeLastResultId(id: string): void {
+  try {
+    window.localStorage.setItem(LAST_RESULT_KEY, id);
+  } catch { /* 저장 불가 환경 — 이번 방문 동안은 state 가 들고 있습니다. */ }
+}
+
+function clearLastResultId(): void {
+  for (const [store, key] of [
+    ['localStorage', LAST_RESULT_KEY],
+    ['sessionStorage', LEGACY_SESSION_LAST_RESULT_KEY],
+  ] as const) {
+    try { window[store].removeItem(key); } catch { /* 저장 불가 환경 */ }
+  }
+}
 
 type ResultEntrySource = 'questionnaire' | 'quick' | 'shared';
 type ResultSaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
@@ -70,13 +105,13 @@ const MIN_ANALYSIS_VISIBLE_MS = 1000;
  * 테두리 반경을 2px 크게 잡아 자식의 모서리가 선 안쪽에 앉도록 합니다.
  */
 const DESKTOP_FRAME_STYLE: CSSProperties = {
-  border: '3px solid #183126',
+  border: '3px solid #014725',
   borderRadius: '34px',
   overflow: 'hidden',
   boxShadow: '0 24px 60px rgba(0, 70, 40, 0.18)',
-  background: '#FAFAF0',
+  background: '#FFFFF3',
   // 기기 목업처럼 높이를 고정해야 안쪽 화면의 스크롤이 프레임 안에서 동작합니다.
-  // 화면들이 minHeight: 100dvh 를 갖고 있어 이를 index.css 에서 무력화합니다(.mebody-frame > *).
+  // 화면 높이는 var(--mebody-app-height) 로 통일합니다.
   height: 'min(844px, calc(100vh - 32px))',
 };
 
@@ -124,6 +159,7 @@ export default function App() {
   const [isBootstrapping, setIsBootstrapping] = useState(!previewScreen);
   const [authReturnScreen, setAuthReturnScreen] = useState<Screen>('landing');
   const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>(bootAuthMode);
+  const [authPurpose, setAuthPurpose] = useState<'default' | 'save-result'>('default');
   const [membershipReturnScreen, setMembershipReturnScreen] = useState<Screen>('landing');
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis>(null);
   const [activeMission, setActiveMission] = useState<UserMission | null>(null);
@@ -132,6 +168,8 @@ export default function App() {
   const [entitlement, setEntitlement] = useState<Entitlement>(FREE_OPEN_ENTITLEMENT);
   /** 하단 5탭. currentScreen === 'result' 일 때 셸이 이 값으로 내용을 고릅니다. */
   const [activeTab, setActiveTab] = useState<AppTab>(restoredRoute?.tab ?? 'home');
+  /** 홈 탭을 누를 때마다 올라갑니다 — AppShell 이 본문을 맨 위로 되돌립니다. */
+  const [homeScrollTopSignal, setHomeScrollTopSignal] = useState(0);
   const [journeyReportTarget, setJourneyReportTarget] = useState<{ type: 'weekly' | 'progress_check'; dayNo: number }>({ type: 'weekly', dayNo: 7 });
   const mountedRef = useRef(true);
   const questionnaireIdRef = useRef<string | undefined>();
@@ -175,7 +213,8 @@ export default function App() {
   const rememberResultForCurrentSession = (id: string, user: User | null = currentUser) => {
     setLatestResultId(id);
     if (!user) {
-      sessionStorage.setItem(SESSION_LAST_RESULT_KEY, id);
+      // 비회원: 기기에 남겨 다음 방문에도 결과를 볼 수 있게 합니다.
+      writeLastResultId(id);
     }
   };
 
@@ -191,15 +230,22 @@ export default function App() {
     setActiveMission(null);
     setJourneySummary(null);
     if (clearSession) {
-      sessionStorage.removeItem(SESSION_LAST_RESULT_KEY);
+      clearLastResultId();
+      clearLocalQuestionnaireResults();
     }
     setCurrentScreen('landing');
   };
 
-  const openAuth = (returnScreen: Screen, mode: 'signin' | 'signup' = 'signin', successScreen: Screen = returnScreen) => {
+  const openAuth = (
+    returnScreen: Screen,
+    mode: 'signin' | 'signup' = 'signin',
+    successScreen: Screen = returnScreen,
+    purpose: 'default' | 'save-result' = 'default',
+  ) => {
     setAuthReturnScreen(returnScreen);
     setAuthSuccessScreen(successScreen);
     setAuthInitialMode(mode);
+    setAuthPurpose(purpose);
     setCurrentScreen('auth');
   };
 
@@ -489,7 +535,7 @@ export default function App() {
       try {
         const params = new URLSearchParams(window.location.search);
         const sharedResultId = params.get('result');
-        const sessionResultId = sessionStorage.getItem(SESSION_LAST_RESULT_KEY) ?? undefined;
+        const sessionResultId = readLastResultId();
 
         const session = await recoverAuthSession();
         if (!mountedRef.current) return;
@@ -512,6 +558,14 @@ export default function App() {
             openResultScreen(sharedResultId, 'questionnaire');
             return;
           }
+          // 기기에 남아 있는 지난 결과로 복귀합니다.
+          // restoredRoute 는 sessionStorage 기반이라 앱을 완전히 닫으면 사라집니다.
+          // 여기서 resetAnonymousState() 로 떨어지면 방금 저장한 결과까지 지웁니다.
+          if (sessionResultId) {
+            openResultScreen(sessionResultId, 'quick');
+            return;
+          }
+          // 남은 결과가 없을 때만 초기화합니다.
           resetAnonymousState();
           return;
         }
@@ -682,7 +736,7 @@ export default function App() {
     const needsSummary =
       Boolean(currentUser)
       && currentScreen === 'result'
-      && (activeTab === 'status' || activeTab === 'routine' || activeTab === 'mission');
+      && (activeTab === 'status' || activeTab === 'routine' || activeTab === 'mission' || activeTab === 'home');
 
     if (!needsSummary) return;
 
@@ -700,6 +754,7 @@ export default function App() {
                 totalDays: summary.totalDays,
                 completed: summary.completed,
                 total: summary.total,
+                yesterdayIncomplete: summary.yesterdayIncomplete,
                 onOpen: () => setCurrentScreen('journeyToday'),
               }
             : null,
@@ -861,11 +916,6 @@ export default function App() {
               }
               latestBodyCode={bodyCode}
               onAccount={currentUser ? openMyPage : () => openAuth('landing')}
-              onPreviewSignedIn={() => {
-                // 미리보기(로그인 직후와 동일): 내 상태 탭
-                setActiveTab('status');
-                setCurrentScreen('result');
-              }}
               sharedCode={sharedCode}
             />
           )}
@@ -896,8 +946,10 @@ export default function App() {
             <AuthScreen
               user={currentUser}
               initialMode={authInitialMode}
+              purpose={authPurpose}
               onBack={() => goBack(authReturnScreen)}
               onSignedIn={async (signedInUser) => {
+                setAuthPurpose('default');
                 const explicitDestination = (
                   ['membership', 'journeyIntro', 'checkout', 'cart', 'journeyToday', 'journeyMission', 'journeyReport', 'journeyNext'] as Screen[]
                 ).includes(authSuccessScreen);
@@ -920,8 +972,11 @@ export default function App() {
             <AppShell
               scrollKey={`${currentScreen}:${activeTab}:${questionnaireId ?? "none"}`}
               activeTab={activeTab}
+              scrollTopSignal={homeScrollTopSignal}
               onTabChange={(tab) => {
                 setActiveTab(tab);
+                // 홈은 들어올 때마다 맨 위(오늘의 미션·루틴)에서 시작합니다.
+                if (tab === 'home') setHomeScrollTopSignal((n) => n + 1);
                 // 멤버십·결제 화면에서 탭을 누르면 그 탭으로 빠져나옵니다.
                 setCurrentScreen('result');
               }}
@@ -933,8 +988,10 @@ export default function App() {
                   style={{
                     border: 0,
                     background: 'transparent',
-                    color: '#004628',
-                    fontSize: '13px',
+                    color: '#014725',
+                    minHeight: '44px',
+                    padding: '0 8px',
+                    fontSize: '0.8125rem',
                     fontWeight: 800,
                     fontFamily: 'inherit',
                     cursor: 'pointer',
@@ -990,7 +1047,7 @@ export default function App() {
                     gap: '10px',
                   }}
                 >
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#7f1d1d', wordBreak: 'keep-all' }}>
+                  <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#7f1d1d', wordBreak: 'keep-all' }}>
                     결과를 서버에 저장하지 못했습니다. 화면에서는 계속 볼 수 있지만, 로그인·여정에는 아직 연결되지 않습니다.
                   </p>
                   <button
@@ -998,13 +1055,13 @@ export default function App() {
                     onClick={() => void handleRetryResultSave()}
                     disabled={!pendingAnalysis}
                     style={{
-                      height: '40px',
+                      minHeight: '44px',
                       borderRadius: '12px',
                       border: 'none',
-                      background: pendingAnalysis ? '#014725' : '#9ca3af',
+                      background: pendingAnalysis ? '#014725' : '#6F8C7B',
                       color: '#fff',
                       fontWeight: 800,
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       cursor: pendingAnalysis ? 'pointer' : 'not-allowed',
                     }}
                   >
@@ -1013,7 +1070,7 @@ export default function App() {
                 </div>
               )}
               {currentScreen === 'result' && activeTab === 'home' && resultSaveStatus === 'saving' && (
-                <p role="status" style={{ margin: '12px 16px 0', fontSize: '13px', fontWeight: 700, color: '#014725' }}>
+                <p role="status" style={{ margin: '12px 16px 0', fontSize: '0.8125rem', fontWeight: 700, color: '#014725' }}>
                   결과를 저장하는 중…
                 </p>
               )}
@@ -1026,8 +1083,10 @@ export default function App() {
                   isPaid={entitlement.isPaid}
                   onResultLoad={handleResultLoad}
                   initialBodyCode={bodyCode}
+                  journeyProgress={journeySummary}
                   onStartCare={() => setActiveTab('mission')}
                   onOpenRoutine={() => setActiveTab('routine')}
+                  onOpenJourneyToday={() => setCurrentScreen('journeyToday')}
                   onOpenMarket={() => setActiveTab('market')}
                   onRemeasure={startNewDiagnosis}
                   onGoAuth={() => openAuth('result')}

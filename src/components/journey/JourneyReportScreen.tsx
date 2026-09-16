@@ -45,8 +45,8 @@ function StatRow({ label, value, total }: { label: string; value: number; total:
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827' }}>{label}</div>
-        <div style={{ fontSize: '12px', fontWeight: 800, color: '#7c8794' }}>{value}회</div>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725' }}>{label}</div>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#587761' }}>{value}회</div>
       </div>
       <div style={{ height: '10px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden' }}>
         <div
@@ -72,11 +72,11 @@ function Card({ title, eyebrow, children }: { title: string; eyebrow?: string; c
       }}
     >
       {eyebrow && (
-        <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
           {eyebrow}
         </div>
       )}
-      <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#111827', marginBottom: '14px' }}>{title}</h2>
+      <h2 style={{ fontSize: '1.125rem', fontWeight: 900, color: '#014725', marginBottom: '14px' }}>{title}</h2>
       {children}
     </section>
   )
@@ -145,52 +145,52 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
             type="button"
             onClick={onBack}
             style={{
-              width: '38px',
-              height: '38px',
+              width: '44px',
+              height: '44px',
               borderRadius: '999px',
               border: '1px solid rgba(255,255,255,0.42)',
               background: 'rgba(255,255,255,0.74)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#374151',
+              color: '#2C5544',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827' }}>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>
           {isProgressCheck ? '2주 진척 확인' : '주간 리포트'}
         </h1>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>집계하는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>집계하는 중...</div>
         ) : !payload ? (
-          <JourneyNotice>아직 리포트를 만들 수 없습니다. 진행 중인 저니가 있는지 확인해 주세요.</JourneyNotice>
+          <JourneyNotice>아직 리포트를 만들 수 없습니다. 진행 중인 14일 루틴이 있는지 확인해 주세요.</JourneyNotice>
         ) : (
           <>
             <section
               style={{
                 borderRadius: '28px',
                 background: 'rgba(255,255,255,0.86)',
-                boxShadow: '0 22px 46px rgba(15, 23, 42, 0.10)',
+                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
                 backdropFilter: 'blur(20px)',
                 padding: '22px 20px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
                 DAY {payload.period.from_day}–{payload.period.to_day}
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '46px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>
+                <div style={{ fontSize: '2.875rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>
                   {payload.completion.rate}%
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#6b7280', paddingBottom: '4px' }}>수행률</div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#4A6B58', paddingBottom: '4px' }}>수행률</div>
               </div>
               <div style={{ height: '14px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden', marginBottom: '12px' }}>
                 <div
@@ -201,7 +201,7 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
                   }}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '16px', fontSize: '13px', fontWeight: 800, color: '#4b5563' }}>
+              <div style={{ display: 'flex', gap: '16px', fontSize: '0.8125rem', fontWeight: 800, color: '#3D6B54' }}>
                 <span>완료 {payload.completion.completed}</span>
                 <span>건너뜀 {payload.completion.skipped}</span>
                 <span>전체 {payload.completion.scheduled}</span>
@@ -220,7 +220,7 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
               }}
             >
               <TrendingUp size={18} color="#014725" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div style={{ fontSize: '14px', lineHeight: 1.7, fontWeight: 700, color: '#014725', wordBreak: 'keep-all' }}>
+              <div style={{ fontSize: '0.875rem', lineHeight: 1.7, fontWeight: 700, color: '#014725', wordBreak: 'keep-all' }}>
                 {payload.next_hint}
               </div>
             </div>
@@ -257,10 +257,10 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
                     .sort((left, right) => right[1] - left[1])
                     .map(([key, count]) => (
                       <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#111827' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#014725' }}>
                           {AXIS_LABEL[key] ?? key}
                         </span>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>{count}회</span>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>{count}회</span>
                       </div>
                     ))}
                 </div>
@@ -274,7 +274,7 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
             )}
 
             {isProgressCheck && onNext && (
-              <JourneyPrimaryButton label="다음 저니 확인하기" onClick={onNext} icon={<ChevronRight size={18} />} />
+              <JourneyPrimaryButton label="다음 루틴 확인하기" onClick={onNext} icon={<ChevronRight size={18} />} />
             )}
             {!isProgressCheck && onBack && (
               <JourneyPrimaryButton label="오늘 미션으로 돌아가기" onClick={onBack} icon={<ChevronRight size={18} />} />

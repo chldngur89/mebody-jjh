@@ -1,5 +1,5 @@
 /**
- * MEBODY Journey — Rule-Based 미션 추천 (V1)
+ * mebody Journey — Rule-Based 미션 추천 (V1)
  *
  * 순수 함수만 둡니다. Supabase·React·DOM 의존이 없어 단독으로 검증할 수 있습니다.
  *
@@ -584,7 +584,7 @@ export function recommendNextJourney(payload: JourneyReportPayload): NextJourney
   if (rate < 40) {
     return {
       kind: 'restart_gentle',
-      title: '같은 저니를 더 가볍게 한 번 더',
+      title: '같은 루틴을 더 가볍게 한 번 더',
       reason: '이번 2주는 수행 횟수가 많지 않았습니다. 하루 한 가지만 더 짧게 이어가 보세요.',
       focusRank: 1,
     }
@@ -610,7 +610,7 @@ export function recommendNextJourney(payload: JourneyReportPayload): NextJourney
 
   return {
     kind: 'remeasure',
-    title: '재측정하고 다음 저니 이어가기',
+    title: '다시 체크하고 다음 루틴 이어가기',
     reason: '2주 동안의 변화를 32문항으로 확인한 뒤 새 우선순위로 이어가는 것을 추천합니다.',
     focusRank: 1,
   }

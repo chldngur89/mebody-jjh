@@ -19,10 +19,10 @@ export type AnalyticsEvent =
   | 'shared_questionnaire_started'
   | 'shared_questionnaire_completed'
 
-export type ShareChannel = 'kakao' | 'native' | 'copy'
+export type ShareChannel = 'kakao' | 'native' | 'copy' | 'image'
 
 export interface AnalyticsProps {
-  /** 몸BTI 코드(FRRS 등). 이미 공유 링크에 들어가는 공개 값입니다. */
+  /** mebody Code(FRRS 등). 이미 공유 링크에 들어가는 공개 값입니다. */
   body_code?: string
   share_channel?: ShareChannel
   /** 유입 표시(share 등) */

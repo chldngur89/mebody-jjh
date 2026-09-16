@@ -49,7 +49,7 @@ export function RoutineTab({
           <SectionHeading kicker="진행 중" title={`DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}`} />
           <ProgressTrack
             percent={(journeyProgress.dayNo / Math.max(1, journeyProgress.totalDays)) * 100}
-            label="14일 관리"
+            label="14일 루틴"
             value={`오늘 ${journeyProgress.completed} / ${journeyProgress.total} 완료`}
           />
           <CTA onClick={onOpenJourney}>
@@ -77,10 +77,10 @@ export function RoutineTab({
         <PageTitle eyebrow="MY ROUTINE" title="14일 루틴" lead="내 코드와 관리 우선순위에 맞춰 하루 한 가지씩 배정됩니다." />
         <Card tone="green">
           {isFreeTrial && <Chip tone="onGreen">첫 14일 무료</Chip>}
-          <h2 style={{ fontSize: '23px', fontWeight: 800, margin: '12px 0 8px', wordBreak: 'keep-all' }}>
+          <h2 style={{ fontSize: '1.4375rem', fontWeight: 800, margin: '12px 0 8px', wordBreak: 'keep-all' }}>
             지금 시작할 수 있어요
           </h2>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,.78)', fontSize: '14px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,.78)', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {isFreeTrial
               ? '첫 14일은 무료입니다. 끝까지 해보고 이어갈지 정하세요.'
               : '멤버십 이용 중이라 언제든 새로 시작할 수 있습니다.'}
@@ -121,10 +121,10 @@ export function RoutineTab({
           >
             <Lock size={22} color={BRAND.green} />
           </div>
-          <h2 style={{ fontSize: '19px', fontWeight: 800, margin: 0, textAlign: 'center', wordBreak: 'keep-all' }}>
+          <h2 style={{ fontSize: '1.1875rem', fontWeight: 800, margin: 0, textAlign: 'center', wordBreak: 'keep-all' }}>
             무료 체험을 모두 사용했습니다
           </h2>
-          <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.7, color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.7, color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
             멤버십에 가입하면 14일 루틴을 계속 이어갈 수 있습니다.
             <br />
             공통 스트레칭과 적립은 지금처럼 무료로 계속 이용하실 수 있어요.
@@ -137,8 +137,8 @@ export function RoutineTab({
 
       <Card>
         <SectionHeading kicker="멤버십" title="무엇이 열리나요" />
-        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', lineHeight: 1.9, color: BRAND.muted }}>
-          <li>14일 관리 무제한</li>
+        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.9, color: BRAND.muted }}>
+          <li>14일 루틴 무제한</li>
           <li>광고 없이 이용</li>
           <li>미션 · 공통 스트레칭 적립 2배</li>
           <li>mebody 상품 구매 시 결제액의 5% 적립</li>

@@ -167,7 +167,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
             const done = doneSet.has(key);
             const isToday = key === iso(today);
             return (
-              <div key={key} style={{ textAlign: 'center', fontSize: '10px', color: '#718078' }}>
+              <div key={key} style={{ textAlign: 'center', fontSize: '0.6875rem', color: '#718078' }}>
                 {DOW[i]}
                 <i
                   style={{
@@ -179,7 +179,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
                     borderRadius: '50%',
                     fontStyle: 'normal',
                     fontWeight: 900,
-                    fontSize: '12px',
+                    fontSize: '0.8125rem',
                     background: done ? BRAND.green : '#ffffff',
                     color: done ? '#ffffff' : isToday ? BRAND.green : '#9BA79F',
                     outline: isToday && !done ? `2px solid ${BRAND.green}` : 'none',
@@ -200,7 +200,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
             background: SURFACE.soft,
             borderRadius: '14px',
             padding: '11px 12px',
-            fontSize: '11px',
+            fontSize: '0.75rem',
           }}
         >
           <span>7일 모두 완료하면</span>
@@ -212,7 +212,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
           </CTA>
         )}
         {notice && (
-          <div style={{ marginTop: '10px', fontSize: '12px', fontWeight: 700, color: BRAND.muted, textAlign: 'center' }}>
+          <div style={{ marginTop: '10px', fontSize: '0.8125rem', fontWeight: 700, color: BRAND.muted, textAlign: 'center' }}>
             {notice}
           </div>
         )}
@@ -223,7 +223,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
         <SectionHeading kicker="기록" title={`${monthStart.getMonth() + 1}월 관리 달력`} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '6px' }}>
           {DOW.map((d) => (
-            <div key={d} style={{ textAlign: 'center', fontSize: '10px', color: BRAND.muted, fontWeight: 800 }}>
+            <div key={d} style={{ textAlign: 'center', fontSize: '0.6875rem', color: BRAND.muted, fontWeight: 800 }}>
               {d}
             </div>
           ))}
@@ -244,7 +244,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
                       display: 'grid',
                       placeItems: 'center',
                       borderRadius: '10px',
-                      fontSize: '11px',
+                      fontSize: '0.75rem',
                       fontWeight: done ? 900 : 600,
                       background: done ? BRAND.green : inMonth ? SURFACE.subtle : 'transparent',
                       color: done ? '#ffffff' : inMonth ? BRAND.text : '#C9D2CB',

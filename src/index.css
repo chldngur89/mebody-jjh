@@ -114,23 +114,23 @@
     --color-gray-700: oklch(.373 .034 259.733);
     --color-gray-900: oklch(.21 .034 264.665);
     --color-white: #fff;
-    --spacing: .25rem;
-    --container-md: 28rem;
-    --text-xs: .75rem;
+    --spacing: 3.5px;
+    --container-md: 392px;
+    --text-xs: .6875rem;   /* 10.5px → 11px — Apple 모바일 최소값 */
     --text-xs--line-height: calc(1 / .75);
-    --text-sm: .875rem;
+    --text-sm: .8125rem;   /* 12.25px → 13px */
     --text-sm--line-height: calc(1.25 / .875);
-    --text-base: 1rem;
-    --text-lg: 1.125rem;
+    --text-base: .875rem;  /* 14px — 동일 */
+    --text-lg: .984375rem; /* 15.75px — 동일 */
     --text-lg--line-height: calc(1.75 / 1.125);
-    --text-xl: 1.25rem;
-    --text-2xl: 1.5rem;
+    --text-xl: 1.09375rem; /* 17.5px — 동일 */
+    --text-2xl: 1.3125rem; /* 21px — 동일 */
     --text-2xl--line-height: calc(2 / 1.5);
-    --text-3xl: 1.875rem;
+    --text-3xl: 1.640625rem; /* 26.25px — 동일 */
     --text-3xl--line-height: calc(2.25 / 1.875);
-    --text-4xl: 2.25rem;
+    --text-4xl: 1.96875rem; /* 31.5px — 동일 */
     --text-4xl--line-height: calc(2.5 / 2.25);
-    --text-7xl: 4.5rem;
+    --text-7xl: 3.9375rem;  /* 63px — 동일 */
     --text-7xl--line-height: 1;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
@@ -139,8 +139,8 @@
     --font-weight-black: 900;
     --tracking-wider: .05em;
     --leading-relaxed: 1.625;
-    --radius-2xl: 1rem;
-    --radius-3xl: 1.5rem;
+    --radius-2xl: 14px;
+    --radius-3xl: 21px;
     --ease-out: cubic-bezier(0, 0, .2, 1);
     --animate-spin: spin 1s linear infinite;
     --animate-pulse: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
@@ -173,7 +173,6 @@
   }
 
   html, :host {
-    -webkit-text-size-adjust: 100%;
     tab-size: 4;
     line-height: 1.5;
     font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
@@ -1754,27 +1753,26 @@
 }
 
 :root {
-  --font-size: 14px;
   --background: #fff;
   --foreground: oklch(.145 0 0);
   --card: #fff;
   --card-foreground: oklch(.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(.145 0 0);
-  --primary: #030213;
+  --primary: #014725;
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(.95 .0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
+  --secondary-foreground: #014725;
+  --muted: #E8EFE5;
+  --muted-foreground: #587761;
+  --accent: #E5EBE5;
+  --accent-foreground: #014725;
+  --destructive: #8E3A32;
   --destructive-foreground: #fff;
   --border: #0000001a;
   --input: transparent;
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
+  --input-background: #F0F4EC;
+  --switch-background: #C8D6C4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: oklch(.708 0 0);
@@ -1783,10 +1781,10 @@
   --chart-3: oklch(.398 .07 227.392);
   --chart-4: oklch(.828 .189 84.429);
   --chart-5: oklch(.769 .188 70.08);
-  --radius: .625rem;
+  --radius: 8.75px;
   --sidebar: oklch(.985 0 0);
   --sidebar-foreground: oklch(.145 0 0);
-  --sidebar-primary: #030213;
+  --sidebar-primary: #014725;
   --sidebar-primary-foreground: oklch(.985 0 0);
   --sidebar-accent: oklch(.97 0 0);
   --sidebar-accent-foreground: oklch(.205 0 0);
@@ -1832,7 +1830,9 @@
 }
 
 html {
-  font-size: var(--font-size);
+  /* 루트를 px 로 고정하면 브라우저·OS 의 글자 크기 설정이 통째로 무시된다.
+     100% = 사용자가 정한 기본 크기(보통 16px). 아래의 모든 rem 이 여기 붙는다. */
+  font-size: 100%;
 }
 
 @property --tw-translate-x {
@@ -2484,7 +2484,7 @@ html {
 }
 
 /* =============================================================================
-   MEBODY BRAND OVERRIDE — cream #FFFFF3 / green #014725
+   mebody BRAND OVERRIDE — cream #FFFFF3 / green #014725
    ROLLBACK: delete this entire block (and revert src/theme/brand.ts + hex replaces)
    or: git checkout main
    ============================================================================= */
@@ -2566,8 +2566,6 @@ body,
     max-height: var(--mebody-app-height);
     overflow: hidden;
     overscroll-behavior: none;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
   }
 
   /* Fixed root tracks visualViewport so Kakao chrome/keyboard don't clip CTAs. */
@@ -2610,8 +2608,8 @@ body,
 }
 
 /* ===== 데스크톱 기기 목업 프레임 =====
-   화면 컴포넌트들이 inline 으로 minHeight:100dvh 를 갖고 있어(21곳)
-   데스크톱에서 프레임이 콘텐츠 길이만큼 늘어났습니다.
+   화면 높이는 var(--mebody-app-height) 로 통일합니다.
+   데스크톱에서 프레임이 콘텐츠 길이만큼 늘어나지 않도록
    여기서 무력화해야 각 화면의 내부 overflowY:auto 가 프레임 안에서 동작합니다.
    모바일에는 적용되지 않습니다. */
 @media (min-width: 768px) {
@@ -2641,8 +2639,131 @@ body {
    기존에는 컴포넌트마다 "SUIT Variable" 을 인라인으로 박아 두었는데,
    그 인라인들을 걷어내고 여기 한 곳에서만 정한다. 되돌리려면 이 변수만 바꾸면 된다.
 --------------------------------------------------------------------------- */
-:root { --mebody-font: Arial, "Noto Sans KR", sans-serif; }
+/* Pretendard Std — 홈페이지(mebody-server)와 동일한 자체 호스팅 폰트.
+   이전에는 Arial, "Noto Sans KR" 이었는데 Arial 에 한글이 없어 OS 기본 한글
+   폰트로 떨어졌고, 그래서 홈페이지와 인상이 크게 달랐다. 웹폰트 로드 0개였다.
+   KS X 1001 한글 서브셋 + 가변 웨이트 1파일 288KB. SIL OFL. */
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/PretendardStdVariable.woff2") format("woff2-variations"),
+       url("/fonts/PretendardStdVariable.woff2") format("woff2");
+}
+:root {
+  --mebody-font: "Pretendard Variable", Pretendard, "Noto Sans KR",
+    system-ui, -apple-system, sans-serif;
+}
 
 body, button, input, textarea, select {
   font-family: var(--mebody-font);
+}
+
+/* ===== 접근성 (Lens 1) ============================================
+   이 파일에는 :focus-visible 선언이 하나도 없었고, 인라인으로
+   outline:'none' 이 7곳에 걸려 있었다. 키보드·스위치 컨트롤 사용자는
+   지금 포커스가 어디 있는지 전혀 알 수 없는 상태였다. */
+
+:root {
+  --mebody-focus-ring: #016b38; /* 크림 위 6.59:1 · 흰 배경 6.64:1 */
+  --mebody-focus-halo: #fffff3;
+  /* 탭바 실제 높이 = 디자인 높이(theme/brand.ts SHELL.tabBarHeight) + 홈 인디케이터.
+     탭바 본체와 그 위에 쌓이는 것들이 전부 이 값 하나를 본다. */
+  --mebody-tabbar-h: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 링을 요소 **안쪽**에 그린다.
+   바깥(offset: 2px)에 그렸더니 전체 폭 요소에서 스크롤 컨테이너에 잘렸다 —
+   실측: 동의 화면의 체크박스 6px, CTA 8px, '자세히 보기' 4px 가 잘림.
+   안쪽에 그리면 어떤 컨테이너 여백에서도 잘리지 않는다.
+   inset halo 는 어두운 채움 위에서 링을 한 번 더 떼어낸다(인라인 boxShadow 가
+   있는 요소에서는 halo 가 덮이지만 outline 은 남는다). */
+:is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--mebody-focus-ring);
+  outline-offset: -2px;
+  /* !important 가 필요한 이유: 주요 CTA 10곳이 인라인 boxShadow(그림자)를 갖고 있어서
+     그냥 쓰면 이 링이 덮입니다. 그 버튼들은 브랜드 그린 그라데이션 채움이라
+     outline 색(#016B38)이 채움과 1.00~1.64 로 사실상 안 보입니다.
+     그라데이션 두 정지색(#016B38·#014725)이 중간톤을 양쪽에서 끼고 있어
+     **단일 색으로는 흰 채움과 그린 채움을 동시에 만족할 수 없습니다** — 2중 링이 필수입니다.
+     포커스 중에만 장식 그림자가 가려지는데, 포커스가 더 잘 보이는 편이 맞습니다. */
+  box-shadow:
+    inset 0 0 0 2px var(--mebody-focus-halo),
+    inset 0 0 0 4px var(--mebody-focus-ring) !important;
+}
+
+/* 테두리 없는 입력이 래퍼 div 안에 들어가는 자리.
+   입력 자신이 아니라 눈에 보이는 필드 전체에 링을 준다. */
+.mebody-field:focus-within {
+  /* 필드는 전체 폭이라 바깥 링이 잘린다 — 안쪽에 그린다. */
+  outline: 2px solid var(--mebody-focus-ring);
+  outline-offset: -2px;
+}
+
+/* 무한 애니메이션 2개가 reduced-motion 블록 밖에 있었다.
+   회전·맥동이 멈추지 않으면 전정기관 장애가 있는 사용자에게 직접적인 위해다. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin {
+    animation: none;
+  }
+  .animate-pulse {
+    animation: none;
+    opacity: 1;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 시각 크기는 그대로 두고 터치 영역만 44×44 로 넓힌다 (레이아웃 변화 0).
+   좌우로 붙어 있는 컨트롤에는 쓰지 않는다 — 서로의 탭을 뺏는다. */
+.mebody-hit {
+  position: relative;
+}
+.mebody-hit::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+}
+
+/* 세로로만 넓힌다 — 좌우로 인접한 컨트롤용 */
+.mebody-hit-y {
+  position: relative;
+}
+.mebody-hit-y::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  translate: 0 -50%;
+  height: max(100%, 44px);
+}
+
+/* 카드 한 장 전체를 버튼의 터치 영역으로 만듭니다.
+   버튼을 position:static 으로 두어야 ::after 의 기준이 카드(position:relative)가 됩니다.
+   작은 버튼을 오른쪽에 두면서도 엄지로는 카드 아무 곳이나 누를 수 있게 하려는 것입니다. */
+.mebody-card-hit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* 진단 소개의 4축 안내(AxisIntroDemo).
+   배치는 결과 화면의 「4축 상세 결과」와 완전히 같게 두고,
+   손잡이만 여기서 부드럽게 움직입니다(결과 화면은 즉시 표시). */
+.mebody-axis-demo i {
+  transition: left 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mebody-axis-demo i {
+    transition: none;
+  }
 }

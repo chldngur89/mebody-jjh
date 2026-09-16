@@ -8,6 +8,7 @@
  * body_code_result_sections 는 코드 플랜 전용 — Home 에서는 읽지 않습니다.
  */
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { focusLabel } from '../../theme/focusLabels';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { fetchQuestionnaireResult, fetchQuestions, fetchBodyCodeContentWithFallback, type BodyCodeContent, type Question, type QuestionnaireResponse } from '../../api/questionnaire';
 import {
@@ -143,28 +144,28 @@ const DEFAULT_YOUTUBE_VIDEOS: YoutubeVideo[] = [
 
 const DEFAULT_STORE_ITEMS: StoreItem[] = [
   {
-    name: 'MEBODY 리커버리 폼롤러',
+    name: 'mebody 리커버리 폼롤러',
     desc: '전신 근막 이완과 루틴 전후 워밍업에 쓰기 좋은 기본형 폼롤러입니다.',
     priceLabel: '가격 준비 중',
     badge: 'BEST',
     ctaLabel: '구매하기 준비 중',
   },
   {
-    name: 'MEBODY 딥 마사지볼 세트',
+    name: 'mebody 딥 마사지볼 세트',
     desc: '어깨, 둔근, 발바닥처럼 국소 자극이 필요한 부위에 쓰는 더블볼 세트입니다.',
     priceLabel: '가격 준비 중',
     badge: 'RECOVERY',
     ctaLabel: '구매하기 준비 중',
   },
   {
-    name: 'MEBODY 스트레칭 밴드',
+    name: 'mebody 스트레칭 밴드',
     desc: '하체 유연성과 골반 정렬 루틴에 맞춰 가볍게 당길 수 있는 저항 밴드입니다.',
     priceLabel: '가격 준비 중',
     badge: 'ROUTINE',
     ctaLabel: '구매하기 준비 중',
   },
   {
-    name: 'MEBODY 밸런스 서포트 쿠션',
+    name: 'mebody 밸런스 서포트 쿠션',
     desc: '앉는 자세에서 체중 분산을 도와 장시간 한 자세에 머무는 시간을 줄여줍니다.',
     priceLabel: '가격 준비 중',
     badge: 'POSTURE',
@@ -197,8 +198,8 @@ function getAxisSentence(content: BodyCodeContent | null, key: AxisKey, fallback
 }
 
 function renderPercentBar(percentLeft: number, percentRight: number, leftColor: string, rightColor: string) {
-  const leftTextColor = percentLeft >= 16 ? '#ffffff' : '#111827';
-  const rightTextColor = percentRight >= 16 ? '#ffffff' : '#111827';
+  const leftTextColor = percentLeft >= 16 ? '#ffffff' : '#014725';
+  const rightTextColor = percentRight >= 16 ? '#ffffff' : '#014725';
 
   return (
     <div
@@ -222,7 +223,7 @@ function renderPercentBar(percentLeft: number, percentRight: number, leftColor: 
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 10px',
-          fontSize: '12px',
+          fontSize: '0.8125rem',
           fontWeight: 800,
           letterSpacing: '-0.01em',
         }}
@@ -324,7 +325,7 @@ function buildStoreItems(
       name: product.name || `상품 ${index + 1}`,
       desc: product.description || '결과 코드에 맞춰 사용할 수 있는 회복/자세 보조 용품입니다.',
       priceLabel: formatPrice(product.price),
-      badge: index === 0 ? `${bodyCode} PICK` : 'MEBODY STORE',
+      badge: index === 0 ? `${bodyCode} PICK` : 'mebody 스토어',
       ctaLabel: '장바구니에 담기',
       imageUrl: product.imageUrl,
       priceKrw: product.price,
@@ -338,7 +339,7 @@ function buildStoreItems(
     name: item?.name?.trim() || `${bodyCode} 추천 용품 ${index + 1}`,
     desc: item?.desc?.trim() || '결과 코드에 맞춰 사용할 수 있는 회복/자세 보조 용품입니다.',
     priceLabel: '가격 준비 중',
-    badge: index === 0 ? `${bodyCode} PICK` : 'MEBODY STORE',
+    badge: index === 0 ? `${bodyCode} PICK` : 'mebody 스토어',
     ctaLabel: '구매하기 준비 중',
   }));
 }
@@ -366,6 +367,8 @@ export interface ResultData {
   strategyTitle: string | null;
   strategySummary: string | null;
   journeyTitle: string | null;
+  /** starter_focus 첫 항목 또는 strategy — 홈 '지금 바로' 한 줄 */
+  oneLineAction: string;
   recommendedStartMinutes: number;
   axisRows: AxisRow[];
   axisDetails: Array<{ key: AxisKey; code: string; title: string; description: string }>;
@@ -451,7 +454,7 @@ export function useResultData(
           return;
         }
         setResult(null);
-        setError('결과를 찾을 수 없습니다.');
+        setError('저장된 결과를 찾지 못했습니다. 홈에서 다시 분석하면 새 결과를 만들 수 있어요.');
       })
       .catch(async (loadError) => {
         if (cancelled) return;
@@ -465,7 +468,7 @@ export function useResultData(
             /* fall through */
           }
         }
-        setError('결과를 찾을 수 없습니다.');
+        setError('저장된 결과를 찾지 못했습니다. 홈에서 다시 분석하면 새 결과를 만들 수 있어요.');
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -513,6 +516,13 @@ export function useResultData(
   const strategyTitle = content?.strategy_title?.trim() || null;
   const strategySummary = content?.strategy_summary?.trim() || null;
   const journeyTitle = content?.journey_title?.trim() || null;
+  const starterFocus = asStringList(content?.starter_focus);
+  // starter_focus 는 'foot_support' 같은 내부 키입니다. 그대로 쓰면 화면에 그 키가 나갑니다.
+  const oneLineAction =
+    focusLabel(starterFocus[0]) ||
+    strategyTitle ||
+    journeyTitle ||
+    '목·어깨부터 가볍게 풀어보기';
   const recommendedStartMinutes =
     typeof content?.recommended_start_minutes === 'number' && content.recommended_start_minutes > 0
       ? content.recommended_start_minutes
@@ -563,7 +573,7 @@ export function useResultData(
   return {
     isLoading, error, result, content, bodyCode, characterName, characterImage,
     identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
-    strategyTitle, strategySummary, journeyTitle, recommendedStartMinutes,
+    strategyTitle, strategySummary, journeyTitle, oneLineAction, recommendedStartMinutes,
     axisRows, axisDetails, youtubeVideos, storeItems, rewardBalance, handleImageError,
   };
 }

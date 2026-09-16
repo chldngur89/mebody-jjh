@@ -47,7 +47,7 @@ function OptionGroup<T extends string>({
 }) {
   return (
     <div>
-      <div style={{ fontSize: '12px', fontWeight: 900, color: '#014725', marginBottom: '10px' }}>{title}</div>
+      <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725', marginBottom: '10px' }}>{title}</div>
       <div style={{ display: 'grid', gap: '8px' }}>
         {options.map((option) => {
           const selected = value === option.value
@@ -72,10 +72,10 @@ function OptionGroup<T extends string>({
               }}
             >
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827', marginBottom: '3px' }}>
+                <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '3px' }}>
                   {option.label}
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#7c8794', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#587761', wordBreak: 'keep-all' }}>
                   {option.desc}
                 </div>
               </div>
@@ -85,7 +85,7 @@ function OptionGroup<T extends string>({
                   width: '22px',
                   height: '22px',
                   borderRadius: '999px',
-                  border: `2px solid ${selected ? AXIS_GREEN_THEME.primary : '#cbd5e1'}`,
+                  border: `2px solid ${selected ? AXIS_GREEN_THEME.primary : '#6F8C7B'}`,
                   background: selected ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
@@ -111,6 +111,10 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
 
   return (
     <div
+      onClick={(event) => {
+        // 배경(이 요소 자신)을 탭했을 때만 닫는다. 저장 중에는 닫지 않는다.
+        if (event.target === event.currentTarget && !isSaving) closeSheet();
+      }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -118,12 +122,15 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        background: 'rgba(15,23,42,0.34)',
+        background: 'rgba(1, 31, 17, 0.34)',
         backdropFilter: 'blur(14px)',
         padding: '18px',
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="missionFeedbackTitle"
         style={{
           width: '100%',
           maxWidth: '430px',
@@ -132,36 +139,36 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           borderRadius: '30px',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(236,253,245,0.98) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
-          boxShadow: '0 28px 80px rgba(15,23,42,0.24)',
+          boxShadow: '0 28px 80px rgba(1, 31, 17, 0.24)',
           padding: '22px 20px 20px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', marginBottom: '18px' }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>
-              MISSION FEEDBACK
+            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>
+              미션 피드백
             </div>
-            <h2 style={{ fontSize: '22px', lineHeight: 1.25, fontWeight: 900, color: '#111827', wordBreak: 'keep-all' }}>
+            <h2 id="missionFeedbackTitle" style={{ fontSize: '1.375rem', lineHeight: 1.25, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
               오늘 어땠나요?
             </h2>
-            <div style={{ marginTop: '6px', fontSize: '13px', fontWeight: 700, color: '#6b7280', wordBreak: 'keep-all' }}>
+            <div style={{ marginTop: '6px', fontSize: '0.8125rem', fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
               {missionTitle}
             </div>
           </div>
           <button
             type="button"
             onClick={closeSheet}
-          disabled={isSaving}
+            disabled={isSaving}
             style={{
-              width: '36px',
-              height: '36px',
+              width: '44px',
+              height: '44px',
               borderRadius: '999px',
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
               background: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#374151',
+              color: '#2C5544',
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -183,20 +190,20 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '5px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '5px' }}>
                   {reward.alreadyClaimed ? '이미 적립됨' : '오늘의 적립'}
                 </div>
-                <div style={{ fontSize: '26px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>
+                <div style={{ fontSize: '1.625rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>
                   +{reward.amount}원
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#7c8794', marginBottom: '4px' }}>총 적립금</div>
-                <div style={{ fontSize: '17px', fontWeight: 900, color: '#014725' }}>{reward.balance}원</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761', marginBottom: '4px' }}>총 적립금</div>
+                <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725' }}>{reward.balance}원</div>
               </div>
             </div>
             {rewardDisclosure && (
-              <div style={{ marginTop: '10px', fontSize: '11px', lineHeight: 1.55, color: '#6b7280', wordBreak: 'keep-all' }}>
+              <div style={{ marginTop: '10px', fontSize: '0.75rem', lineHeight: 1.55, color: '#4A6B58', wordBreak: 'keep-all' }}>
                 {rewardDisclosure}
               </div>
             )}
@@ -215,9 +222,9 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
             background: 'rgba(244,251,249,0.96)',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
             padding: '12px 14px',
-            fontSize: '12px',
+            fontSize: '0.8125rem',
             lineHeight: 1.6,
-            color: '#6b7280',
+            color: '#4A6B58',
             wordBreak: 'keep-all',
             marginBottom: '14px',
           }}
@@ -238,9 +245,9 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
             justifyContent: 'center',
             borderRadius: '16px',
             border: 'none',
-            background: canSubmit ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#cbd5e1',
+            background: canSubmit ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#6F8C7B',
             color: '#ffffff',
-            fontSize: '15px',
+            fontSize: '0.9375rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: canSubmit ? 'pointer' : 'default',
@@ -257,8 +264,8 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
             width: '100%',
             border: 'none',
             background: 'transparent',
-            color: '#6b7280',
-            fontSize: '13px',
+            color: '#4A6B58',
+            fontSize: '0.8125rem',
             fontWeight: 700,
             fontFamily: 'inherit',
             cursor: 'pointer',

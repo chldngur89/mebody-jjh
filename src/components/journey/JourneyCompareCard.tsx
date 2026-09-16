@@ -15,11 +15,16 @@ const TREND_ICON: Record<CompareTrend, typeof Minus> = {
   flipped: Shuffle,
 }
 
+/**
+ * 변화 방향 4단계 — 브랜드 팔레트 안에서만 고른다.
+ * 이전에는 widened 가 #92400e, flipped 가 #1d4ed8(Tailwind 파랑)이었다.
+ * 좋아짐(그린) → 비슷(뉴트럴) → 벌어짐(경고) → 뒤집힘(주의) 순의 심각도 램프.
+ */
 const TREND_COLOR: Record<CompareTrend, string> = {
   narrowed: '#014725',
-  widened: '#92400e',
-  similar: '#6b7280',
-  flipped: '#1d4ed8',
+  widened: '#7A5500',
+  similar: '#4A6B58',
+  flipped: '#8E3A32',
 }
 
 export function JourneyCompareCard({ comparison }: { comparison: JourneyComparison }) {
@@ -32,10 +37,10 @@ export function JourneyCompareCard({ comparison }: { comparison: JourneyComparis
         padding: '20px 18px',
       }}
     >
-      <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
+      <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
         RE-CHECK
       </div>
-      <h2 style={{ fontSize: '19px', fontWeight: 900, color: '#111827', marginBottom: '14px' }}>재측정 전후 비교</h2>
+      <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: '#014725', marginBottom: '14px' }}>재측정 전후 비교</h2>
 
       <div
         style={{
@@ -51,15 +56,15 @@ export function JourneyCompareCard({ comparison }: { comparison: JourneyComparis
         }}
       >
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', fontWeight: 900, color: '#7c8794', marginBottom: '4px' }}>이전</div>
-          <div style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '-0.03em', color: '#6b7280' }}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 900, color: '#587761', marginBottom: '4px' }}>이전</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#4A6B58' }}>
             {comparison.beforeCode || '----'}
           </div>
         </div>
         <ArrowRight size={20} color="#014725" />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', fontWeight: 900, color: '#014725', marginBottom: '4px' }}>지금</div>
-          <div style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '-0.03em', color: '#111827' }}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 900, color: '#014725', marginBottom: '4px' }}>지금</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#014725' }}>
             {comparison.afterCode || '----'}
           </div>
         </div>
@@ -71,7 +76,7 @@ export function JourneyCompareCard({ comparison }: { comparison: JourneyComparis
           background: 'rgba(228,244,240,0.9)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
           padding: '13px 15px',
-          fontSize: '13px',
+          fontSize: '0.8125rem',
           lineHeight: 1.7,
           fontWeight: 700,
           color: '#014725',
@@ -100,10 +105,10 @@ export function JourneyCompareCard({ comparison }: { comparison: JourneyComparis
               }}
             >
               <Icon size={18} color={TREND_COLOR[axis.trend]} />
-              <div style={{ minWidth: 0, fontSize: '13px', lineHeight: 1.55, color: '#374151', wordBreak: 'keep-all' }}>
+              <div style={{ minWidth: 0, fontSize: '0.8125rem', lineHeight: 1.55, color: '#2C5544', wordBreak: 'keep-all' }}>
                 {axis.message}
               </div>
-              <div style={{ flexShrink: 0, fontSize: '12px', fontWeight: 800, color: '#7c8794', fontVariantNumeric: 'tabular-nums' }}>
+              <div style={{ flexShrink: 0, fontSize: '0.8125rem', fontWeight: 800, color: '#587761', fontVariantNumeric: 'tabular-nums' }}>
                 {axis.beforeWinner} {axis.beforePercent}% → {axis.afterWinner} {axis.afterPercent}%
               </div>
             </div>
@@ -119,18 +124,18 @@ export function JourneyCompareCard({ comparison }: { comparison: JourneyComparis
             background: 'rgba(255,255,255,0.9)',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
             padding: '13px 14px',
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             lineHeight: 1.6,
-            color: '#374151',
+            color: '#2C5544',
             wordBreak: 'keep-all',
           }}
         >
-          아이덴티티가 <strong style={{ color: '#6b7280' }}>{comparison.identityBefore}</strong>에서{' '}
+          아이덴티티가 <strong style={{ color: '#4A6B58' }}>{comparison.identityBefore}</strong>에서{' '}
           <strong style={{ color: '#014725' }}>{comparison.identityAfter}</strong>으로 바뀌었습니다.
         </div>
       )}
 
-      <div style={{ marginTop: '12px', fontSize: '11px', lineHeight: 1.6, color: '#9ca3af', wordBreak: 'keep-all' }}>
+      <div style={{ marginTop: '12px', fontSize: '0.75rem', lineHeight: 1.6, color: '#6F8C7B', wordBreak: 'keep-all' }}>
         이 비교는 셀프 체크 응답의 변화이며 의료 진단이나 치료 효과 판정이 아닙니다. 통증이 지속되면 의료 전문가의 판단을 우선해 주세요.
       </div>
     </section>

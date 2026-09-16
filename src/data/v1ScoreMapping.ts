@@ -1,4 +1,4 @@
-/** MEBODY V1 — 96 choice score mappings */
+/** mebody V1 — 96 choice score mappings */
 export type V1AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility'
 export type V1Choice = '①' | '②' | '③'
 

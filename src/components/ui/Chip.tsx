@@ -35,7 +35,7 @@ export function Chip({
         gap: '7px',
         borderRadius: '999px',
         padding: '8px 13px',
-        fontSize: '13px',
+        fontSize: '0.8125rem',
         fontWeight: 800,
         fontFamily: 'inherit',
         whiteSpace: 'nowrap',

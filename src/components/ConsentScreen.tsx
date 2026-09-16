@@ -1,7 +1,8 @@
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
-import { CTA, LEGAL, PRODUCT } from '../theme/copy';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { CTA, PRODUCT } from '../theme/copy';
+import { ConsentCheckbox, LegalConsentLabel } from './ui';
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
 import { ScrollIndicator } from './ScrollIndicator';
@@ -16,7 +17,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest('button, a, input, label, textarea, select, [role="button"]'));
 }
 
-export function ConsentScreen({ onAgree }: ConsentScreenProps) {
+export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   const screenHeight = isDesktopMockup ? '100%' : 'var(--mebody-app-height)';
 
@@ -50,7 +51,7 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
         maxHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(15, 23, 42, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -76,20 +77,44 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
             overflow: 'hidden',
             borderRadius: '20px',
             background: '#ffffff',
-            boxShadow: '0 12px 28px rgba(15, 23, 42, 0.08)',
+            boxShadow: '0 12px 28px rgba(1, 71, 37, 0.08)',
             padding: isDesktopMockup ? '20px 20px 16px' : '16px 14px 12px',
           }}
         >
-          <div style={{ marginBottom: '12px', textAlign: 'center', flexShrink: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '8px' }}>
-              시작 전 안내
+          <div style={{ marginBottom: '12px', textAlign: 'center', flexShrink: 0, position: 'relative' }}>
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="뒤로"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '999px',
+                  border: '1px solid #E1E9DA',
+                  background: '#ffffff',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                <ArrowLeft size={18} color="#2C5544" />
+              </button>
+            )}
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '8px' }}>
+              동의 안내
             </div>
             <h1
               style={{
-                fontSize: isDesktopMockup ? '24px' : '22px',
+                fontSize: isDesktopMockup ? '1.5rem' : '1.375rem',
                 lineHeight: 1.3,
                 fontWeight: 850,
-                color: '#111827',
+                color: '#014725',
                 marginBottom: '8px',
                 wordBreak: 'keep-all',
                 letterSpacing: '-0.03em',
@@ -99,8 +124,8 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
               <br />
               아래 내용을 확인해 주세요
             </h1>
-            <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
-              {PRODUCT.codeGuide}를 찾는 셀프 체크예요. 의료 진단이나 치료를 대신하지 않습니다.
+            <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              내 {PRODUCT.codeName}를 찾는 {PRODUCT.codeGuide}예요. 의료 진단이나 치료를 대신하지 않습니다.
             </p>
           </div>
 
@@ -125,7 +150,7 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
                   marginBottom: '10px',
                 }}
               >
-                <ul style={{ display: 'grid', gap: '10px', fontSize: '13px', lineHeight: 1.55, color: '#374151' }}>
+                <ul style={{ display: 'grid', gap: '10px', fontSize: '0.8125rem', lineHeight: 1.55, color: '#2C5544' }}>
                   <li style={{ display: 'flex', gap: '10px' }}>
                     <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>1</span>
                     <span>질문에 답하면 지금의 자세·체형 경향을 {PRODUCT.codeName}로 보여줍니다.</span>
@@ -148,7 +173,7 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
               <div
                 style={{
                   borderRadius: '14px',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid #E1E9DA',
                   background: '#ffffff',
                   overflow: 'hidden',
                   marginBottom: '10px',
@@ -163,33 +188,33 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 14px',
-                    background: '#f9fafb',
-                    color: '#1f2937',
-                    fontSize: '13px',
+                    background: '#F7FAF4',
+                    color: '#014725',
+                    fontSize: '0.8125rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
                   <span>자세히 보기</span>
-                  {detailsOpen ? <ChevronUp size={18} color="#6b7280" /> : <ChevronDown size={18} color="#6b7280" />}
+                  {detailsOpen ? <ChevronUp size={18} color="#4A6B58" /> : <ChevronDown size={18} color="#4A6B58" />}
                 </button>
                 {detailsOpen && (
-                  <div style={{ borderTop: '1px solid #f3f4f6', padding: '12px 14px', display: 'grid', gap: '12px' }}>
+                  <div style={{ borderTop: '1px solid #F0F4EC', padding: '12px 14px', display: 'grid', gap: '12px' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공하는 것</div>
-                      <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725', marginBottom: '4px' }}>제공하는 것</div>
+                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
                         설문 기반 {PRODUCT.codeName}({PRODUCT.codeGuide})와, 결과를 이해하기 위한 웰니스 가이드입니다.
                       </p>
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>제공하지 않는 것</div>
-                      <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725', marginBottom: '4px' }}>제공하지 않는 것</div>
+                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
                         질병 진단, 통증 판독, 치료·재활·교정 처방은 하지 않으며 의학적 판단을 대신하지 않습니다.
                       </p>
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>결과 저장</div>
-                      <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#4b5563', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725', marginBottom: '4px' }}>결과 저장</div>
+                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
                         로그인하면 설문 결과가 계정에 연결되어 다음에 다시 볼 수 있습니다.
                       </p>
                     </div>
@@ -198,106 +223,13 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
               </div>
 
               <div style={{ display: 'grid', gap: '8px', paddingBottom: '8px' }}>
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    borderRadius: '14px',
-                    background: '#ffffff',
-                    padding: '12px 14px',
-                    border: '1px solid #e5e7eb',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={agreeContent}
-                    onChange={(event) => setAgreeContent(event.target.checked)}
-                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-                  />
-                  <span
-                    aria-hidden
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      marginTop: '1px',
-                      borderRadius: '6px',
-                      border: agreeContent ? '2px solid #016B38' : '2px solid #9ca3af',
-                      background: agreeContent ? '#016B38' : '#ffffff',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {agreeContent && <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
-                  </span>
-                  <span style={{ fontSize: '14px', lineHeight: 1.5, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
-                    위 안내를 확인했고, 의료 진단이 아님을 이해했습니다.
-                  </span>
-                </label>
+                <ConsentCheckbox checked={agreeContent} onChange={setAgreeContent}>
+                  위 안내를 확인했고, 의료 진단이 아님을 이해했습니다.
+                </ConsentCheckbox>
 
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    borderRadius: '14px',
-                    background: '#ffffff',
-                    padding: '12px 14px',
-                    border: '1px solid #e5e7eb',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={agreePrivacy}
-                    onChange={(event) => setAgreePrivacy(event.target.checked)}
-                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-                  />
-                  <span
-                    aria-hidden
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      marginTop: '1px',
-                      borderRadius: '6px',
-                      border: agreePrivacy ? '2px solid #016B38' : '2px solid #9ca3af',
-                      background: agreePrivacy ? '#016B38' : '#ffffff',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {agreePrivacy && <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
-                  </span>
-                  <span style={{ fontSize: '14px', lineHeight: 1.5, color: '#374151', wordBreak: 'keep-all', flex: 1 }}>
-                    <a
-                      href={LEGAL.privacyPath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(event) => event.stopPropagation()}
-                      style={{ color: '#014725', fontWeight: 800, textDecoration: 'underline', textUnderlineOffset: '2px' }}
-                    >
-                      {LEGAL.privacyLabel}
-                    </a>
-                    과{' '}
-                    <a
-                      href={LEGAL.termsPath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(event) => event.stopPropagation()}
-                      style={{ color: '#014725', fontWeight: 800, textDecoration: 'underline', textUnderlineOffset: '2px' }}
-                    >
-                      {LEGAL.termsLabel}
-                    </a>
-                    에 동의합니다.
-                  </span>
-                </label>
+                <ConsentCheckbox checked={agreePrivacy} onChange={setAgreePrivacy}>
+                  <LegalConsentLabel />
+                </ConsentCheckbox>
               </div>
             </div>
             <ScrollIndicator containerRef={consentScrollRef} bottomOffset="24px" />
@@ -318,16 +250,16 @@ export function ConsentScreen({ onAgree }: ConsentScreenProps) {
               gap: '8px',
               borderRadius: '14px',
               border: 'none',
-              background: canProceed ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#e5e7eb',
-              color: canProceed ? '#ffffff' : '#9ca3af',
-              fontSize: '16px',
+              background: canProceed ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#E1E9DA',
+              color: canProceed ? '#ffffff' : '#6F8C7B',
+              fontSize: '1rem',
               fontWeight: 800,
               boxShadow: canProceed ? '0 12px 24px rgba(1,71,37,0.22)' : 'none',
               cursor: 'pointer',
             }}
           >
             {canProceed ? CTA.consentAgree : CTA.consentLocked}
-            <span style={{ fontSize: '18px' }}>→</span>
+            <span style={{ fontSize: '1.125rem' }}>→</span>
           </button>
         </div>
       </div>

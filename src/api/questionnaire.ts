@@ -4,6 +4,7 @@ import { V1_QUESTION_SET, V1_QUESTIONS_SNAPSHOT, type V1Question } from '../data
 import { calculateBodyCode, type AnswerMap, type ScoringQuestion } from '../utils/bodyCodeCalculator'
 import { PRODUCT } from '../theme/copy'
 import { isMissingRpc, isRpcKnownMissing, markRpcMissing } from './rpcSupport'
+import { reportError } from '../lib/reportError'
 
 export type QuestionAnswerType = 'single' | 'multi'
 
@@ -69,10 +70,22 @@ const OPTIONAL_RESPONSE_COLUMNS = [
 
 const MIN_ACTIVE_QUESTION_COUNT = 32
 const REQUIRED_QUESTION_CODES = ['A1', 'B1', 'C1', 'D7'] as const
-const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:mebody_v1_32:v3'
+// v4 — questions.media_url 이 DB 에서 비워졌다가 복구됐습니다(2026-09-16).
+// 키를 올리지 않으면 기존 사용자는 사진이 null 인 옛 캐시를 계속 씁니다.
+const QUESTION_CACHE_STORAGE_KEY = 'mebody:questions:mebody_v1_32:v4'
 const LOCAL_RESULT_PREFIX = 'local-result-'
 const LOCAL_RESULT_STORAGE_PREFIX = 'mebody:local-result:'
-const QUESTION_QUERY_TIMEOUT_MS = 2500
+/**
+ * 문항 조회 타임아웃.
+ *
+ * 2500ms 였는데 근거가 없었습니다. 이 쿼리는 32행 × 27컬럼(약 33KB)이고
+ * 실측 0.22~0.77초입니다. 모바일 데이터나 Supabase 콜드 스타트에서는 2.5초를
+ * 넘기고, 넘기면 앱이 번들 스냅샷으로 폴백합니다 — **스냅샷에는 media_url 이
+ * 없어서 문항 사진이 전부 사라집니다.** 같은 파일의 콘텐츠 조회와 같은 8초로 맞춥니다.
+ */
+const QUESTION_QUERY_TIMEOUT_MS = 8000
+/** 타임아웃·네트워크 오류일 때 한 번 더 시도합니다. 스냅샷 폴백은 최후수단입니다. */
+const QUESTION_QUERY_RETRIES = 1
 
 function getErrorText(error: unknown): string {
   return String((error as { message?: string } | null)?.message ?? error ?? '').toLowerCase()
@@ -205,6 +218,16 @@ function isValidQuestionSet(questions: Question[]): boolean {
   return REQUIRED_QUESTION_CODES.every((code) => questionCodes.has(code))
 }
 
+/**
+ * 상단 사진이 빠진 문항 코드. 비어 있으면 정상입니다.
+ *
+ * media_url 은 DB(questions.media_url)가 정본입니다. 과거에 이 컬럼이 통째로
+ * 비워진 적이 있고 화면에는 빈 칸만 남았습니다 — 조용히 넘어가지 않고 잡습니다.
+ */
+export function findQuestionsMissingMedia(questions: Question[]): string[] {
+  return questions.filter((q) => !q.media_url?.trim()).map((q) => q.question_code)
+}
+
 function normalizeQuestionSet(questions: Question[]): Question[] | null {
   const sortedQuestions = [...questions].sort((a, b) => a.sort_order - b.sort_order)
   return isValidQuestionSet(sortedQuestions) ? sortedQuestions : null
@@ -246,6 +269,58 @@ function getLocalResultStorageKey(questionnaireId: string): string {
   return `${LOCAL_RESULT_STORAGE_PREFIX}${questionnaireId}`
 }
 
+/**
+ * 비회원 결과는 **기기에** 남깁니다(localStorage).
+ * 이전에는 sessionStorage 라 탭을 닫으면 결과가 사라졌습니다.
+ * 시크릿 모드·저장 차단 환경에서는 접근 자체가 throw 하므로 전부 감쌉니다.
+ */
+function localStore(): Storage | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
+/** 이번 방문에만 쓰던 옛 저장소 — 기존 사용자의 결과를 잃지 않도록 읽기에서만 참조합니다. */
+function legacySessionStore(): Storage | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 과거 로컬 결과를 지웁니다.
+ * sessionStorage 시절에는 탭을 닫으면 알아서 없어졌지만, localStorage 는 남습니다.
+ * 정리하지 않으면 재측정할 때마다 키가 하나씩 쌓입니다.
+ */
+function pruneLocalResults(keepId: string): void {
+  for (const store of [localStore(), legacySessionStore()]) {
+    if (!store) continue
+    try {
+      const stale: string[] = []
+      for (let i = 0; i < store.length; i++) {
+        const key = store.key(i)
+        if (key?.startsWith(LOCAL_RESULT_STORAGE_PREFIX) && key !== getLocalResultStorageKey(keepId)) {
+          stale.push(key)
+        }
+      }
+      for (const key of stale) store.removeItem(key)
+    } catch (error) {
+      console.warn('pruneLocalResults failed:', error)
+    }
+  }
+}
+
+/** 기기에 남은 로컬 결과를 모두 지웁니다(재측정·초기화 시). */
+export function clearLocalQuestionnaireResults(): void {
+  pruneLocalResults('')
+}
+
 function isLocalResultId(questionnaireId: string): boolean {
   return questionnaireId.startsWith(LOCAL_RESULT_PREFIX)
 }
@@ -255,15 +330,20 @@ export { isLocalResultId }
 export function readLocalQuestionnaireResult(questionnaireId: string): QuestionnaireResponse | null {
   if (typeof window === 'undefined' || !isLocalResultId(questionnaireId)) return null
 
-  try {
-    const raw = window.sessionStorage.getItem(getLocalResultStorageKey(questionnaireId))
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as QuestionnaireResponse
-    return parsed?.id === questionnaireId ? parsed : null
-  } catch (error) {
-    console.warn('readLocalQuestionnaireResult failed:', error)
-    return null
+  const key = getLocalResultStorageKey(questionnaireId)
+  // localStorage 우선. 옛 sessionStorage 에 있던 것도 읽어 줍니다(이전 버전에서 넘어온 사용자).
+  for (const store of [localStore(), legacySessionStore()]) {
+    if (!store) continue
+    try {
+      const raw = store.getItem(key)
+      if (!raw) continue
+      const parsed = JSON.parse(raw) as QuestionnaireResponse
+      if (parsed?.id === questionnaireId) return parsed
+    } catch (error) {
+      console.warn('readLocalQuestionnaireResult failed:', error)
+    }
   }
+  return null
 }
 
 async function fetchBodyCodeContentWithFallback(bodyCode: string): Promise<BodyCodeContent> {
@@ -311,11 +391,20 @@ export function createLocalQuestionnaireResult(
     scoring_meta: bodyCodeResult.scoringMeta,
   }
 
-  if (typeof window !== 'undefined') {
+  const store = localStore()
+  if (store) {
     try {
-      window.sessionStorage.setItem(getLocalResultStorageKey(id), JSON.stringify(response))
+      store.setItem(getLocalResultStorageKey(id), JSON.stringify(response))
+      pruneLocalResults(id)
     } catch (error) {
+      // 용량 초과면 과거 것을 비우고 한 번 더 시도합니다.
       console.warn('createLocalQuestionnaireResult persist failed:', error)
+      try {
+        pruneLocalResults(id)
+        store.setItem(getLocalResultStorageKey(id), JSON.stringify(response))
+      } catch {
+        /* 저장 불가 환경 — 이번 방문 동안은 React state 가 결과를 들고 있습니다. */
+      }
     }
   }
 
@@ -459,6 +548,13 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
   let data: Record<string, unknown>[] | null = null
   let error: unknown = null
 
+  for (let attempt = 0; attempt <= QUESTION_QUERY_RETRIES; attempt++) {
+    if (attempt > 0) {
+      console.warn(`fetchQuestions retrying (attempt ${attempt + 1}).`)
+      await new Promise((resolve) => setTimeout(resolve, 400))
+    }
+    data = null
+    error = null
   try {
     const result = await withTimeout(
       // DO NOT drop public.questions — this is the live UI source (32 rows).
@@ -477,10 +573,23 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
   } catch (caught) {
     error = caught
   }
+    // 타임아웃·네트워크 오류만 재시도합니다. 스키마 오류는 다시 해도 같습니다.
+    if (!error) break
+    if (!isTimeoutError(error) && !isNetworkError(error)) break
+  }
 
   if (!error && data && data.length > 0) {
     const mappedQuestions = normalizeQuestionSet(data.map(mapQuestionRow))
     if (mappedQuestions) {
+      const missingMedia = findQuestionsMissingMedia(mappedQuestions)
+      if (missingMedia.length > 0) {
+        // DB 는 응답했지만 사진 경로가 비었습니다 — 화면에 빈 칸으로 나가므로 남깁니다.
+        reportError('questions.media_url_missing', {
+          missing_count: missingMedia.length,
+          total: mappedQuestions.length,
+          codes: missingMedia.slice(0, 8).join(','),
+        })
+      }
       questionsCache = mappedQuestions
       persistQuestions(questionsCache)
       return questionsCache
@@ -507,7 +616,11 @@ async function loadQuestionsFromSource(): Promise<Question[]> {
     return questionsCache
   }
 
-  console.warn('Falling back to bundled 32-question snapshot.')
+  // 스냅샷에는 media_url 이 없습니다 — 사진 없는 화면이 나가므로 반드시 남깁니다.
+  console.warn('Falling back to bundled 32-question snapshot (no media).')
+  reportError('questions.snapshot_fallback', {
+    reason: isTimeoutError(error) ? 'timeout' : isNetworkError(error) ? 'network' : 'other',
+  })
   questionsCache = getSnapshotQuestions()
   return questionsCache
 }

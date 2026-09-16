@@ -1,5 +1,5 @@
 /**
- * MEBODY Journey — Supabase 직접 접근 API
+ * mebody Journey — Supabase 직접 접근 API
  *
  * 원칙
  *  - Spring 서버를 거치지 않습니다. 기존 api/questionnaire.ts · api/account.ts 와 같은 방식입니다.
@@ -701,6 +701,8 @@ export interface TodayProgressSummary {
   total: number
   completed: number
   progress: number
+  /** 어제 배정 미션 중 미완료(스킵 제외)가 남아 있으면 true */
+  yesterdayIncomplete: boolean
 }
 
 /**
@@ -719,6 +721,10 @@ export async function fetchTodayProgressSummary(userId: string): Promise<TodayPr
 
   const missions = await fetchMissionsForJourney(journey.id)
   const todayMissions = missions.filter((mission) => mission.day_no === dayNo)
+  const yesterdayMissions = dayNo > 1 ? missions.filter((mission) => mission.day_no === dayNo - 1) : []
+  const yesterdayIncomplete =
+    yesterdayMissions.length > 0 &&
+    yesterdayMissions.some((mission) => mission.status !== 'completed' && mission.status !== 'skipped')
 
   return {
     journeyId: journey.id,
@@ -727,6 +733,7 @@ export async function fetchTodayProgressSummary(userId: string): Promise<TodayPr
     total: todayMissions.length,
     completed: todayMissions.filter((mission) => mission.status === 'completed').length,
     progress: calculateDayProgress(todayMissions),
+    yesterdayIncomplete,
   }
 }
 

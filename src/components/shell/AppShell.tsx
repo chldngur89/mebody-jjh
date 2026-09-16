@@ -1,15 +1,14 @@
 /**
  * 시안의 .app-shell — 상단바 + 스크롤 본문 + 하단 탭바
  *
- * .app-shell{width:min(430px,100%);min-height:100vh;margin:0 auto;background:var(--bg);
- *   padding-bottom:92px;box-shadow:0 0 50px rgba(0,0,0,.08)}
- * body{background:#eef1ec}
+ * 높이는 100dvh/100vh 가 아니라 var(--mebody-app-height) 를 씁니다.
+ * (카카오 인앱에서 visualViewport 로 잰 값 — src/lib/viewport.ts)
  *
  * 본문 하단 여백은 탭바 높이 + (네이티브에서) AdMob 배너 높이를 합산합니다.
  * 배너는 웹뷰 위에 겹쳐 뜨므로 여백이 없으면 콘텐츠를 가립니다.
  */
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { BRAND, SHELL } from '../../theme/brand';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { BRAND } from '../../theme/brand';
 import { ScrollIndicator } from '../ScrollIndicator';
 import { TabBar, type AppTab } from './TabBar';
 import { TopBar } from './TopBar';
@@ -25,6 +24,12 @@ export function AppShell({
   children,
   /** 탭바를 숨길 때(전체화면 흐름) */
   hideTabBar = false,
+  /**
+   * 값이 바뀌면 본문을 맨 위로 되돌립니다.
+   * 홈 탭을 누를 때 쓰입니다 — 들어오면 오늘의 미션·루틴이 먼저 보여야 하는데,
+   * 기본 동작은 탭별로 마지막 스크롤 위치를 복원하는 것이어서 중간부터 열립니다.
+   */
+  scrollTopSignal = 0,
 }: {
   activeTab: AppTab;
   scrollKey?: string;
@@ -33,6 +38,7 @@ export function AppShell({
   topBarRight?: ReactNode;
   children: ReactNode;
   hideTabBar?: boolean;
+  scrollTopSignal?: number;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -67,6 +73,17 @@ export function AppShell({
     };
   }, [scrollKey]);
 
+  // 신호가 올라오면 저장된 위치를 지우고 맨 위로. 같은 탭을 다시 눌렀을 때도 동작합니다.
+  useEffect(() => {
+    if (!scrollTopSignal) return;
+    try {
+      for (const key of Object.keys(sessionStorage)) {
+        if (key.startsWith(`mebody:scroll:`) && key.endsWith(scrollKey)) sessionStorage.removeItem(key);
+      }
+    } catch { /* memory only */ }
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [scrollTopSignal, scrollKey]);
+
   return (
     <div
       style={{
@@ -95,13 +112,13 @@ export function AppShell({
           // 탭바 + 배너에 가리지 않도록. --mebody-ad-inset 은 src/lib/ads.ts 가 채웁니다.
           paddingBottom: hideTabBar
             ? 'calc(30px + var(--mebody-ad-inset, 0px))'
-            : `calc(${SHELL.tabBarHeight + 24}px + var(--mebody-ad-inset, 0px))`,
+            : 'calc(var(--mebody-tabbar-h) + 24px + var(--mebody-ad-inset, 0px))',
         }}
       >
         <div ref={contentRef}>{children}</div>
       </div>
 
-      <ScrollIndicator containerRef={scrollRef} bottomOffset={`${SHELL.tabBarHeight + 12}px`} />
+      <ScrollIndicator containerRef={scrollRef} bottomOffset="calc(var(--mebody-tabbar-h) + 12px)" />
       {!hideTabBar && <TabBar active={activeTab} onChange={onTabChange} />}
     </div>
   );

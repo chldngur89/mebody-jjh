@@ -162,49 +162,49 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
             type="button"
             onClick={onBack}
             style={{
-              width: '38px',
-              height: '38px',
+              width: '44px',
+              height: '44px',
               borderRadius: '999px',
               border: '1px solid rgba(255,255,255,0.42)',
               background: 'rgba(255,255,255,0.74)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#374151',
+              color: '#2C5544',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
+              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111827' }}>다음 저니</h1>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>다음 루틴</h1>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>불러오는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>불러오는 중...</div>
         ) : !journey ? (
-          <JourneyNotice>진행 중인 저니가 없습니다.</JourneyNotice>
+          <JourneyNotice>진행 중인 14일 루틴이 없습니다.</JourneyNotice>
         ) : (
           <>
             <section
               style={{
                 borderRadius: '28px',
                 background: 'rgba(255,255,255,0.86)',
-                boxShadow: '0 22px 46px rgba(15, 23, 42, 0.10)',
+                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
                 backdropFilter: 'blur(20px)',
                 padding: '22px 20px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
                 RECOMMENDED
               </div>
-              <h2 style={{ fontSize: '22px', lineHeight: 1.3, fontWeight: 900, color: '#111827', marginBottom: '10px', wordBreak: 'keep-all' }}>
-                {recommendation?.title ?? '재측정하고 다음 저니 이어가기'}
+              <h2 style={{ fontSize: '1.375rem', lineHeight: 1.3, fontWeight: 900, color: '#014725', marginBottom: '10px', wordBreak: 'keep-all' }}>
+                {recommendation?.title ?? '다시 체크하고 다음 루틴 이어가기'}
               </h2>
-              <p style={{ fontSize: '14px', lineHeight: 1.75, color: '#4b5563', wordBreak: 'keep-all' }}>
+              <p style={{ fontSize: '0.875rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>
                 {recommendation?.reason ??
                   '2주 동안의 변화를 32문항으로 확인한 뒤 새 우선순위로 이어가는 것을 추천합니다.'}
               </p>
@@ -217,7 +217,7 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                     background: 'rgba(228,244,240,0.86)',
                     border: `1px solid ${AXIS_GREEN_THEME.border}`,
                     padding: '13px 15px',
-                    fontSize: '13px',
+                    fontSize: '0.8125rem',
                     fontWeight: 800,
                     color: '#014725',
                     wordBreak: 'keep-all',
@@ -237,12 +237,12 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                   padding: '18px',
                 }}
               >
-                <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
                   14일 완주 보너스
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' }}>
-                  <div style={{ fontSize: '28px', lineHeight: 1, fontWeight: 900, color: '#111827' }}>+{bonus.amount}원</div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#014725' }}>총 {bonus.balance}원</div>
+                  <div style={{ fontSize: '1.75rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>+{bonus.amount}원</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725' }}>총 {bonus.balance}원</div>
                 </div>
               </div>
             )}
@@ -257,7 +257,7 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                 padding: '20px 18px',
               }}
             >
-              <h3 style={{ fontSize: '17px', fontWeight: 900, color: '#111827', marginBottom: '14px' }}>어떻게 이어갈까요?</h3>
+              <h3 style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725', marginBottom: '14px' }}>어떻게 이어갈까요?</h3>
               <div style={{ display: 'grid', gap: '10px' }}>
                 <button
                   type="button"
@@ -279,14 +279,14 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                 >
                   <RefreshCw size={20} color="#014725" />
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '3px' }}>
                       32문항 재측정하기
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#7c8794', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#587761', wordBreak: 'keep-all' }}>
                       2주 뒤 지금 상태로 우선순위를 새로 잡습니다
                     </div>
                   </div>
-                  <ChevronRight size={18} color="#7c8794" />
+                  <ChevronRight size={18} color="#587761" />
                 </button>
 
                 <button
@@ -309,20 +309,20 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                 >
                   <Repeat size={20} color="#014725" />
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 900, color: '#111827', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '3px' }}>
                       {isWorking ? '준비하는 중...' : '재측정 없이 바로 이어가기'}
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#7c8794', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#587761', wordBreak: 'keep-all' }}>
                       지금 결과 그대로 새 14일을 시작합니다
                     </div>
                   </div>
-                  <ChevronRight size={18} color="#7c8794" />
+                  <ChevronRight size={18} color="#587761" />
                 </button>
               </div>
             </section>
 
             <JourneyNotice>
-              구독으로 이어지는 장기 저니는 아직 준비 중입니다. 지금은 재측정과 이어가기 두 가지로 계속할 수 있습니다.
+              구독으로 이어지는 장기 루틴은 아직 준비 중입니다. 지금은 다시 체크하거나 이어가기 두 가지로 계속할 수 있습니다.
             </JourneyNotice>
 
             {onBack && (

@@ -27,9 +27,9 @@ export function AxisTrack({
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr', gap: '10px', alignItems: 'end' }}>
-      <b style={{ fontSize: '14px', color: BRAND.text }}>{label}</b>
+      <b style={{ fontSize: '0.875rem', color: BRAND.text }}>{label}</b>
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#5F6E65', marginBottom: '7px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#5F6E65', marginBottom: '7px' }}>
           <span>{leftLabel}</span>
           <span>{rightLabel}</span>
         </div>

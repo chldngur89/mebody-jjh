@@ -1,5 +1,5 @@
 /**
- * MEBODY V1 — 32문항 체형 코드 + 아이덴티티 계산
+ * mebody V1 — 32문항 mebody Code + 아이덴티티 계산
  * - 선택지별 Mapping(⑪)으로 축/아이덴티티 점수 누적
  * - 축 동점 시 Primary → Secondary → Supporting 앵커 비교 (가산점 없음)
  * - 아이덴티티는 raw / max * 100 정규화 후 최대 유형 선택

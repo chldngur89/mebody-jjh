@@ -93,10 +93,10 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
         <PageTitle eyebrow="CHECKOUT" title="결제 완료" />
         <Card tone="green">
           <CheckCircle2 size={30} />
-          <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '12px 0 8px', wordBreak: 'keep-all' }}>
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: '12px 0 8px', wordBreak: 'keep-all' }}>
             멤버십이 시작되었습니다
           </h2>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '14px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {done.until
               ? `${new Date(done.until).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}까지 이용하실 수 있어요.`
               : '이제 14일 루틴을 이어서 하실 수 있어요.'}
@@ -107,8 +107,8 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
         </Card>
         <Card>
           <SectionHeading kicker="멤버십" title="지금부터 열린 것" />
-          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', lineHeight: 1.9, color: BRAND.muted }}>
-            <li>14일 관리 무제한</li>
+          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.9, color: BRAND.muted }}>
+            <li>14일 루틴 무제한</li>
             <li>광고 없이 이용</li>
             <li>미션 · 공통 스트레칭 적립 2배</li>
             <li>mebody 상품 구매 시 결제액의 5% 적립</li>
@@ -123,6 +123,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
       {onBack && (
         <button
           type="button"
+          className="mebody-hit"
           onClick={onBack}
           style={{
             justifySelf: 'start',
@@ -133,7 +134,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
             background: 'transparent',
             padding: '2px 0',
             color: BRAND.muted,
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
             cursor: 'pointer',
@@ -146,11 +147,11 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
 
       {loading ? (
         <Card>
-          <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>플랜을 불러오는 중...</p>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>플랜을 불러오는 중...</p>
         </Card>
       ) : !plan ? (
         <Card>
-          <p style={{ margin: 0, fontSize: '13px', color: BRAND.muted }}>선택한 플랜을 찾을 수 없습니다.</p>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>선택한 플랜을 찾을 수 없습니다.</p>
           <CTA variant="outline" onClick={onBack}>
             멤버십으로 돌아가기
           </CTA>
@@ -159,7 +160,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
         <>
           <Card>
             <SectionHeading kicker="주문 내용" title={plan.name} hint={plan.billing_cycle === 'monthly' ? '월 자동결제' : undefined} />
-            <p style={{ margin: '0 0 14px', fontSize: '13px', lineHeight: 1.7, color: BRAND.muted, wordBreak: 'keep-all' }}>
+            <p style={{ margin: '0 0 14px', fontSize: '0.8125rem', lineHeight: 1.7, color: BRAND.muted, wordBreak: 'keep-all' }}>
               {plan.description}
             </p>
             <div
@@ -171,8 +172,8 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
                 paddingTop: '14px',
               }}
             >
-              <span style={{ fontSize: '13px', fontWeight: 800, color: BRAND.muted }}>결제 금액</span>
-              <strong style={{ fontSize: '24px', fontWeight: 900, color: BRAND.green }}>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: BRAND.muted }}>결제 금액</span>
+              <strong style={{ fontSize: '1.5rem', fontWeight: 900, color: BRAND.green }}>
                 {formatKrw(plan.price_krw)}원
               </strong>
             </div>
@@ -182,7 +183,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
             <Card style={{ background: '#FFF8E8', border: '1px solid #F0DCA8' }}>
               <div style={{ display: 'flex', gap: '9px' }}>
                 <Info size={16} color="#9A6B00" style={{ flexShrink: 0, marginTop: '1px' }} />
-                <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.65, color: '#7A5500', wordBreak: 'keep-all' }}>
+                <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.65, color: '#7A5500', wordBreak: 'keep-all' }}>
                   지금은 <b>테스트 결제</b>로 동작합니다. 실제로 돈이 빠져나가지 않습니다.
                   사업자등록과 결제사 연동이 끝나면 실결제로 바뀝니다.
                 </p>
@@ -194,7 +195,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
             <Card>
               <div style={{ display: 'flex', gap: '9px' }}>
                 <Info size={16} color={BRAND.muted} style={{ flexShrink: 0, marginTop: '1px' }} />
-                <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.65, color: BRAND.muted, wordBreak: 'keep-all' }}>
+                <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.65, color: BRAND.muted, wordBreak: 'keep-all' }}>
                   {billing?.serverMissing
                     ? '결제 서버가 아직 연결되지 않았습니다. 연결 후 이용하실 수 있습니다.'
                     : '결제 수단을 준비 중입니다. 준비가 끝나면 이 화면에서 바로 결제하실 수 있어요.'}
@@ -207,14 +208,14 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
 
           {error && (
             <Card style={{ background: '#FDF2F1', border: '1px solid #F3CFCB' }}>
-              <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6, color: '#8E3A32', wordBreak: 'keep-all' }}>{error}</p>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6, color: '#8E3A32', wordBreak: 'keep-all' }}>{error}</p>
             </Card>
           )}
 
           <Card>
             <div style={{ display: 'flex', gap: '9px', marginBottom: '4px' }}>
               <ShieldCheck size={16} color={BRAND.green} style={{ flexShrink: 0, marginTop: '1px' }} />
-              <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.65, color: BRAND.muted, wordBreak: 'keep-all' }}>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.65, color: BRAND.muted, wordBreak: 'keep-all' }}>
                 결제 정보는 앱이 보관하지 않습니다. 멤버십 활성화는 결제 승인을 확인한 서버가 처리합니다.
               </p>
             </div>
@@ -223,7 +224,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
               {submitting ? '처리 중...' : canPay ? `${formatKrw(plan.price_krw)}원 결제하기` : '결제 준비 중'}
             </CTA>
             {!user && (
-              <p style={{ margin: '10px 0 0', fontSize: '11px', color: BRAND.muted, textAlign: 'center' }}>
+              <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: BRAND.muted, textAlign: 'center' }}>
                 결제하려면 로그인이 필요합니다.
               </p>
             )}
@@ -231,7 +232,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
 
           <Card>
             <SectionHeading kicker="안내" title="해지와 환불" />
-            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', lineHeight: 1.9, color: BRAND.muted }}>
+            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.9, color: BRAND.muted }}>
               <li>언제든 해지할 수 있고, 해지해도 남은 기간은 그대로 이용합니다.</li>
               <li>해지는 내 상태 → 멤버십에서 할 수 있습니다.</li>
               <li>

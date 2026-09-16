@@ -7,3 +7,5 @@ export { AxisTrack } from './AxisTrack';
 export { ProgressTrack } from './ProgressTrack';
 export { Chip } from './Chip';
 export { DirectionCard, type DirectionStep } from './DirectionCard';
+export { ConsentCheckbox, LegalConsentLabel } from './ConsentCheckbox';
+export { BrandMark } from './BrandMark';

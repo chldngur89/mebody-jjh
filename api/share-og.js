@@ -2,7 +2,10 @@
  * 공유 링크 OG 미리보기 엔드포인트 (Vercel Serverless).
  *
  * 카톡/슬랙 등에 링크를 붙여넣으면 크롤러가 이 HTML 의 og:* 를 읽습니다.
- * 사람(브라우저)이 열면 SPA 공유 랜딩(?ref=share&code=XXXX)으로 보냅니다.
+ * 사람은 meta refresh + JS 로 SPA 공유 랜딩(?ref=share&code=XXXX)으로 이동합니다.
+ *
+ * UA 분기(봇/사람)를 쓰지 않습니다. CDN 이 봇 HTML 을 사람에게 캐시하면
+ * 리다이렉트가 깨지기 때문입니다.
  *
  * 로컬 Vite 에는 /api 가 없으므로 프로덕션 배포 후에만 동작합니다.
  * buildShareUrl 이 DEV 에서는 SPA 쿼리로 폴백합니다.
@@ -35,13 +38,6 @@ const CHARACTER_NAMES = {
 
 const CODE_RE = /^[FC][RL][RL][SF]$/
 
-/** 링크 미리보기 봇만. 카카오 인앱 브라우저(KAKAOTALK) 사람은 제외합니다. */
-function isLinkPreviewBot(ua) {
-  return /facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|Googlebot|bingbot|Embedly|Pinterest|redditbot|Applebot|meta-externalagent|kakaotalk-scrap|YetAnotherValidator|Iframely|Slack-ImgProxy|SkypeUriPreview/i.test(
-    ua,
-  )
-}
-
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -57,23 +53,17 @@ module.exports = function handler(req, res) {
   const code = CODE_RE.test(raw) ? raw : ''
   const name = code ? CHARACTER_NAMES[code] ?? code : ''
   const spaUrl = code ? `${SITE}/?ref=share&code=${code}` : `${SITE}/`
-  const title = code ? `내 몸BTI는 ${code} · ${name}` : 'mebody | Mebody Code · 체형코드(몸Bti)'
+  const title = code ? `내 mebody Code는 ${code} · ${name}` : 'mebody | mebody Code · 자세·체형 셀프 체크'
   const description = code
-    ? `친구의 Mebody Code는 ${code} (${name}) 였어요. 나는 어떤 유형일까요?`
-    : 'Mebody Code(체형코드(몸Bti))를 찾고, 나에게 맞는 개인화 웰니스 가이드를 받아보세요.'
-
-  const ua = String(req.headers['user-agent'] ?? '')
-  if (!isLinkPreviewBot(ua)) {
-    res.statusCode = 302
-    res.setHeader('Location', spaUrl)
-    res.end()
-    return
-  }
+    ? `친구의 mebody Code는 ${code} (${name}) 였어요. 나는 어떤 유형일까요?`
+    : 'mebody Code(자세·체형 셀프 체크)를 찾고, 나에게 맞는 개인화 웰니스 가이드를 받아보세요.'
 
   const safeTitle = escapeHtml(title)
   const safeDesc = escapeHtml(description)
   const safeUrl = escapeHtml(spaUrl)
   const safeImage = escapeHtml(OG_IMAGE)
+  // JSON.stringify 로 JS 문자열 이스케이프 (따옴표·개행)
+  const jsUrl = JSON.stringify(spaUrl)
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
@@ -100,6 +90,8 @@ module.exports = function handler(req, res) {
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
   <meta name="twitter:image" content="${safeImage}" />
+  <meta http-equiv="refresh" content="0;url=${safeUrl}" />
+  <script>location.replace(${jsUrl})</script>
 </head>
 <body>
   <p>${safeTitle}</p>

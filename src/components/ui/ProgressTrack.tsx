@@ -1,7 +1,7 @@
 /**
  * 시안의 .status-exp-track — 사용자가 "그래프 바도 html 처럼" 이라고 한 그것.
  * .status-exp-track{height:8px;background:#e2e9e2;border-radius:999px;overflow:hidden}
- * .status-exp-track i{background:#004628;border-radius:999px}
+ * .status-exp-track i{background:#014725;border-radius:999px}
  */
 import type { ReactNode } from 'react';
 import { BRAND, GAUGE } from '../../theme/brand';
@@ -24,7 +24,7 @@ export function ProgressTrack({
   return (
     <div style={{ width: '100%', marginTop: '14px' }}>
       {(label || value) && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#748079' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#748079' }}>
           <b style={{ color: BRAND.green }}>{label}</b>
           <span>{value}</span>
         </div>
@@ -32,7 +32,7 @@ export function ProgressTrack({
       <div style={{ height: `${GAUGE.height}px`, background: GAUGE.progressBg, borderRadius: '999px', marginTop: '6px', overflow: 'hidden' }}>
         <i style={{ display: 'block', width: `${clamped}%`, height: '100%', background: BRAND.green, borderRadius: '999px', transition: 'width 260ms ease' }} />
       </div>
-      {foot && <div style={{ marginTop: '5px', textAlign: 'right', fontSize: '10px', color: '#8A938D' }}>{foot}</div>}
+      {foot && <div style={{ marginTop: '5px', textAlign: 'right', fontSize: '0.6875rem', color: '#8A938D' }}>{foot}</div>}
     </div>
   );
 }

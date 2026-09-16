@@ -128,20 +128,20 @@ export function StatusScreen({
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{name} 회원님</h2>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 800, margin: 0 }}>{name} 회원님</h2>
               {isPaid && <Chip tone="solid">VIP</Chip>}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <small style={{ fontSize: '10px', color: BRAND.muted, letterSpacing: '0.08em' }}>적립금</small>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: BRAND.green }}>{balance.toLocaleString()}원</div>
+            <small style={{ fontSize: '0.6875rem', color: BRAND.muted, letterSpacing: '0.08em' }}>적립금</small>
+            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: BRAND.green }}>{balance.toLocaleString()}원</div>
           </div>
         </div>
 
         {/* .status-exp-track 을 "14일 관리 진행률" 로 씁니다 */}
         <ProgressTrack
           percent={journeyPercent}
-          label="14일 관리"
+          label="14일 루틴"
           value={journeyProgress ? `DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}` : '진행 중 아님'}
           foot={journeyProgress ? `오늘 ${journeyProgress.completed} / ${journeyProgress.total} 완료` : undefined}
         />
@@ -164,13 +164,13 @@ export function StatusScreen({
               display: 'grid',
               placeItems: 'center',
               fontWeight: 900,
-              fontSize: '15px',
+              fontSize: '0.9375rem',
             }}
           >
             {bodyCode ?? '----'}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '16px', fontWeight: 800, wordBreak: 'keep-all' }}>{characterName ?? `나의 ${PRODUCT.codeName}`}</div>
+            <div style={{ fontSize: '1rem', fontWeight: 800, wordBreak: 'keep-all' }}>{characterName ?? `나의 ${PRODUCT.codeName}`}</div>
             <TextLink onClick={() => onOpenResult?.()}>결과 자세히 보기 →</TextLink>
           </div>
         </div>
@@ -178,8 +178,8 @@ export function StatusScreen({
 
       {/* 14일 관리 */}
       <Card>
-        <SectionHeading kicker="루틴" title="14일 관리" />
-        <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+        <SectionHeading kicker="내 진행" title="14일 루틴" />
+        <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
           {journeyProgress
             ? `진행 중입니다. DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}`
             : '내 코드에 맞는 미션이 하루 한 가지씩 배정됩니다.'}
@@ -212,17 +212,17 @@ export function StatusScreen({
         />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div style={{ background: SURFACE.subtle, borderRadius: '14px', padding: '14px' }}>
-            <div style={{ fontSize: '11px', color: BRAND.muted, fontWeight: 800 }}>이번 주</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: BRAND.green, marginTop: '4px' }}>
+            <div style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 800 }}>이번 주</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 900, color: BRAND.green, marginTop: '4px' }}>
               {challenge?.weekDone ?? 0}
-              <span style={{ fontSize: '13px', color: BRAND.muted, fontWeight: 700 }}> / {challenge?.weekRequired ?? 7}일</span>
+              <span style={{ fontSize: '0.8125rem', color: BRAND.muted, fontWeight: 700 }}> / {challenge?.weekRequired ?? 7}일</span>
             </div>
           </div>
           <div style={{ background: SURFACE.subtle, borderRadius: '14px', padding: '14px' }}>
-            <div style={{ fontSize: '11px', color: BRAND.muted, fontWeight: 800 }}>이번 달</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: BRAND.green, marginTop: '4px' }}>
+            <div style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 800 }}>이번 달</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 900, color: BRAND.green, marginTop: '4px' }}>
               {challenge?.monthDone ?? 0}
-              <span style={{ fontSize: '13px', color: BRAND.muted, fontWeight: 700 }}> / {challenge?.monthRequired ?? 20}일</span>
+              <span style={{ fontSize: '0.8125rem', color: BRAND.muted, fontWeight: 700 }}> / {challenge?.monthRequired ?? 20}일</span>
             </div>
           </div>
         </div>
@@ -237,7 +237,7 @@ export function StatusScreen({
         <div style={{ display: 'grid', gap: '10px' }}>
           {onStartDiagnosis && (
             <CTA variant="outline" onClick={onStartDiagnosis} style={{ marginTop: 0 }}>
-              32문항 다시 측정하기
+              mebody Code 다시 확인하기
             </CTA>
           )}
           {onLogout && (
@@ -248,7 +248,7 @@ export function StatusScreen({
                 border: 0,
                 background: 'transparent',
                 padding: '10px 4px',
-                fontSize: '13px',
+                fontSize: '0.8125rem',
                 fontWeight: 800,
                 color: BRAND.muted,
                 fontFamily: 'inherit',

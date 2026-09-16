@@ -6,6 +6,7 @@
  * 휴대폰은 연락처로만 저장합니다. 로그인 식별자(휴대폰 별칭 이메일)는 바꾸지 않을 수 있습니다.
  */
 import { supabase } from '../lib/supabase'
+import { authErrorMessage } from '../lib/authErrorMessage'
 import { isEmail, phoneFromLoginEmail } from '../lib/identifier'
 
 export interface MyProfile {
@@ -178,7 +179,7 @@ export async function updateMyEmail(nextEmail: string): Promise<{ ok: true } | {
   if (!isEmail(email)) return { ok: false, message: '이메일 형식이 올바르지 않습니다.' }
 
   const { error } = await supabase.auth.updateUser({ email })
-  if (error) return { ok: false, message: error.message || '이메일을 바꾸지 못했습니다.' }
+  if (error) return { ok: false, message: authErrorMessage(error, '이메일을 바꾸지 못했습니다.') }
   return { ok: true }
 }
 
@@ -188,7 +189,7 @@ export async function updateMyPassword(nextPassword: string): Promise<{ ok: true
   if (!password) return { ok: true }
 
   const { error } = await supabase.auth.updateUser({ password })
-  if (error) return { ok: false, message: error.message || '비밀번호를 바꾸지 못했습니다.' }
+  if (error) return { ok: false, message: authErrorMessage(error, '비밀번호를 바꾸지 못했습니다.') }
   return { ok: true }
 }
 
