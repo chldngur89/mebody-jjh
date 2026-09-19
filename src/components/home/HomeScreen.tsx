@@ -50,7 +50,7 @@ const HOME_TODAY_TITLE: CSSProperties = {
 };
 const HOME_TODAY_DETAIL: CSSProperties = {
   margin: 0,
-  color: 'rgba(255,255,255,.82)',
+  color: 'var(--mebody-t-w82, rgba(255,255,255,.82))',
   fontSize: '0.8125rem',
   lineHeight: 1.45,
   wordBreak: 'keep-all',
@@ -64,7 +64,7 @@ const HOME_TODAY_PILL: CSSProperties = {
   padding: '0 14px 0 16px',
   border: 0,
   borderRadius: '999px',
-  background: '#ffffff',
+  background: 'var(--mebody-s-ffffff, #ffffff)',
   color: BRAND.green,
   fontFamily: 'inherit',
   fontSize: '0.875rem',
@@ -150,7 +150,7 @@ export function HomeScreen({
             width: '100%',
             border: `1px solid ${SURFACE.hairline}`,
             borderRadius: '16px',
-            background: '#FFF8EB',
+            background: 'var(--mebody-s-fff8eb, #FFF8EB)',
             padding: '14px 16px',
             cursor: 'pointer',
             fontFamily: 'inherit',
@@ -197,7 +197,7 @@ export function HomeScreen({
           </div>
         )}
 
-        <div style={hasJourney ? { ...HOME_TODAY_ROW, borderTop: '1px solid rgba(255,255,255,.18)' } : HOME_TODAY_ROW}>
+        <div style={hasJourney ? { ...HOME_TODAY_ROW, borderTop: '1px solid var(--mebody-b-w18, rgba(255,255,255,.18))' } : HOME_TODAY_ROW}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={HOME_TODAY_TITLE}>
               {todayDone ? '오늘의 미션 완료' : hasJourney ? `오늘의 미션 ${remaining}개` : '오늘의 미션 1개'}
@@ -207,7 +207,7 @@ export function HomeScreen({
                 ? `${journey?.dayNo ?? ''}일차를 마쳤어요`
                 : hasJourney
                   ? `약 ${careMinutes}분 · ${journey?.completed ?? 0}/${journey?.total ?? 0} 완료`
-                  : `약 ${careMinutes}분 · ${data.oneLineAction}`}
+                  : `약 ${careMinutes}분 · ${PRODUCT.program} 1일차 시작`}
             </p>
           </div>
           <button
@@ -224,7 +224,7 @@ export function HomeScreen({
 
       {/* 결과 요약 + 한 줄 액션 (항상 같은 자리) */}
       <Card padding="22px 20px 18px" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <span style={{ position: 'absolute', width: '160px', height: '160px', left: '-60px', top: '-40px', borderRadius: '50%', background: '#EEF4EC' }} />
+        <span style={{ position: 'absolute', width: '160px', height: '160px', left: '-60px', top: '-40px', borderRadius: '50%', background: 'var(--mebody-s-eef4ec, #EEF4EC)' }} />
         <div style={{ position: 'relative' }}>
           {data.characterImage && (
             <img
@@ -396,7 +396,7 @@ export function HomeScreen({
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <span style={{ fontSize: '0.75rem', color: '#B4C0B6' }}>제품 이미지</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--mebody-t-b4c0b6, #B4C0B6)' }}>제품 이미지</span>
                     )}
                   </div>
                   <small style={{ color: BRAND.muted, fontSize: '0.75rem' }}>{item.badge}</small>

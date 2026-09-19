@@ -47,7 +47,7 @@ function OptionGroup<T extends string>({
 }) {
   return (
     <div>
-      <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725', marginBottom: '10px' }}>{title}</div>
+      <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px' }}>{title}</div>
       <div style={{ display: 'grid', gap: '8px' }}>
         {options.map((option) => {
           const selected = value === option.value
@@ -64,7 +64,7 @@ function OptionGroup<T extends string>({
                 width: '100%',
                 borderRadius: '16px',
                 border: `1px solid ${selected ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
-                background: selected ? 'rgba(228,244,240,0.92)' : '#ffffff',
+                background: selected ? 'var(--mebody-s-w92-2, rgba(228,244,240,0.92))' : 'var(--mebody-s-ffffff, #ffffff)',
                 padding: '14px 16px',
                 textAlign: 'left',
                 fontFamily: 'inherit',
@@ -72,10 +72,10 @@ function OptionGroup<T extends string>({
               }}
             >
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '3px' }}>
+                <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '3px' }}>
                   {option.label}
                 </div>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#587761', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-587761, #587761)', wordBreak: 'keep-all' }}>
                   {option.desc}
                 </div>
               </div>
@@ -85,8 +85,8 @@ function OptionGroup<T extends string>({
                   width: '22px',
                   height: '22px',
                   borderRadius: '999px',
-                  border: `2px solid ${selected ? AXIS_GREEN_THEME.primary : '#6F8C7B'}`,
-                  background: selected ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
+                  border: `2px solid ${selected ? AXIS_GREEN_THEME.primary : 'var(--mebody-b-6f8c7b, #6F8C7B)'}`,
+                  background: selected ? 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -122,7 +122,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        background: 'rgba(1, 31, 17, 0.34)',
+        background: 'var(--mebody-s-k34, rgba(1, 31, 17, 0.34))',
         backdropFilter: 'blur(14px)',
         padding: '18px',
       }}
@@ -137,21 +137,21 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           maxHeight: '88vh',
           overflowY: 'auto',
           borderRadius: '30px',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(236,253,245,0.98) 100%)',
+          background: 'linear-gradient(180deg, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 0%, var(--mebody-s-w98-3, rgba(236,253,245,0.98)) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
-          boxShadow: '0 28px 80px rgba(1, 31, 17, 0.24)',
+          boxShadow: '0 28px 80px var(--mebody-d-k24, rgba(1, 31, 17, 0.24))',
           padding: '22px 20px 20px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', marginBottom: '18px' }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
               미션 피드백
             </div>
-            <h2 id="missionFeedbackTitle" style={{ fontSize: '1.375rem', lineHeight: 1.25, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+            <h2 id="missionFeedbackTitle" style={{ fontSize: '1.375rem', lineHeight: 1.25, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
               오늘 어땠나요?
             </h2>
-            <div style={{ marginTop: '6px', fontSize: '0.8125rem', fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
+            <div style={{ marginTop: '6px', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
               {missionTitle}
             </div>
           </div>
@@ -164,11 +164,11 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
               height: '44px',
               borderRadius: '999px',
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
-              background: '#ffffff',
+              background: 'var(--mebody-s-ffffff, #ffffff)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -182,7 +182,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           <div
             style={{
               borderRadius: '18px',
-              background: 'linear-gradient(135deg, rgba(232,245,238,0.96) 0%, rgba(255,255,255,0.98) 100%)',
+              background: 'linear-gradient(135deg, var(--mebody-s-w96-3, rgba(232,245,238,0.96)) 0%, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 100%)',
               border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
               padding: '16px',
               marginBottom: '18px',
@@ -190,20 +190,20 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '5px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '5px' }}>
                   {reward.alreadyClaimed ? '이미 적립됨' : '오늘의 적립'}
                 </div>
-                <div style={{ fontSize: '1.625rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>
+                <div style={{ fontSize: '1.625rem', lineHeight: 1, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
                   +{reward.amount}원
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761', marginBottom: '4px' }}>총 적립금</div>
-                <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725' }}>{reward.balance}원</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-587761, #587761)', marginBottom: '4px' }}>총 적립금</div>
+                <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>{reward.balance}원</div>
               </div>
             </div>
             {rewardDisclosure && (
-              <div style={{ marginTop: '10px', fontSize: '0.75rem', lineHeight: 1.55, color: '#4A6B58', wordBreak: 'keep-all' }}>
+              <div style={{ marginTop: '10px', fontSize: '0.75rem', lineHeight: 1.55, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
                 {rewardDisclosure}
               </div>
             )}
@@ -219,12 +219,12 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
         <div
           style={{
             borderRadius: '14px',
-            background: 'rgba(244,251,249,0.96)',
+            background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
             padding: '12px 14px',
             fontSize: '0.8125rem',
             lineHeight: 1.6,
-            color: '#4A6B58',
+            color: 'var(--mebody-t-4a6b58, #4A6B58)',
             wordBreak: 'keep-all',
             marginBottom: '14px',
           }}
@@ -232,7 +232,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           남겨주신 답변에 따라 다음 미션의 시간과 강도가 조정됩니다. 불편했던 동작은 남은 기간 동안 다른 동작으로 바뀝니다.
         </div>
 
-        {errorMessage && <p role="alert" style={{ color: '#b42318' }}>{errorMessage}</p>}
+        {errorMessage && <p role="alert" style={{ color: 'var(--mebody-t-b42318, #b42318)' }}>{errorMessage}</p>}
         <button
           type="button"
           onClick={() => feeling && difficulty && onSubmit(feeling, difficulty)}
@@ -245,8 +245,8 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
             justifyContent: 'center',
             borderRadius: '16px',
             border: 'none',
-            background: canSubmit ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#6F8C7B',
-            color: '#ffffff',
+            background: canSubmit ? 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-6f8c7b, #6F8C7B)',
+            color: 'var(--mebody-t-ffffff-2, #ffffff)',
             fontSize: '0.9375rem',
             fontWeight: 800,
             fontFamily: 'inherit',
@@ -264,7 +264,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
             width: '100%',
             border: 'none',
             background: 'transparent',
-            color: '#4A6B58',
+            color: 'var(--mebody-t-4a6b58, #4A6B58)',
             fontSize: '0.8125rem',
             fontWeight: 700,
             fontFamily: 'inherit',

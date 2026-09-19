@@ -231,7 +231,7 @@ function renderBold(text: string) {
   const parts = text.split(/\*\*(.*?)\*\*/g);
   return parts.map((part, index) =>
     index % 2 === 1 ? (
-      <strong key={index} style={{ fontWeight: 700, color: '#014725' }}>
+      <strong key={index} style={{ fontWeight: 700, color: 'var(--mebody-t-014725, #014725)' }}>
         {part}
       </strong>
     ) : (
@@ -249,7 +249,7 @@ function renderReadableText(text: string) {
   const blocks = paragraphs.length ? paragraphs : [text];
 
   return (
-    <div style={{ display: 'grid', gap: '13px', fontSize: '0.875rem', lineHeight: 1.82, color: '#3D6B54', wordBreak: 'keep-all' }}>
+    <div style={{ display: 'grid', gap: '13px', fontSize: '0.875rem', lineHeight: 1.82, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
       {blocks.map((block, blockIndex) => {
         const lines = block
           .split('\n')
@@ -859,7 +859,7 @@ function ActionImage({ url, alt }: { url?: string; alt: string }) {
         borderRadius: '14px',
         overflow: 'hidden',
         border: `1px solid ${AXIS_GREEN_THEME.border}`,
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         marginBottom: '10px',
       }}
     >
@@ -881,16 +881,16 @@ function InstructionBlock({ title, meta, text }: { title: string; meta: string; 
     <div
       style={{
         borderRadius: '20px',
-        background: 'rgba(244,251,249,0.96)',
+        background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
         border: `1px solid ${AXIS_GREEN_THEME.border}`,
         padding: '16px',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
-        <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>{title}</div>
+        <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>{title}</div>
         <div style={{ flexShrink: 0, fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>{meta}</div>
       </div>
-      <ol style={{ display: 'grid', gap: '7px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>
+      <ol style={{ display: 'grid', gap: '7px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
         {steps.map((step, index) => (
           <li key={`${title}-${index}`}>{step.replace(/^\d+\.\s*/, '')}</li>
         ))}
@@ -932,7 +932,7 @@ function ActionDetailOverlay({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        background: 'rgba(1, 31, 17, 0.34)',
+        background: 'var(--mebody-s-k34, rgba(1, 31, 17, 0.34))',
         backdropFilter: 'blur(14px)',
         padding: '18px',
       }}
@@ -948,9 +948,9 @@ function ActionDetailOverlay({
           flexDirection: 'column',
           minHeight: 0,
           borderRadius: '30px',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(236,253,245,0.98) 100%)',
+          background: 'linear-gradient(180deg, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 0%, var(--mebody-s-w98-3, rgba(236,253,245,0.98)) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
-          boxShadow: '0 28px 80px rgba(1, 31, 17, 0.24)',
+          boxShadow: '0 28px 80px var(--mebody-d-k24, rgba(1, 31, 17, 0.24))',
           overflow: 'hidden',
         }}
       >
@@ -965,8 +965,8 @@ function ActionDetailOverlay({
         >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', marginBottom: '16px' }}>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>COMMON STRETCH</div>
-            <h2 style={{ fontSize: '1.5rem', lineHeight: 1.18, letterSpacing: '-0.045em', fontWeight: 900, color: '#014725' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>COMMON STRETCH</div>
+            <h2 style={{ fontSize: '1.5rem', lineHeight: 1.18, letterSpacing: '-0.045em', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
               {title}
             </h2>
           </div>
@@ -978,11 +978,11 @@ function ActionDetailOverlay({
               height: '44px',
               borderRadius: '999px',
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
-              background: '#ffffff',
+              background: 'var(--mebody-s-ffffff, #ffffff)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -998,10 +998,10 @@ function ActionDetailOverlay({
               key={item.id}
               style={{
                 borderRadius: '26px',
-                background: '#ffffff',
+                background: 'var(--mebody-s-ffffff, #ffffff)',
                 border: `1px solid ${itemIndex === 0 ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                 padding: '17px',
-                boxShadow: '0 14px 30px rgba(1, 71, 37, 0.06)',
+                boxShadow: '0 14px 30px var(--mebody-d-k06-2, rgba(1, 71, 37, 0.06))',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
@@ -1012,14 +1012,14 @@ function ActionDetailOverlay({
                     height: '26px',
                     borderRadius: '9px',
                     border: `2px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                    background: itemIndex === 0 ? AXIS_GREEN_THEME.surface : '#ffffff',
+                    background: itemIndex === 0 ? AXIS_GREEN_THEME.surface : 'var(--mebody-s-ffffff, #ffffff)',
                     flexShrink: 0,
                     marginTop: '2px',
                   }}
                 />
                 <div>
                   <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '5px' }}>{item.title}</div>
-                  <h3 style={{ fontSize: '1.125rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                  <h3 style={{ fontSize: '1.125rem', lineHeight: 1.35, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                     {item.displayName}
                   </h3>
                 </div>
@@ -1032,7 +1032,7 @@ function ActionDetailOverlay({
                       <div style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '5px' }}>
                         {content.direction === 'both' ? '양쪽' : content.direction === 'right' ? '오른쪽' : content.direction === 'left' ? '왼쪽' : '공통'}
                       </div>
-                      <h4 style={{ fontSize: '1.0625rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                      <h4 style={{ fontSize: '1.0625rem', lineHeight: 1.35, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                         {content.display_name}
                       </h4>
                       <div style={{ marginTop: '8px', display: 'inline-flex', borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '6px 10px', fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
@@ -1058,12 +1058,12 @@ function ActionDetailOverlay({
                         style={{
                           marginTop: '10px',
                           borderRadius: '16px',
-                          background: 'rgba(255,251,235,0.88)',
-                          border: '1px solid rgba(245,158,11,0.22)',
+                          background: 'var(--mebody-s-w88-4, rgba(255,251,235,0.88))',
+                          border: '1px solid var(--mebody-b-r22, rgba(245,158,11,0.22))',
                           padding: '12px',
                           fontSize: '0.8125rem',
                           lineHeight: 1.6,
-                          color: '#7A5500',
+                          color: 'var(--mebody-t-7a5500, #7A5500)',
                           wordBreak: 'keep-all',
                         }}
                       >
@@ -1104,17 +1104,17 @@ export function JourneyEntryCard({
       style={{
         borderRadius: '24px',
         border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-        background: 'linear-gradient(135deg, rgba(232,245,238,0.96) 0%, rgba(255,255,255,0.98) 100%)',
+        background: 'linear-gradient(135deg, var(--mebody-s-w96-3, rgba(232,245,238,0.96)) 0%, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 100%)',
         padding: '20px 18px',
       }}
     >
-      <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+      <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
         {hasActiveJourney ? `IN PROGRESS · DAY ${dayNo ?? 1} / ${totalDays ?? 14}` : 'NEXT'}
       </div>
-      <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: '#014725', marginBottom: '8px' }}>
+      <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '8px' }}>
         {hasActiveJourney ? '오늘의 내 코드 미션이 준비됐습니다' : '내 코드에 맞는 14일 루틴 시작하기'}
       </h2>
-      <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all', marginBottom: '14px' }}>
+      <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all', marginBottom: '14px' }}>
         {hasActiveJourney
           ? '진행 중인 14일 루틴이 있습니다. 바로 오늘 미션으로 이어집니다.'
           : '위 공통 스트레칭과 별개로, 내 코드와 관리 우선순위에 맞춘 미션이 하루 한 가지씩 배정됩니다.'}
@@ -1131,8 +1131,8 @@ export function JourneyEntryCard({
           gap: '8px',
           borderRadius: '16px',
           border: 'none',
-          background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-          color: '#ffffff',
+          background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+          color: 'var(--mebody-t-ffffff-2, #ffffff)',
           fontSize: '0.9375rem',
           fontWeight: 800,
           fontFamily: 'inherit',
@@ -1235,8 +1235,8 @@ function RoutineStepTimer({
           gap: '7px',
           borderRadius: '14px',
           border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-          background: 'rgba(1,71,37,0.08)',
-          color: '#014725',
+          background: 'var(--mebody-s-k08, rgba(1,71,37,0.08))',
+          color: 'var(--mebody-t-014725, #014725)',
           fontSize: '0.8125rem',
           fontWeight: 900,
           fontFamily: 'inherit',
@@ -1269,7 +1269,7 @@ function RoutineStepTimer({
             fontSize: '1.625rem',
             lineHeight: 1,
             fontWeight: 900,
-            color: started ? '#014725' : '#6F8C7B',
+            color: started ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-6f8c7b, #6F8C7B)',
             fontVariantNumeric: 'tabular-nums',
           }}
         >
@@ -1292,10 +1292,10 @@ function RoutineStepTimer({
             borderRadius: '999px',
             border: 'none',
             background: startBlocked
-              ? '#C8D6C4'
-              : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+              ? 'var(--mebody-s-c8d6c4, #C8D6C4)'
+              : 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
             padding: '0 18px',
-            color: '#ffffff',
+            color: 'var(--mebody-t-ffffff-2, #ffffff)',
             fontSize: '0.8125rem',
             fontWeight: 900,
             fontFamily: 'inherit',
@@ -1321,7 +1321,7 @@ function RoutineStepTimer({
           style={{
             width: `${progress}%`,
             height: '100%',
-            background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+            background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
             transition: 'width 900ms linear',
           }}
         />
@@ -1337,7 +1337,7 @@ function RoutineStepTimer({
           padding: '4px',
           fontSize: '0.8125rem',
           fontWeight: 800,
-          color: '#6F8C7B',
+          color: 'var(--mebody-t-6f8c7b, #6F8C7B)',
           fontFamily: 'inherit',
           cursor: 'pointer',
         }}
@@ -1617,7 +1617,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
           style={{
             borderRadius: '24px',
             border: routineOpen ? `1px solid ${AXIS_GREEN_THEME.borderStrong}` : `1px solid ${AXIS_GREEN_THEME.border}`,
-            background: '#ffffff',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
             overflow: 'hidden',
           }}
         >
@@ -1631,14 +1631,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
               justifyContent: 'space-between',
               gap: '12px',
               padding: '22px 20px',
-              background: routineOpen ? 'rgba(228,244,240,0.84)' : '#ffffff',
+              background: routineOpen ? 'var(--mebody-s-w84-2, rgba(228,244,240,0.84))' : 'var(--mebody-s-ffffff, #ffffff)',
               cursor: 'pointer',
             }}
           >
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '7px' }}>COMMON</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#014725', marginBottom: '6px' }}>매일 하는 공통 스트레칭</div>
-              <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#4A6B58' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '7px' }}>COMMON</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>매일 하는 공통 스트레칭</div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>
                 총 {routineTotalLabel} · {routineStepCount}단계
                 {useAxisRoutine ? ' · 목에서 하체 순서' : ' 구성'}
               </div>
@@ -1650,12 +1650,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     alignItems: 'center',
                     gap: '5px',
                     borderRadius: '999px',
-                    background: routineCompleted ? 'rgba(1,71,37,0.10)' : '#ffffff',
+                    background: routineCompleted ? 'var(--mebody-s-k10, rgba(1,71,37,0.10))' : 'var(--mebody-s-ffffff, #ffffff)',
                     border: `1px solid ${routineCompleted ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                     padding: '4px 10px',
                     fontSize: '0.75rem',
                     fontWeight: 900,
-                    color: '#014725',
+                    color: 'var(--mebody-t-014725, #014725)',
                   }}
                 >
                   {routineCompleted ? (
@@ -1678,13 +1678,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   <div
                     style={{
                       borderRadius: '16px',
-                      background: 'rgba(228,244,240,0.86)',
+                      background: 'var(--mebody-s-w86-2, rgba(228,244,240,0.86))',
                       border: `1px solid ${AXIS_GREEN_THEME.border}`,
                       padding: '13px 15px',
                       fontSize: '0.8125rem',
                       lineHeight: 1.65,
                       fontWeight: 700,
-                      color: '#014725',
+                      color: 'var(--mebody-t-014725, #014725)',
                       wordBreak: 'keep-all',
                     }}
                   >
@@ -1707,7 +1707,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                             justifyContent: 'space-between',
                             gap: '12px',
                             borderRadius: '16px',
-                            background: 'rgba(1,71,37,0.06)',
+                            background: 'var(--mebody-s-k06, rgba(1,71,37,0.06))',
                             border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                             padding: '14px 16px',
                             cursor: 'pointer',
@@ -1718,16 +1718,16 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                             <CheckCircle2 size={18} color="#014725" style={{ flexShrink: 0 }} />
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58', marginBottom: '3px' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-4a6b58, #4A6B58)', marginBottom: '3px' }}>
                                 STEP {step.order}
                                 {step.axisLabel ? ` · ${step.axisLabel}` : ''}
                               </div>
-                              <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                              <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                                 {step.title} — 완료
                               </div>
                             </div>
                           </div>
-                          <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58' }}>다시 보기</span>
+                          <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>다시 보기</span>
                         </button>
                       );
                     }
@@ -1736,7 +1736,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       key={stepKey}
                       style={{
                         borderRadius: '24px',
-                        background: step.kind === 'finish' ? 'rgba(248,252,248,0.95)' : 'rgba(244,251,249,0.95)',
+                        background: step.kind === 'finish' ? 'var(--mebody-s-w95-4, rgba(248,252,248,0.95))' : 'var(--mebody-s-w95-3, rgba(244,251,249,0.95))',
                         border: `1px solid ${step.priorityRank ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                         padding: '22px 20px',
                       }}
@@ -1752,40 +1752,40 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                               <span
                                 style={{
                                   borderRadius: '999px',
-                                  background: 'rgba(1,71,37,0.10)',
+                                  background: 'var(--mebody-s-k10, rgba(1,71,37,0.10))',
                                   border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                                   padding: '3px 8px',
                                   fontSize: '0.6875rem',
                                   lineHeight: 1,
                                   fontWeight: 900,
-                                  color: '#014725',
+                                  color: 'var(--mebody-t-014725, #014725)',
                                 }}
                               >
                                 {step.priorityRank}순위 집중
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '1.1875rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                          <div style={{ fontSize: '1.1875rem', lineHeight: 1.35, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                             {step.title}
                           </div>
                         </div>
-                        <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>
+                        <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
                           {formatRoutineDuration(step.durationSec)}
                         </div>
                       </div>
 
                       {step.kind === 'finish' ? (
-                        <div style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>{step.desc}</div>
+                        <div style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>{step.desc}</div>
                       ) : (
                         <>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
                             {step.targetMuscle && (
-                              <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 800, color: '#3D6B54' }}>
+                              <span style={{ borderRadius: '999px', background: 'var(--mebody-s-ffffff, #ffffff)', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-3d6b54, #3D6B54)' }}>
                                 타겟: {step.targetMuscle}
                               </span>
                             )}
                             {step.tool && (
-                              <span style={{ borderRadius: '999px', background: '#ffffff', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 800, color: '#3D6B54' }}>
+                              <span style={{ borderRadius: '999px', background: 'var(--mebody-s-ffffff, #ffffff)', border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-3d6b54, #3D6B54)' }}>
                                 도구: {step.tool}
                               </span>
                             )}
@@ -1796,7 +1796,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                                 이완 {step.releaseSec}초
                               </div>
                               <ActionImage url={step.releaseImageUrl} alt={`${step.title} 이완 동작`} />
-                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                                 {(step.releaseSteps ?? []).map((line, index) => (
                                   <li key={index}>{line}</li>
                                 ))}
@@ -1807,7 +1807,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                                 스트레칭 {step.stretchSec}초 × {step.sets}세트
                               </div>
                               <ActionImage url={step.stretchImageUrl} alt={`${step.title} 스트레칭 동작`} />
-                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                              <ol style={{ display: 'grid', gap: '5px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                                 {(step.stretchSteps ?? []).map((line, index) => (
                                   <li key={index}>{line}</li>
                                 ))}
@@ -1819,12 +1819,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                               style={{
                                 marginTop: '12px',
                                 borderRadius: '14px',
-                                background: 'rgba(255,251,235,0.88)',
-                                border: '1px solid rgba(245,158,11,0.22)',
+                                background: 'var(--mebody-s-w88-4, rgba(255,251,235,0.88))',
+                                border: '1px solid var(--mebody-b-r22, rgba(245,158,11,0.22))',
                                 padding: '11px 12px',
                                 fontSize: '0.8125rem',
                                 lineHeight: 1.6,
-                                color: '#7A5500',
+                                color: 'var(--mebody-t-7a5500, #7A5500)',
                                 wordBreak: 'keep-all',
                               }}
                             >
@@ -1878,7 +1878,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           justifyContent: 'space-between',
                           gap: '12px',
                           borderRadius: '16px',
-                          background: 'rgba(1,71,37,0.06)',
+                          background: 'var(--mebody-s-k06, rgba(1,71,37,0.06))',
                           border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                           padding: '14px 16px',
                           cursor: 'pointer',
@@ -1889,15 +1889,15 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                           <CheckCircle2 size={18} color="#014725" style={{ flexShrink: 0 }} />
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58', marginBottom: '3px' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-4a6b58, #4A6B58)', marginBottom: '3px' }}>
                               STEP {index + 1}
                             </div>
-                            <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                            <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                               {exercise.title} — 완료
                             </div>
                           </div>
                         </div>
-                        <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: '#4A6B58' }}>다시 보기</span>
+                        <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>다시 보기</span>
                       </button>
                     );
                   }
@@ -1906,7 +1906,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     key={stepKey}
                     style={{
                       borderRadius: '24px',
-                      background: 'rgba(244,251,249,0.95)',
+                      background: 'var(--mebody-s-w95-3, rgba(244,251,249,0.95))',
                       border: `1px solid ${AXIS_GREEN_THEME.border}`,
                       padding: '22px 20px',
                     }}
@@ -1916,13 +1916,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         <div style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, marginBottom: '7px' }}>
                           STEP {index + 1}
                         </div>
-                        <div style={{ fontSize: '1.1875rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>{exercise.title}</div>
+                        <div style={{ fontSize: '1.1875rem', lineHeight: 1.35, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>{exercise.title}</div>
                       </div>
-                      <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>
+                      <div style={{ flexShrink: 0, borderRadius: '999px', background: AXIS_GREEN_THEME.surface, border: `1px solid ${AXIS_GREEN_THEME.border}`, padding: '7px 11px', fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
                         {exercise.durationMinutes}분
                       </div>
                     </div>
-                    <div style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>{exercise.desc}</div>
+                    <div style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>{exercise.desc}</div>
                     <RoutineStepTimer
                       key={`${routineStorageKey}:legacy-${index}:${exercise.durationMinutes}`}
                       storageKey={`${routineStorageKey}:timer:legacy-${index}:${exercise.durationMinutes}`}
@@ -1950,7 +1950,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   );
                 })
               ) : (
-                <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#4A6B58', paddingTop: '4px', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--mebody-t-4a6b58, #4A6B58)', paddingTop: '4px', wordBreak: 'keep-all' }}>
                   아직 연결된 루틴이 없습니다.
                 </div>
               )}
@@ -1961,7 +1961,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     style={{
                       borderRadius: '22px',
                       border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                      background: 'linear-gradient(135deg, rgba(1,71,37,0.10) 0%, rgba(232,245,238,0.86) 100%)',
+                      background: 'linear-gradient(135deg, var(--mebody-s-k10, rgba(1,71,37,0.10)) 0%, var(--mebody-s-w86-3, rgba(232,245,238,0.86)) 100%)',
                       padding: '20px 18px',
                       textAlign: 'center',
                     }}
@@ -1973,20 +1973,20 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     ) : (
                       <CheckCircle2 size={30} color="#014725" style={{ margin: '0 auto 8px' }} />
                     )}
-                    <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725', marginBottom: '5px' }}>
+                    <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '5px' }}>
                       {rewardRolling
                         ? '주사위를 굴리는 중...'
                         : rewardAmount != null
                           ? `주사위 ${rewardDice} · ${rewardAmount}원 적립!`
                           : '오늘의 공통 스트레칭 성공!'}
                     </div>
-                    <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, fontWeight: 700, color: '#3f6553', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, fontWeight: 700, color: 'var(--mebody-t-3f6553, #3f6553)', wordBreak: 'keep-all' }}>
                       {rewardAmount != null && !rewardRolling
                         ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
                         : `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
                     </div>
                     {rewardNotice && (
-                      <div style={{ marginTop: '10px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
+                      <div style={{ marginTop: '10px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
                         {rewardNotice}
                       </div>
                     )}
@@ -2004,7 +2004,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           gap: '8px',
                           fontSize: '0.8125rem',
                           fontWeight: 900,
-                          color: '#014725',
+                          color: 'var(--mebody-t-014725, #014725)',
                         }}
                       >
                         <RewardDice value={bonusDice} rolling={false} size={34} />
@@ -2025,8 +2025,8 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                             gap: '7px',
                             borderRadius: '14px',
                             border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                            background: '#ffffff',
-                            color: '#014725',
+                            background: 'var(--mebody-s-ffffff, #ffffff)',
+                            color: 'var(--mebody-t-014725, #014725)',
                             fontSize: '0.8125rem',
                             fontWeight: 900,
                             fontFamily: 'inherit',
@@ -2037,13 +2037,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           <Gift size={15} />
                           {bonusRolling ? '광고 보는 중...' : '광고 보고 한 번 더 굴리기'}
                         </button>
-                        <div style={{ marginTop: '6px', fontSize: '0.75rem', lineHeight: 1.5, color: '#6F8C7B', wordBreak: 'keep-all' }}>
+                        <div style={{ marginTop: '6px', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--mebody-t-6f8c7b, #6F8C7B)', wordBreak: 'keep-all' }}>
                           선택입니다. 보지 않으셔도 위의 적립은 그대로예요.
                         </div>
                       </div>
                     ) : null}
                     {bonusNotice && (
-                      <div style={{ marginTop: '8px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
+                      <div style={{ marginTop: '8px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
                         {bonusNotice}
                       </div>
                     )}
@@ -2057,11 +2057,11 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         gap: '6px',
                         borderRadius: '999px',
                         border: `1px solid ${AXIS_GREEN_THEME.border}`,
-                        background: '#ffffff',
+                        background: 'var(--mebody-s-ffffff, #ffffff)',
                         padding: '8px 14px',
                         fontSize: '0.8125rem',
                         fontWeight: 800,
-                        color: '#4A6B58',
+                        color: 'var(--mebody-t-4a6b58, #4A6B58)',
                         fontFamily: 'inherit',
                         cursor: 'pointer',
                       }}
@@ -2083,12 +2083,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       gap: '8px',
                       borderRadius: '16px',
                       border: routineAllDone ? 'none' : `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                      background: routineAllDone ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#ffffff',
-                      color: routineAllDone ? '#ffffff' : '#014725',
+                      background: routineAllDone ? 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
+                      color: routineAllDone ? 'var(--mebody-t-ffffff-2, #ffffff)' : 'var(--mebody-t-014725, #014725)',
                       fontSize: '0.9375rem',
                       fontWeight: 900,
                       fontFamily: 'inherit',
-                      boxShadow: routineAllDone ? '0 14px 28px rgba(1,71,37,0.22)' : 'none',
+                      boxShadow: routineAllDone ? '0 14px 28px var(--mebody-d-k22, rgba(1,71,37,0.22))' : 'none',
                       cursor: 'pointer',
                     }}
                   >
@@ -2111,13 +2111,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
       <section
         style={{
           borderRadius: '30px',
-          background: 'rgba(255,255,255,0.84)',
-          boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
+          background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
+          boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
           backdropFilter: 'blur(20px)',
           padding: '18px',
         }}
       >
-        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '12px' }}>코드 상태 창</div>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '12px' }}>코드 상태 창</div>
         <div style={{ display: 'grid', gridTemplateColumns: '96px 1fr', gap: '15px', alignItems: 'center' }}>
           <div style={{ minWidth: 0 }}>
             <div
@@ -2125,13 +2125,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                 width: '96px',
                 height: '108px',
                 borderRadius: '24px',
-                background: 'linear-gradient(135deg, rgba(236,253,245,0.96) 0%, rgba(255,255,255,0.96) 100%)',
-                border: '1px solid rgba(209,250,229,0.95)',
+                background: 'linear-gradient(135deg, var(--mebody-s-w96-4, rgba(236,253,245,0.96)) 0%, var(--mebody-s-w96, rgba(255,255,255,0.96)) 100%)',
+                border: '1px solid var(--mebody-b-w95-2, rgba(209,250,229,0.95))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
-                boxShadow: '0 14px 26px rgba(1, 71, 37, 0.08)',
+                boxShadow: '0 14px 26px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
                 marginBottom: '9px',
               }}
             >
@@ -2143,12 +2143,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   onError={() => data.handleImageError(data.characterImage)}
                 />
               ) : (
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#014725' }}>{data.bodyCode}</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>{data.bodyCode}</div>
               )}
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', lineHeight: 1, fontWeight: 900, letterSpacing: '-0.04em', color: '#014725', marginBottom: '5px' }}>{data.bodyCode}</div>
-              <div style={{ fontSize: '0.8125rem', lineHeight: 1.35, fontWeight: 800, color: '#2C5544', wordBreak: 'keep-all' }}>{data.characterName}</div>
+              <div style={{ fontSize: '1.5rem', lineHeight: 1, fontWeight: 900, letterSpacing: '-0.04em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '5px' }}>{data.bodyCode}</div>
+              <div style={{ fontSize: '0.8125rem', lineHeight: 1.35, fontWeight: 800, color: 'var(--mebody-t-2c5544, #2C5544)', wordBreak: 'keep-all' }}>{data.characterName}</div>
             </div>
           </div>
 
@@ -2156,16 +2156,16 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
             {data.axisRows.map((row) => (
               <div key={row.key}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '5px' }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>{row.labelLeft}</div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>{row.labelRight}</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>{row.labelLeft}</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>{row.labelRight}</div>
                 </div>
-                <div style={{ display: 'flex', height: '12px', borderRadius: '999px', overflow: 'hidden', background: '#eef4f2' }}>
+                <div style={{ display: 'flex', height: '12px', borderRadius: '999px', overflow: 'hidden', background: 'var(--mebody-s-eef4f2, #eef4f2)' }}>
                   <div style={{ width: `${row.percentLeft}%`, background: AXIS_GREEN_THEME.soft }} />
                   <div style={{ width: `${row.percentRight}%`, background: AXIS_GREEN_THEME.primary }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761' }}>{row.percentLeft}%</div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761' }}>{row.percentRight}%</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-587761, #587761)' }}>{row.percentLeft}%</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-587761, #587761)' }}>{row.percentRight}%</div>
                 </div>
               </div>
             ))}
@@ -2176,13 +2176,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
           style={{
             marginTop: '16px',
             borderRadius: '20px',
-            background: 'rgba(228,244,240,0.86)',
+            background: 'var(--mebody-s-w86-2, rgba(228,244,240,0.86))',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
             padding: '16px 18px',
           }}
         >
-          <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725', marginBottom: '7px' }}>한 줄 이해</div>
-          <div style={{ fontSize: '0.9375rem', lineHeight: 1.65, fontWeight: 800, color: '#014725', wordBreak: 'keep-all' }}>{data.summaryLine}</div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '7px' }}>한 줄 이해</div>
+          <div style={{ fontSize: '0.9375rem', lineHeight: 1.65, fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>{data.summaryLine}</div>
         </div>
       </section>
 
@@ -2200,34 +2200,34 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
         style={{
           borderRadius: '24px',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
-          background: '#ffffff',
+          background: 'var(--mebody-s-ffffff, #ffffff)',
           padding: '18px',
           cursor: data.actionPlan.detailContents.length > 0 ? 'pointer' : 'default',
         }}
       >
-        <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '8px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '8px' }}>
           {journeyProgress
             ? `MY CODE MISSION · DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}`
             : 'COMMON STRETCH'}
         </div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#014725', marginBottom: '6px' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
           {journeyProgress ? `${data.bodyCode ?? '내'} 코드 미션 수행률` : '공통 스트레칭 진행률'}
         </h2>
-        <p style={{ fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', marginBottom: '14px', wordBreak: 'keep-all' }}>
+        <p style={{ fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)', marginBottom: '14px', wordBreak: 'keep-all' }}>
           {journeyProgress
             ? '14일 루틴에서 내 코드에 맞춰 하루 한 가지씩 배정되는 미션입니다.'
             : '공통 스트레칭은 누구나 같은 4축을 합니다. 내 코드에 맞는 미션은 14일 루틴에서 따로 나갑니다.'}
         </p>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '2.5rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>{displayProgress}%</div>
-          <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: displayProgress > 0 ? AXIS_GREEN_THEME.text : '#4A6B58' }}>{missionStatus}</div>
+          <div style={{ fontSize: '2.5rem', lineHeight: 1, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>{displayProgress}%</div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: displayProgress > 0 ? AXIS_GREEN_THEME.text : 'var(--mebody-t-4a6b58, #4A6B58)' }}>{missionStatus}</div>
         </div>
         <div style={{ height: '14px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden' }}>
           <div
             style={{
               width: `${displayProgress}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+              background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
               transition: 'width 260ms ease',
             }}
           />
@@ -2238,14 +2238,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
         style={{
           borderRadius: '24px',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
-          background: '#ffffff',
+          background: 'var(--mebody-s-ffffff, #ffffff)',
           padding: '19px 18px',
         }}
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '6px' }}>COMMON · STEP 1</div>
-            <h2 style={{ fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, color: '#014725' }}>공통 스트레칭 · 먼저 할 두 가지</h2>
+            <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>COMMON · STEP 1</div>
+            <h2 style={{ fontSize: '1.25rem', lineHeight: 1.2, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>공통 스트레칭 · 먼저 할 두 가지</h2>
           </div>
 
           <div style={{ display: 'grid', gap: '10px' }}>
@@ -2276,13 +2276,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       alignItems: 'center',
                       gap: '13px',
                       borderRadius: '20px',
-                      background: index === 0 ? 'rgba(244,251,249,0.98)' : 'rgba(228,244,240,0.9)',
+                      background: index === 0 ? 'var(--mebody-s-w98-4, rgba(244,251,249,0.98))' : 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))',
                       border: `1px solid ${index === 0 ? AXIS_GREEN_THEME.border : AXIS_GREEN_THEME.borderStrong}`,
                       padding: '17px 15px',
                       textAlign: 'left',
                       fontFamily: 'inherit',
                       cursor: data.actionPlan.detailContents.length > 0 ? 'pointer' : 'default',
-                      boxShadow: index === 0 ? '0 12px 24px rgba(1, 71, 37, 0.05)' : 'none',
+                      boxShadow: index === 0 ? '0 12px 24px var(--mebody-d-k05, rgba(1, 71, 37, 0.05))' : 'none',
                     }}
                   >
                     <div
@@ -2291,38 +2291,38 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         width: '28px',
                         height: '28px',
                         borderRadius: '10px',
-                        border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#6F8C7B'}`,
-                        background: isCompleted ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
-                        boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.85)',
+                        border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : 'var(--mebody-b-6f8c7b, #6F8C7B)'}`,
+                        background: isCompleted ? 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
+                        boxShadow: 'inset 0 0 0 3px var(--mebody-d-w85, rgba(255,255,255,0.85))',
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px', flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: index === 0 ? '#4A6B58' : AXIS_GREEN_THEME.text }}>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: index === 0 ? 'var(--mebody-t-4a6b58, #4A6B58)' : AXIS_GREEN_THEME.text }}>
                           {item.title}
                         </div>
                         <div
                           style={{
                             borderRadius: '999px',
-                            background: isCompleted ? 'rgba(1,71,37,0.12)' : '#ffffff',
+                            background: isCompleted ? 'var(--mebody-s-k12, rgba(1,71,37,0.12))' : 'var(--mebody-s-ffffff, #ffffff)',
                             border: `1px solid ${isCompleted ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                             padding: '4px 8px',
                             fontSize: '0.6875rem',
                             lineHeight: 1,
                             fontWeight: 900,
-                            color: isCompleted ? '#014725' : '#587761',
+                            color: isCompleted ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-587761, #587761)',
                           }}
                         >
                           {statusLabel}
                         </div>
                       </div>
-                      <div style={{ fontSize: '1.0625rem', lineHeight: 1.36, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '1.0625rem', lineHeight: 1.36, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                         {item.displayName}
                       </div>
                     </div>
                     <div style={{ display: 'grid', justifyItems: 'end', gap: '8px', flexShrink: 0 }}>
                       {typeof item.percent === 'number' && (
-                        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#587761' }}>{item.percent}%</div>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-587761, #587761)' }}>{item.percent}%</div>
                       )}
                       {data.actionPlan.detailContents.length > 0 && <ChevronRight size={18} color="#587761" />}
                     </div>
@@ -2333,12 +2333,12 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
               <div
                 style={{
                   borderRadius: '16px',
-                  background: 'rgba(244,251,249,0.96)',
+                  background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
                   border: `1px solid ${AXIS_GREEN_THEME.border}`,
                   padding: '14px',
                   fontSize: '0.875rem',
                   lineHeight: 1.6,
-                  color: '#4A6B58',
+                  color: 'var(--mebody-t-4a6b58, #4A6B58)',
                   wordBreak: 'keep-all',
                 }}
               >
@@ -2355,7 +2355,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
           style={{
             borderRadius: '24px',
             border: guideOpen ? `1px solid ${AXIS_GREEN_THEME.borderStrong}` : `1px solid ${AXIS_GREEN_THEME.border}`,
-            background: '#ffffff',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
             overflow: 'hidden',
           }}
         >
@@ -2369,13 +2369,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
               justifyContent: 'space-between',
               gap: '12px',
               padding: '18px',
-              background: guideOpen ? 'rgba(228,244,240,0.84)' : '#ffffff',
+              background: guideOpen ? 'var(--mebody-s-w84-2, rgba(228,244,240,0.84))' : 'var(--mebody-s-ffffff, #ffffff)',
               cursor: 'pointer',
             }}
           >
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.14em', color: '#014725', marginBottom: '4px' }}>GUIDE</div>
-              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#014725' }}>나의 {PRODUCT.codeName} 가이드 보기</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>GUIDE</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>나의 {PRODUCT.codeName} 가이드 보기</div>
             </div>
             {guideOpen ? <ChevronUp size={18} color="#4A6B58" /> : <ChevronDown size={18} color="#4A6B58" />}
           </button>
@@ -2387,18 +2387,18 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                     key={block.id}
                     style={{
                       borderRadius: '18px',
-                      background: 'rgba(244,251,249,0.95)',
+                      background: 'var(--mebody-s-w95-3, rgba(244,251,249,0.95))',
                       border: `1px solid ${AXIS_GREEN_THEME.border}`,
                       padding: '18px',
                     }}
                   >
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>{block.caption}</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#014725', marginBottom: '10px', wordBreak: 'keep-all' }}>{block.title}</div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>{block.caption}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px', wordBreak: 'keep-all' }}>{block.title}</div>
                     {renderReadableText(block.content)}
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#4A6B58', paddingTop: '4px', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--mebody-t-4a6b58, #4A6B58)', paddingTop: '4px', wordBreak: 'keep-all' }}>
                   아직 연결된 가이드가 없습니다.
                 </div>
               )}

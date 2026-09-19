@@ -167,7 +167,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
             const done = doneSet.has(key);
             const isToday = key === iso(today);
             return (
-              <div key={key} style={{ textAlign: 'center', fontSize: '0.6875rem', color: '#718078' }}>
+              <div key={key} style={{ textAlign: 'center', fontSize: '0.6875rem', color: 'var(--mebody-t-718078, #718078)' }}>
                 {DOW[i]}
                 <i
                   style={{
@@ -180,8 +180,8 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
                     fontStyle: 'normal',
                     fontWeight: 900,
                     fontSize: '0.8125rem',
-                    background: done ? BRAND.green : '#ffffff',
-                    color: done ? '#ffffff' : isToday ? BRAND.green : '#9BA79F',
+                    background: done ? BRAND.green : 'var(--mebody-s-ffffff, #ffffff)',
+                    color: done ? 'var(--mebody-t-ffffff-2, #ffffff)' : isToday ? BRAND.green : 'var(--mebody-t-9ba79f, #9BA79F)',
                     outline: isToday && !done ? `2px solid ${BRAND.green}` : 'none',
                     border: done ? 'none' : `1px solid ${SURFACE.hairline}`,
                   }}
@@ -247,7 +247,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
                       fontSize: '0.75rem',
                       fontWeight: done ? 900 : 600,
                       background: done ? BRAND.green : inMonth ? SURFACE.subtle : 'transparent',
-                      color: done ? '#ffffff' : inMonth ? BRAND.text : '#C9D2CB',
+                      color: done ? 'var(--mebody-t-ffffff-2, #ffffff)' : inMonth ? BRAND.text : 'var(--mebody-t-c9d2cb, #C9D2CB)',
                       outline: isToday ? `2px solid ${BRAND.green}` : 'none',
                     }}
                   >

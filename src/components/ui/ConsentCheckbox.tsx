@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 import { LEGAL } from '../../theme/copy';
 
 const LINK_STYLE = {
-  color: '#014725',
+  color: 'var(--mebody-t-014725, #014725)',
   fontWeight: 800,
   textDecoration: 'underline',
   textUnderlineOffset: '2px',
@@ -33,9 +33,9 @@ export function ConsentCheckbox({
         gap: '12px',
         // 체크박스 줄 전체가 탭 영역이라 44px 를 넘습니다 (22px 박스 + 위아래 12px 패딩).
         borderRadius: '14px',
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         padding: '12px 14px',
-        border: '1px solid #E1E9DA',
+        border: '1px solid var(--mebody-b-e1e9da, #E1E9DA)',
         cursor: 'pointer',
       }}
     >
@@ -54,8 +54,8 @@ export function ConsentCheckbox({
           height: '22px',
           marginTop: '1px',
           borderRadius: '6px',
-          border: checked ? '2px solid #016B38' : '2px solid #6F8C7B',
-          background: checked ? '#016B38' : '#ffffff',
+          border: checked ? '2px solid var(--mebody-b-016b38, #016B38)' : '2px solid var(--mebody-b-6f8c7b, #6F8C7B)',
+          background: checked ? 'var(--mebody-s-016b38, #016B38)' : 'var(--mebody-s-ffffff, #ffffff)',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -63,9 +63,9 @@ export function ConsentCheckbox({
           boxSizing: 'border-box',
         }}
       >
-        {checked && <span style={{ color: '#ffffff', fontSize: '0.875rem', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+        {checked && <span style={{ color: 'var(--mebody-t-ffffff-2, #ffffff)', fontSize: '0.875rem', fontWeight: 900, lineHeight: 1 }}>✓</span>}
       </span>
-      <span style={{ fontSize: '0.875rem', lineHeight: 1.5, color: '#2C5544', wordBreak: 'keep-all', flex: 1 }}>
+      <span style={{ fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--mebody-t-2c5544, #2C5544)', wordBreak: 'keep-all', flex: 1 }}>
         {children}
       </span>
     </label>

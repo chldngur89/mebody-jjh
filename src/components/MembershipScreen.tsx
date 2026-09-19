@@ -107,7 +107,7 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
               <h2 style={{ fontSize: '1.3125rem', fontWeight: 800, margin: '12px 0 6px', wordBreak: 'keep-all' }}>
                 이미 멤버십 회원이세요
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '0.8125rem', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, color: 'var(--mebody-t-w80, rgba(255,255,255,.8))', fontSize: '0.8125rem', lineHeight: 1.6 }}>
                 {mySubscription.current_period_end
                   ? `${new Date(mySubscription.current_period_end).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}까지 이용하실 수 있습니다.`
                   : '이용 중입니다.'}

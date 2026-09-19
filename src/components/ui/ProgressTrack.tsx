@@ -24,7 +24,7 @@ export function ProgressTrack({
   return (
     <div style={{ width: '100%', marginTop: '14px' }}>
       {(label || value) && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#748079' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--mebody-t-748079, #748079)' }}>
           <b style={{ color: BRAND.green }}>{label}</b>
           <span>{value}</span>
         </div>
@@ -32,7 +32,7 @@ export function ProgressTrack({
       <div style={{ height: `${GAUGE.height}px`, background: GAUGE.progressBg, borderRadius: '999px', marginTop: '6px', overflow: 'hidden' }}>
         <i style={{ display: 'block', width: `${clamped}%`, height: '100%', background: BRAND.green, borderRadius: '999px', transition: 'width 260ms ease' }} />
       </div>
-      {foot && <div style={{ marginTop: '5px', textAlign: 'right', fontSize: '0.6875rem', color: '#8A938D' }}>{foot}</div>}
+      {foot && <div style={{ marginTop: '5px', textAlign: 'right', fontSize: '0.6875rem', color: 'var(--mebody-t-8a938d, #8A938D)' }}>{foot}</div>}
     </div>
   );
 }

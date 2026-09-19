@@ -51,7 +51,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
         maxHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px var(--mebody-d-k13, rgba(1, 71, 37, 0.13))' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -76,8 +76,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
             flexDirection: 'column',
             overflow: 'hidden',
             borderRadius: '20px',
-            background: '#ffffff',
-            boxShadow: '0 12px 28px rgba(1, 71, 37, 0.08)',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
+            boxShadow: '0 12px 28px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
             padding: isDesktopMockup ? '20px 20px 16px' : '16px 14px 12px',
           }}
         >
@@ -94,8 +94,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                   width: '44px',
                   height: '44px',
                   borderRadius: '999px',
-                  border: '1px solid #E1E9DA',
-                  background: '#ffffff',
+                  border: '1px solid var(--mebody-b-e1e9da, #E1E9DA)',
+                  background: 'var(--mebody-s-ffffff, #ffffff)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -106,7 +106,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 <ArrowLeft size={18} color="#2C5544" />
               </button>
             )}
-            <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.12em', color: '#014725', marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '8px' }}>
               동의 안내
             </div>
             <h1
@@ -114,7 +114,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                 fontSize: isDesktopMockup ? '1.5rem' : '1.375rem',
                 lineHeight: 1.3,
                 fontWeight: 850,
-                color: '#014725',
+                color: 'var(--mebody-t-014725, #014725)',
                 marginBottom: '8px',
                 wordBreak: 'keep-all',
                 letterSpacing: '-0.03em',
@@ -124,7 +124,7 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               <br />
               아래 내용을 확인해 주세요
             </h1>
-            <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+            <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
               내 {PRODUCT.codeName}를 찾는 {PRODUCT.codeGuide}예요. 의료 진단이나 치료를 대신하지 않습니다.
             </p>
           </div>
@@ -145,26 +145,26 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               <div
                 style={{
                   borderRadius: '14px',
-                  background: '#f3faf6',
+                  background: 'var(--mebody-s-f3faf6, #f3faf6)',
                   padding: '14px 14px',
                   marginBottom: '10px',
                 }}
               >
-                <ul style={{ display: 'grid', gap: '10px', fontSize: '0.8125rem', lineHeight: 1.55, color: '#2C5544' }}>
+                <ul style={{ display: 'grid', gap: '10px', fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-2c5544, #2C5544)' }}>
                   <li style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>1</span>
+                    <span style={{ color: 'var(--mebody-t-016b38, #016B38)', fontWeight: 800, flexShrink: 0 }}>1</span>
                     <span>질문에 답하면 지금의 자세·체형 경향을 {PRODUCT.codeName}로 보여줍니다.</span>
                   </li>
                   <li style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>2</span>
+                    <span style={{ color: 'var(--mebody-t-016b38, #016B38)', fontWeight: 800, flexShrink: 0 }}>2</span>
                     <span>생활 습관, 환경, 컨디션에 따라 결과는 달라질 수 있어요.</span>
                   </li>
                   <li style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>3</span>
+                    <span style={{ color: 'var(--mebody-t-016b38, #016B38)', fontWeight: 800, flexShrink: 0 }}>3</span>
                     <span>질병 진단·통증 판독·치료/교정 처방은 포함되지 않습니다.</span>
                   </li>
                   <li style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: '#016B38', fontWeight: 800, flexShrink: 0 }}>4</span>
+                    <span style={{ color: 'var(--mebody-t-016b38, #016B38)', fontWeight: 800, flexShrink: 0 }}>4</span>
                     <span>통증이나 이상이 있으면 먼저 전문가 상담을 우선해 주세요.</span>
                   </li>
                 </ul>
@@ -173,8 +173,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               <div
                 style={{
                   borderRadius: '14px',
-                  border: '1px solid #E1E9DA',
-                  background: '#ffffff',
+                  border: '1px solid var(--mebody-b-e1e9da, #E1E9DA)',
+                  background: 'var(--mebody-s-ffffff, #ffffff)',
                   overflow: 'hidden',
                   marginBottom: '10px',
                 }}
@@ -188,8 +188,8 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 14px',
-                    background: '#F7FAF4',
-                    color: '#014725',
+                    background: 'var(--mebody-s-f7faf4, #F7FAF4)',
+                    color: 'var(--mebody-t-014725, #014725)',
                     fontSize: '0.8125rem',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -199,22 +199,22 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
                   {detailsOpen ? <ChevronUp size={18} color="#4A6B58" /> : <ChevronDown size={18} color="#4A6B58" />}
                 </button>
                 {detailsOpen && (
-                  <div style={{ borderTop: '1px solid #F0F4EC', padding: '12px 14px', display: 'grid', gap: '12px' }}>
+                  <div style={{ borderTop: '1px solid var(--mebody-b-f0f4ec, #F0F4EC)', padding: '12px 14px', display: 'grid', gap: '12px' }}>
                     <div>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725', marginBottom: '4px' }}>제공하는 것</div>
-                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>제공하는 것</div>
+                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                         설문 기반 {PRODUCT.codeName}({PRODUCT.codeGuide})와, 결과를 이해하기 위한 웰니스 가이드입니다.
                       </p>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725', marginBottom: '4px' }}>제공하지 않는 것</div>
-                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>제공하지 않는 것</div>
+                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                         질병 진단, 통증 판독, 치료·재활·교정 처방은 하지 않으며 의학적 판단을 대신하지 않습니다.
                       </p>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725', marginBottom: '4px' }}>결과 저장</div>
-                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>결과 저장</div>
+                      <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                         로그인하면 설문 결과가 계정에 연결되어 다음에 다시 볼 수 있습니다.
                       </p>
                     </div>
@@ -250,11 +250,11 @@ export function ConsentScreen({ onBack, onAgree }: ConsentScreenProps) {
               gap: '8px',
               borderRadius: '14px',
               border: 'none',
-              background: canProceed ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)' : '#E1E9DA',
-              color: canProceed ? '#ffffff' : '#6F8C7B',
+              background: canProceed ? 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-e1e9da, #E1E9DA)',
+              color: canProceed ? 'var(--mebody-t-ffffff-2, #ffffff)' : 'var(--mebody-t-6f8c7b, #6F8C7B)',
               fontSize: '1rem',
               fontWeight: 800,
-              boxShadow: canProceed ? '0 12px 24px rgba(1,71,37,0.22)' : 'none',
+              boxShadow: canProceed ? '0 12px 24px var(--mebody-d-k22, rgba(1,71,37,0.22))' : 'none',
               cursor: 'pointer',
             }}
           >

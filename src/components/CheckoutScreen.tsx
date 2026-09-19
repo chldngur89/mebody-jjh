@@ -96,7 +96,7 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
           <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: '12px 0 8px', wordBreak: 'keep-all' }}>
             멤버십이 시작되었습니다
           </h2>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, color: 'var(--mebody-t-w80, rgba(255,255,255,.8))', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {done.until
               ? `${new Date(done.until).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}까지 이용하실 수 있어요.`
               : '이제 14일 루틴을 이어서 하실 수 있어요.'}
@@ -180,10 +180,10 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
           </Card>
 
           {billing?.devMode && (
-            <Card style={{ background: '#FFF8E8', border: '1px solid #F0DCA8' }}>
+            <Card style={{ background: 'var(--mebody-s-fff8e8, #FFF8E8)', border: '1px solid var(--mebody-b-f0dca8, #F0DCA8)' }}>
               <div style={{ display: 'flex', gap: '9px' }}>
                 <Info size={16} color="#9A6B00" style={{ flexShrink: 0, marginTop: '1px' }} />
-                <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.65, color: '#7A5500', wordBreak: 'keep-all' }}>
+                <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.65, color: 'var(--mebody-t-7a5500, #7A5500)', wordBreak: 'keep-all' }}>
                   지금은 <b>테스트 결제</b>로 동작합니다. 실제로 돈이 빠져나가지 않습니다.
                   사업자등록과 결제사 연동이 끝나면 실결제로 바뀝니다.
                 </p>
@@ -207,8 +207,8 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
           )}
 
           {error && (
-            <Card style={{ background: '#FDF2F1', border: '1px solid #F3CFCB' }}>
-              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6, color: '#8E3A32', wordBreak: 'keep-all' }}>{error}</p>
+            <Card style={{ background: 'var(--mebody-s-fdf2f1, #FDF2F1)', border: '1px solid var(--mebody-b-f3cfcb, #F3CFCB)' }}>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6, color: 'var(--mebody-t-8e3a32, #8E3A32)', wordBreak: 'keep-all' }}>{error}</p>
             </Card>
           )}
 

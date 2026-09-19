@@ -45,15 +45,15 @@ function StatRow({ label, value, total }: { label: string; value: number; total:
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
-        <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725' }}>{label}</div>
-        <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#587761' }}>{value}회</div>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>{label}</div>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-587761, #587761)' }}>{value}회</div>
       </div>
       <div style={{ height: '10px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden' }}>
         <div
           style={{
             width: `${percent}%`,
             height: '100%',
-            background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+            background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
           }}
         />
       </div>
@@ -67,16 +67,16 @@ function Card({ title, eyebrow, children }: { title: string; eyebrow?: string; c
       style={{
         borderRadius: '24px',
         border: `1px solid ${AXIS_GREEN_THEME.border}`,
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         padding: '20px 18px',
       }}
     >
       {eyebrow && (
-        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
           {eyebrow}
         </div>
       )}
-      <h2 style={{ fontSize: '1.125rem', fontWeight: 900, color: '#014725', marginBottom: '14px' }}>{title}</h2>
+      <h2 style={{ fontSize: '1.125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '14px' }}>{title}</h2>
       {children}
     </section>
   )
@@ -136,7 +136,7 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
           alignItems: 'center',
           gap: '12px',
           padding: '22px 24px 18px',
-          background: 'rgba(255,255,255,0.52)',
+          background: 'var(--mebody-s-w52, rgba(255,255,255,0.52))',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -148,28 +148,28 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
               width: '44px',
               height: '44px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.42)',
-              background: 'rgba(255,255,255,0.74)',
+              border: '1px solid var(--mebody-b-w42, rgba(255,255,255,0.42))',
+              background: 'var(--mebody-s-w74, rgba(255,255,255,0.74))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+              boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>
           {isProgressCheck ? '2주 진척 확인' : '주간 리포트'}
         </h1>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>집계하는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--mebody-t-4a6b58, #4A6B58)', fontSize: '0.875rem' }}>집계하는 중...</div>
         ) : !payload ? (
           <JourneyNotice>아직 리포트를 만들 수 없습니다. 진행 중인 14일 루틴이 있는지 확인해 주세요.</JourneyNotice>
         ) : (
@@ -177,31 +177,31 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
             <section
               style={{
                 borderRadius: '28px',
-                background: 'rgba(255,255,255,0.86)',
-                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
+                background: 'var(--mebody-s-w86, rgba(255,255,255,0.86))',
+                boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(20px)',
                 padding: '22px 20px',
               }}
             >
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px' }}>
                 DAY {payload.period.from_day}–{payload.period.to_day}
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '2.875rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>
+                <div style={{ fontSize: '2.875rem', lineHeight: 1, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
                   {payload.completion.rate}%
                 </div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#4A6B58', paddingBottom: '4px' }}>수행률</div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--mebody-t-4a6b58, #4A6B58)', paddingBottom: '4px' }}>수행률</div>
               </div>
               <div style={{ height: '14px', borderRadius: '999px', background: AXIS_GREEN_THEME.track, overflow: 'hidden', marginBottom: '12px' }}>
                 <div
                   style={{
                     width: `${payload.completion.rate}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                    background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
                   }}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '16px', fontSize: '0.8125rem', fontWeight: 800, color: '#3D6B54' }}>
+              <div style={{ display: 'flex', gap: '16px', fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-3d6b54, #3D6B54)' }}>
                 <span>완료 {payload.completion.completed}</span>
                 <span>건너뜀 {payload.completion.skipped}</span>
                 <span>전체 {payload.completion.scheduled}</span>
@@ -215,12 +215,12 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
                 gap: '10px',
                 borderRadius: '20px',
                 border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                background: 'rgba(228,244,240,0.9)',
+                background: 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))',
                 padding: '16px',
               }}
             >
               <TrendingUp size={18} color="#014725" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div style={{ fontSize: '0.875rem', lineHeight: 1.7, fontWeight: 700, color: '#014725', wordBreak: 'keep-all' }}>
+              <div style={{ fontSize: '0.875rem', lineHeight: 1.7, fontWeight: 700, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                 {payload.next_hint}
               </div>
             </div>
@@ -257,7 +257,7 @@ export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }:
                     .sort((left, right) => right[1] - left[1])
                     .map(([key, count]) => (
                       <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#014725' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>
                           {AXIS_LABEL[key] ?? key}
                         </span>
                         <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>{count}회</span>

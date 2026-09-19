@@ -15,7 +15,19 @@ const SITE = String(process.env.VITE_PUBLIC_SITE_URL || 'https://mebody-jjh.verc
   /\/+$/,
   '',
 )
-const OG_IMAGE = `${SITE}/og-image.png?v=20260909`
+/**
+ * 미리보기 이미지.
+ *
+ * 코드가 있으면 그 코드의 카드(4축 방향까지 그려진 것)를, 없으면 공용 이미지를 씁니다.
+ * 카드 16장은 scripts/make-share-og.py 로 미리 만들어 public/share-cards/ 에 두었습니다.
+ * 서버리스에는 DOM 이 없어 요청 때마다 캔버스로 그릴 수 없기 때문입니다.
+ *
+ * ?v= 는 캐시 무효화용입니다. **카드 그림을 바꾸면 이 값을 함께 올려야** 합니다.
+ * 카카오·슬랙은 og:image 를 URL 단위로 오래 캐시합니다.
+ */
+const CARD_VERSION = '20260916'
+const SHARED_OG_IMAGE = `${SITE}/og-image.png?v=20260909`
+const cardImage = (code) => (code ? `${SITE}/share-cards/${code}.png?v=${CARD_VERSION}` : SHARED_OG_IMAGE)
 
 const CHARACTER_NAMES = {
   FRRS: '꽈악 잠금 로봇',
@@ -61,7 +73,7 @@ module.exports = function handler(req, res) {
   const safeTitle = escapeHtml(title)
   const safeDesc = escapeHtml(description)
   const safeUrl = escapeHtml(spaUrl)
-  const safeImage = escapeHtml(OG_IMAGE)
+  const safeImage = escapeHtml(cardImage(code))
   // JSON.stringify 로 JS 문자열 이스케이프 (따옴표·개행)
   const jsUrl = JSON.stringify(spaUrl)
 

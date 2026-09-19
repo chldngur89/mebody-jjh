@@ -19,10 +19,10 @@ export function Chip({
   onClick?: () => void;
 }) {
   const map = {
-    solid: { background: BRAND.green, color: '#ffffff', border: '1px solid transparent' },
+    solid: { background: BRAND.green, color: 'var(--mebody-t-ffffff-2, #ffffff)', border: '1px solid transparent' },
     subtle: { background: SURFACE.subtle, color: BRAND.muted, border: '1px solid transparent' },
-    outline: { background: '#ffffff', color: BRAND.text, border: '1px solid #DBE2DA' },
-    onGreen: { background: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid transparent' },
+    outline: { background: 'var(--mebody-s-ffffff, #ffffff)', color: BRAND.text, border: '1px solid var(--mebody-b-dbe2da, #DBE2DA)' },
+    onGreen: { background: 'var(--mebody-s-w15, rgba(255,255,255,0.15))', color: 'var(--mebody-t-ffffff-2, #ffffff)', border: '1px solid transparent' },
   }[tone];
 
   const Tag = onClick ? 'button' : 'span';

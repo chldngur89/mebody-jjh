@@ -9,12 +9,12 @@ import { ChevronDown } from 'lucide-react';
 import { BRAND, BRAND_CARD_BORDER, BRAND_RADIUS, BRAND_SHADOW, SURFACE } from '../../theme/brand';
 
 const DANGER = {
-  border: '1px solid rgba(185, 58, 50, 0.42)',
-  background: '#FDF2F1',
+  border: '1px solid var(--mebody-b-r42, rgba(185, 58, 50, 0.42))',
+  background: 'var(--mebody-s-fdf2f1, #FDF2F1)',
   kicker: '#8E3A32',
   hintBg: '#F8E0DD',
   hintColor: '#8E3A32',
-  shadow: '0 12px 34px rgba(142, 58, 50, 0.08)',
+  shadow: '0 12px 34px var(--mebody-d-r08, rgba(142, 58, 50, 0.08))',
 } as const;
 
 export function Collapsible({

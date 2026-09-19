@@ -25,9 +25,9 @@ export function DirectionCard({
   action?: ReactNode;
 }) {
   return (
-    <section style={{ background: BRAND.green, color: '#ffffff', borderRadius: `${BRAND_RADIUS}px`, padding: '20px' }}>
+    <section style={{ background: BRAND.green, color: 'var(--mebody-t-ffffff-2, #ffffff)', borderRadius: `${BRAND_RADIUS}px`, padding: '20px' }}>
       {kicker && (
-        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.08em', color: 'rgba(255,255,255,.78)', marginBottom: '6px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.08em', color: 'var(--mebody-t-w78, rgba(255,255,255,.78))', marginBottom: '6px' }}>
           {kicker}
         </div>
       )}
@@ -41,7 +41,7 @@ export function DirectionCard({
                 width: '26px',
                 height: '26px',
                 borderRadius: '50%',
-                background: '#ffffff',
+                background: 'var(--mebody-s-ffffff, #ffffff)',
                 color: BRAND.green,
                 display: 'grid',
                 placeItems: 'center',
@@ -54,7 +54,7 @@ export function DirectionCard({
             <div style={{ minWidth: 0 }}>
               <b style={{ fontSize: '0.9375rem', wordBreak: 'keep-all' }}>{step.title}</b>
               {step.desc && (
-                <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,.75)', fontSize: '0.8125rem', lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                <p style={{ margin: '2px 0 0', color: 'var(--mebody-t-w75, rgba(255,255,255,.75))', fontSize: '0.8125rem', lineHeight: 1.5, wordBreak: 'keep-all' }}>
                   {step.desc}
                 </p>
               )}

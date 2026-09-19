@@ -57,7 +57,7 @@ export function AxisIntroDemo({ compact = false }: { compact?: boolean }) {
     <div
       style={{
         borderRadius: '18px',
-        border: '1px solid rgba(1, 71, 37, 0.12)',
+        border: '1px solid var(--mebody-b-k12, rgba(1, 71, 37, 0.12))',
         background: BRAND.card,
         padding: compact ? '16px 16px 12px' : '20px',
       }}

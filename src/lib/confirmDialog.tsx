@@ -73,7 +73,7 @@ function ConfirmDialog({ options, onClose }: { options: ConfirmOptions; onClose:
         background: BRAND.card,
         color: BRAND.text,
         fontFamily: 'inherit',
-        boxShadow: '0 24px 60px rgba(1, 31, 17, 0.28)',
+        boxShadow: '0 24px 60px var(--mebody-d-k28-2, rgba(1, 31, 17, 0.28))',
       }}
     >
       <h2 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 900, letterSpacing: '-0.01em', wordBreak: 'keep-all' }}>
@@ -97,7 +97,7 @@ function ConfirmDialog({ options, onClose }: { options: ConfirmOptions; onClose:
           ref={confirmRef}
           type="button"
           onClick={() => close(true)}
-          style={{ ...button, background: destructive ? DANGER : BRAND.green, color: '#ffffff' }}
+          style={{ ...button, background: destructive ? DANGER : BRAND.green, color: 'var(--mebody-t-ffffff-2, #ffffff)' }}
         >
           {confirmLabel}
         </button>

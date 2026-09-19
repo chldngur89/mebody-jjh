@@ -172,7 +172,7 @@ export function JourneyIntroScreen({
           alignItems: 'center',
           gap: '12px',
           padding: '22px 24px 18px',
-          background: 'rgba(255,255,255,0.52)',
+          background: 'var(--mebody-s-w52, rgba(255,255,255,0.52))',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -184,33 +184,33 @@ export function JourneyIntroScreen({
               width: '44px',
               height: '44px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.42)',
-              background: 'rgba(255,255,255,0.74)',
+              border: '1px solid var(--mebody-b-w42, rgba(255,255,255,0.42))',
+              background: 'var(--mebody-s-w74, rgba(255,255,255,0.74))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+              boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>14일 루틴 시작하기</h1>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>14일 루틴 시작하기</h1>
         {isFirstJourneyFree && (
           <span
             style={{
               marginLeft: 'auto',
               flexShrink: 0,
               borderRadius: '999px',
-              background: 'rgba(1,71,37,0.10)',
+              background: 'var(--mebody-s-k10, rgba(1,71,37,0.10))',
               border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
               padding: '5px 11px',
               fontSize: '0.75rem',
               fontWeight: 900,
-              color: '#014725',
+              color: 'var(--mebody-t-014725, #014725)',
             }}
           >
             첫 14일 무료
@@ -222,8 +222,8 @@ export function JourneyIntroScreen({
         <section
           style={{
             borderRadius: '30px',
-            background: 'rgba(255,255,255,0.84)',
-            boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
+            background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
+            boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
             backdropFilter: 'blur(20px)',
             padding: '22px',
           }}
@@ -234,8 +234,8 @@ export function JourneyIntroScreen({
                 width: '72px',
                 height: '82px',
                 borderRadius: '20px',
-                background: 'linear-gradient(135deg, rgba(236,253,245,0.96) 0%, rgba(255,255,255,0.96) 100%)',
-                border: '1px solid rgba(209,250,229,0.95)',
+                background: 'linear-gradient(135deg, var(--mebody-s-w96-4, rgba(236,253,245,0.96)) 0%, var(--mebody-s-w96, rgba(255,255,255,0.96)) 100%)',
+                border: '1px solid var(--mebody-b-w95-2, rgba(209,250,229,0.95))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -251,17 +251,17 @@ export function JourneyIntroScreen({
                   onError={() => data.handleImageError(data.characterImage)}
                 />
               ) : (
-                <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#014725' }}>{data.bodyCode}</div>
+                <div style={{ fontSize: '1.375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>{data.bodyCode}</div>
               )}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
                 MY CODE
               </div>
-              <div style={{ fontSize: '1.5rem', lineHeight: 1.1, fontWeight: 900, color: '#014725', marginBottom: '4px' }}>
+              <div style={{ fontSize: '1.5rem', lineHeight: 1.1, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>
                 {data.bodyCode}
               </div>
-              <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                 {data.characterName}
               </div>
             </div>
@@ -270,12 +270,12 @@ export function JourneyIntroScreen({
           <div
             style={{
               borderRadius: '20px',
-              background: 'rgba(228,244,240,0.86)',
+              background: 'var(--mebody-s-w86-2, rgba(228,244,240,0.86))',
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
               padding: '16px 18px',
             }}
           >
-            <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725', marginBottom: '10px' }}>관리 우선순위</div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px' }}>관리 우선순위</div>
             {axisPriority.length > 0 ? (
               <div style={{ display: 'grid', gap: '10px' }}>
                 {axisPriority.slice(0, 2).map((entry) => (
@@ -288,8 +288,8 @@ export function JourneyIntroScreen({
                         minWidth: '26px',
                         height: '26px',
                         borderRadius: '999px',
-                        background: entry.rank === 1 ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
-                        color: entry.rank === 1 ? '#ffffff' : '#014725',
+                        background: entry.rank === 1 ? 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
+                        color: entry.rank === 1 ? 'var(--mebody-t-ffffff-2, #ffffff)' : 'var(--mebody-t-014725, #014725)',
                         border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                         fontSize: '0.8125rem',
                         fontWeight: 900,
@@ -299,7 +299,7 @@ export function JourneyIntroScreen({
                       {entry.rank}
                     </span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                         {AXIS_LABEL[entry.axis] ?? entry.axis} · {entry.label}
                       </div>
                     </div>
@@ -310,7 +310,7 @@ export function JourneyIntroScreen({
                 ))}
               </div>
             ) : (
-              <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, color: '#4A6B58', wordBreak: 'keep-all' }}>
+              <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
                 {data.isLoading ? '결과를 불러오는 중입니다.' : '연결된 결과가 없습니다. 결과 화면에서 다시 진입해 주세요.'}
               </div>
             )}
@@ -323,13 +323,13 @@ export function JourneyIntroScreen({
           style={{
             borderRadius: '24px',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
-            background: '#ffffff',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
             padding: '20px 18px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <CalendarDays size={18} color="#014725" />
-            <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: '#014725' }}>14일 동안 이렇게 진행합니다</h2>
+            <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>14일 동안 이렇게 진행합니다</h2>
           </div>
           <div style={{ display: 'grid', gap: '11px' }}>
             {[
@@ -342,7 +342,7 @@ export function JourneyIntroScreen({
                 <div style={{ fontSize: '0.75rem', fontWeight: 900, color: AXIS_GREEN_THEME.text, paddingTop: '2px' }}>
                   {item.day}
                 </div>
-                <div style={{ fontSize: '0.875rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>{item.text}</div>
+                <div style={{ fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>{item.text}</div>
               </div>
             ))}
           </div>
@@ -352,15 +352,15 @@ export function JourneyIntroScreen({
           style={{
             borderRadius: '24px',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
-            background: '#ffffff',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
             padding: '20px 18px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
             <Sparkles size={18} color="#014725" />
-            <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: '#014725' }}>하루 5분이면 충분합니다</h2>
+            <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>하루 5분이면 충분합니다</h2>
           </div>
-          <p style={{ fontSize: '0.875rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>
+          <p style={{ fontSize: '0.875rem', lineHeight: 1.75, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
             매일 이완 90초와 스트레칭 30초씩 3세트, 약 3분짜리 한 가지를 제안합니다.
             수행 후 남긴 느낌과 난이도에 따라 다음 날 미션의 시간과 강도가 조정됩니다.
           </p>
@@ -379,7 +379,7 @@ export function JourneyIntroScreen({
                   border: 'none',
                   background: 'transparent',
                   padding: 0,
-                  color: '#014725',
+                  color: 'var(--mebody-t-014725, #014725)',
                   fontSize: '0.8125rem',
                   fontWeight: 800,
                   fontFamily: 'inherit',
@@ -398,12 +398,12 @@ export function JourneyIntroScreen({
           <div
             style={{
               borderRadius: '16px',
-              border: '1px solid rgba(239,68,68,0.28)',
-              background: 'rgba(254,242,242,0.9)',
+              border: '1px solid var(--mebody-b-r28, rgba(239,68,68,0.28))',
+              background: 'var(--mebody-s-w90-3, rgba(254,242,242,0.9))',
               padding: '14px 16px',
               fontSize: '0.8125rem',
               lineHeight: 1.65,
-              color: '#8E3A32',
+              color: 'var(--mebody-t-8e3a32, #8E3A32)',
               wordBreak: 'keep-all',
             }}
           >

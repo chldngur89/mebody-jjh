@@ -181,7 +181,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
         minHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: '0 24px 60px rgba(1, 71, 37, 0.13)',
+        boxShadow: '0 24px 60px var(--mebody-d-k13, rgba(1, 71, 37, 0.13))',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -195,7 +195,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
             width: '384px',
             height: '384px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.035)',
+            background: 'var(--mebody-s-k04, rgba(0, 70, 40, 0.035))',
             filter: 'blur(64px)',
           }}
         />
@@ -207,7 +207,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
             width: '384px',
             height: '384px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.03)',
+            background: 'var(--mebody-s-k03, rgba(0, 70, 40, 0.03))',
             filter: 'blur(64px)',
           }}
         />
@@ -235,15 +235,15 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
               alignItems: 'center',
               gap: '8px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.28)',
-              background: 'rgba(255,255,255,0.62)',
+              border: '1px solid var(--mebody-b-w28, rgba(255,255,255,0.28))',
+              background: 'var(--mebody-s-w62, rgba(255,255,255,0.62))',
               padding: '8px 16px',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.10)',
+              boxShadow: '0 10px 20px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
               backdropFilter: 'blur(12px)',
             }}
           >
             <BrandMark size={16} color="#014725" />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#014725' }}>{PRODUCT.mark}</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--mebody-t-014725, #014725)' }}>{PRODUCT.mark}</span>
           </div>
 
           {onBack && (
@@ -255,14 +255,14 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                 alignItems: 'center',
                 gap: '6px',
                 borderRadius: '999px',
-                border: '1px solid rgba(255,255,255,0.28)',
-                background: 'rgba(255,255,255,0.62)',
+                border: '1px solid var(--mebody-b-w28, rgba(255,255,255,0.28))',
+                background: 'var(--mebody-s-w62, rgba(255,255,255,0.62))',
                 minHeight: '44px',
                 padding: '8px 14px',
-                color: '#2C5544',
+                color: 'var(--mebody-t-2c5544, #2C5544)',
                 fontSize: '0.8125rem',
                 fontWeight: 600,
-                boxShadow: '0 10px 20px rgba(1, 71, 37, 0.10)',
+                boxShadow: '0 10px 20px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(12px)',
                 cursor: 'pointer',
               }}
@@ -283,8 +283,8 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
             flexDirection: 'column',
             overflowY: 'auto',
             borderRadius: '24px',
-            background: 'rgba(255,255,255,0.74)',
-            boxShadow: '0 20px 46px rgba(1, 71, 37, 0.12)',
+            background: 'var(--mebody-s-w74, rgba(255,255,255,0.74))',
+            boxShadow: '0 20px 46px var(--mebody-d-k12, rgba(1, 71, 37, 0.12))',
             backdropFilter: 'blur(20px)',
             padding: '22px',
             paddingBottom: 'calc(22px + env(safe-area-inset-bottom))',
@@ -292,18 +292,18 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
         >
           <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 700, letterSpacing: '0.04em', color: '#014725', marginBottom: '6px' }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
               {user
                 ? '계정'
                 : purpose === 'save-result'
                   ? '휴대폰으로 결과 보관'
                   : '결과 저장을 위해 가입하기'}
             </div>
-            <h1 style={{ fontSize: '1.625rem', fontWeight: 800, lineHeight: 1.2, color: '#014725' }}>
+            <h1 style={{ fontSize: '1.625rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--mebody-t-014725, #014725)' }}>
               {purpose === 'save-result' && !user ? '번호만으로 빠르게 저장' : '로그인 / 회원가입'}
             </h1>
             {purpose === 'save-result' && !user && (
-              <p style={{ margin: '10px 0 0', fontSize: '0.875rem', lineHeight: 1.55, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              <p style={{ margin: '10px 0 0', fontSize: '0.875rem', lineHeight: 1.55, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                 010 번호를 입력하면 결과만 계정에 연결해요. 이메일 없이도 다음에 다시 볼 수 있습니다.
               </p>
             )}
@@ -314,29 +314,29 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
               <div
                 style={{
                   borderRadius: '16px',
-                  border: '1px solid rgba(167, 243, 208, 1)',
-                  background: 'rgba(236, 253, 245, 0.95)',
+                  border: '1px solid var(--mebody-b-g100, rgba(167, 243, 208, 1))',
+                  background: 'var(--mebody-s-w95, rgba(236, 253, 245, 0.95))',
                   padding: '16px',
                 }}
               >
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#047857', fontSize: '0.875rem', fontWeight: 700, marginBottom: '8px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--mebody-t-047857, #047857)', fontSize: '0.875rem', fontWeight: 700, marginBottom: '8px' }}>
                   <CheckCircle2 size={16} />
                   로그인 상태
                 </div>
-                <p style={{ fontSize: '0.875rem', color: '#064e3b', wordBreak: 'break-all' }}>{user.email}</p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--mebody-t-064e3b, #064e3b)', wordBreak: 'break-all' }}>{user.email}</p>
               </div>
 
               <div
                 style={{
                   borderRadius: '16px',
-                  border: '1px solid rgba(225, 233, 218,0.9)',
-                  background: 'linear-gradient(135deg, rgba(247, 250, 244,0.88) 0%, rgba(240, 244, 236,0.88) 100%)',
+                  border: '1px solid var(--mebody-b-w90, rgba(225, 233, 218,0.9))',
+                  background: 'linear-gradient(135deg, var(--mebody-s-w88, rgba(247, 250, 244,0.88)) 0%, var(--mebody-s-w88-2, rgba(240, 244, 236,0.88)) 100%)',
                   padding: '16px',
                 }}
               >
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>NEXT STEP</div>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#014725', marginBottom: '8px' }}>재방문 자동 결과 / 멤버십 연결</h2>
-                <p style={{ fontSize: '0.875rem', lineHeight: 1.65, color: '#2C5544', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>NEXT STEP</div>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', marginBottom: '8px' }}>재방문 자동 결과 / 멤버십 연결</h2>
+                <p style={{ fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--mebody-t-2c5544, #2C5544)', wordBreak: 'keep-all' }}>
                   재방문 시 최근 결과로 바로 진입할 수 있고, 멤버십 결제를 통해 심화 리포트를 사용할 수 있습니다.
                 </p>
                 {onGoMembership && (
@@ -352,8 +352,8 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                       justifyContent: 'center',
                       borderRadius: '12px',
                       border: 'none',
-                      background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                      color: '#ffffff',
+                      background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                      color: 'var(--mebody-t-ffffff-2, #ffffff)',
                       fontSize: '0.9375rem',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -376,9 +376,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                   justifyContent: 'center',
                   gap: '8px',
                   borderRadius: '12px',
-                  border: '1px solid rgba(200, 214, 196,1)',
-                  background: 'rgba(255,255,255,0.84)',
-                  color: '#2C5544',
+                  border: '1px solid var(--mebody-b-g100-2, rgba(200, 214, 196,1))',
+                  background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
+                  color: 'var(--mebody-t-2c5544, #2C5544)',
                   fontSize: '0.875rem',
                   fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
@@ -394,13 +394,13 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
               <div
                 style={{
                   borderRadius: '16px',
-                  border: '1px solid rgba(225, 233, 218,0.9)',
-                  background: 'linear-gradient(135deg, rgba(247, 250, 244,0.88) 0%, rgba(240, 244, 236,0.88) 100%)',
+                  border: '1px solid var(--mebody-b-w90, rgba(225, 233, 218,0.9))',
+                  background: 'linear-gradient(135deg, var(--mebody-s-w88, rgba(247, 250, 244,0.88)) 0%, var(--mebody-s-w88-2, rgba(240, 244, 236,0.88)) 100%)',
                   padding: '16px',
                 }}
               >
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', color: '#014725', marginBottom: '6px' }}>WELCOME</div>
-                <p style={{ fontSize: '0.875rem', lineHeight: 1.65, color: '#2C5544', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>WELCOME</div>
+                <p style={{ fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--mebody-t-2c5544, #2C5544)', wordBreak: 'keep-all' }}>
                   로그인하면 결과가 계정에 연결되어, 다음 방문에서 바로 결과를 확인할 수 있습니다.
                 </p>
               </div>
@@ -409,9 +409,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                 style={{
                   display: 'flex',
                   borderRadius: '12px',
-                  background: 'rgba(240, 244, 236,0.92)',
+                  background: 'var(--mebody-s-w92, rgba(240, 244, 236,0.92))',
                   padding: '4px',
-                  border: '1px solid rgba(225, 233, 218,0.95)',
+                  border: '1px solid var(--mebody-b-w95, rgba(225, 233, 218,0.95))',
                 }}
               >
                 <button
@@ -429,11 +429,11 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                     minHeight: '44px',
                     borderRadius: '10px',
                     border: 'none',
-                    background: mode === 'signin' ? '#ffffff' : 'transparent',
-                    color: mode === 'signin' ? '#014725' : '#4A6B58',
+                    background: mode === 'signin' ? 'var(--mebody-s-ffffff, #ffffff)' : 'transparent',
+                    color: mode === 'signin' ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-4a6b58, #4A6B58)',
                     fontSize: '0.875rem',
                     fontWeight: 700,
-                    boxShadow: mode === 'signin' ? '0 4px 10px rgba(1, 71, 37, 0.08)' : 'none',
+                    boxShadow: mode === 'signin' ? '0 4px 10px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))' : 'none',
                     cursor: 'pointer',
                   }}
                 >
@@ -454,11 +454,11 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                     minHeight: '44px',
                     borderRadius: '10px',
                     border: 'none',
-                    background: mode === 'signup' ? '#ffffff' : 'transparent',
-                    color: mode === 'signup' ? '#014725' : '#4A6B58',
+                    background: mode === 'signup' ? 'var(--mebody-s-ffffff, #ffffff)' : 'transparent',
+                    color: mode === 'signup' ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-4a6b58, #4A6B58)',
                     fontSize: '0.875rem',
                     fontWeight: 700,
-                    boxShadow: mode === 'signup' ? '0 4px 10px rgba(1, 71, 37, 0.08)' : 'none',
+                    boxShadow: mode === 'signup' ? '0 4px 10px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))' : 'none',
                     cursor: 'pointer',
                   }}
                 >
@@ -476,13 +476,13 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                   display: 'grid',
                   gap: '10px',
                   borderRadius: '16px',
-                  border: '1px solid rgba(225, 233, 218,0.9)',
-                  background: 'rgba(255,255,255,0.86)',
+                  border: '1px solid var(--mebody-b-w90, rgba(225, 233, 218,0.9))',
+                  background: 'var(--mebody-s-w86, rgba(255,255,255,0.86))',
                   padding: '16px',
                 }}
               >
                 <label style={{ display: 'block' }}>
-                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--mebody-t-2c5544, #2C5544)' }}>
                     이메일 혹은 핸드폰 번호 넣어주세요
                   </span>
                   <div
@@ -493,9 +493,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                       gap: '8px',
                       padding: '0 12px',
                       height: '46px',
-                      border: '1px solid rgba(200, 214, 196,1)',
+                      border: '1px solid var(--mebody-b-g100-2, rgba(200, 214, 196,1))',
                       borderRadius: '12px',
-                      background: 'rgba(247, 250, 244,0.98)',
+                      background: 'var(--mebody-s-w98, rgba(247, 250, 244,0.98))',
                     }}
                   >
                     {identifierKind === 'phone'
@@ -527,11 +527,11 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                         outline: 'none',
                         background: 'transparent',
                         fontSize: '1rem',
-                        color: '#014725',
+                        color: 'var(--mebody-t-014725, #014725)',
                       }}
                     />
                   </div>
-                  <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8125rem', lineHeight: 1.5, color: '#4A6B58' }}>
+                  <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>
                     {mode === 'signup'
                       ? '확인 절차 없이 바로 가입됩니다. 다음에도 같은 이메일 또는 번호로 로그인해주세요.'
                       : '가입할 때 쓴 이메일이나 번호를 그대로 입력해주세요.'}
@@ -539,7 +539,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                 </label>
 
                 <label style={{ display: 'block' }}>
-                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>비밀번호</span>
+                  <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--mebody-t-2c5544, #2C5544)' }}>비밀번호</span>
                   <div
                     className="mebody-field"
                     style={{
@@ -548,9 +548,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                       gap: '8px',
                       padding: '0 12px',
                       height: '46px',
-                      border: '1px solid rgba(200, 214, 196,1)',
+                      border: '1px solid var(--mebody-b-g100-2, rgba(200, 214, 196,1))',
                       borderRadius: '12px',
-                      background: 'rgba(247, 250, 244,0.98)',
+                      background: 'var(--mebody-s-w98, rgba(247, 250, 244,0.98))',
                     }}
                   >
                     <Lock size={16} color="#4A6B58" />
@@ -570,7 +570,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                         outline: 'none',
                         background: 'transparent',
                         fontSize: '1rem',
-                        color: '#014725',
+                        color: 'var(--mebody-t-014725, #014725)',
                       }}
                     />
                   </div>
@@ -578,7 +578,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
 
                 {mode === 'signup' && (
                   <label style={{ display: 'block' }}>
-                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--mebody-t-2c5544, #2C5544)' }}>
                       비밀번호 확인
                     </span>
                     <div
@@ -589,9 +589,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                         gap: '8px',
                         padding: '0 12px',
                         height: '46px',
-                        border: passwordMismatch ? '1px solid #8E3A32' : '1px solid rgba(200, 214, 196,1)',
+                        border: passwordMismatch ? '1px solid var(--mebody-b-8e3a32, #8E3A32)' : '1px solid var(--mebody-b-g100-2, rgba(200, 214, 196,1))',
                         borderRadius: '12px',
-                        background: 'rgba(247, 250, 244,0.98)',
+                        background: 'var(--mebody-s-w98, rgba(247, 250, 244,0.98))',
                       }}
                     >
                       <Lock size={16} color={passwordMismatch ? '#8E3A32' : '#4A6B58'} />
@@ -614,12 +614,12 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                           outline: 'none',
                           background: 'transparent',
                           fontSize: '1rem',
-                          color: '#014725',
+                          color: 'var(--mebody-t-014725, #014725)',
                         }}
                       />
                     </div>
                     {passwordMismatch && (
-                      <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8125rem', lineHeight: 1.45, color: '#8E3A32', fontWeight: 700 }}>
+                      <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8125rem', lineHeight: 1.45, color: 'var(--mebody-t-8e3a32, #8E3A32)', fontWeight: 700 }}>
                         비밀번호가 일치하지 않습니다.
                       </span>
                     )}
@@ -628,7 +628,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
 
                 {mode === 'signup' && (
                   <label style={{ display: 'block' }}>
-                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: '#2C5544' }}>이름(선택)</span>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--mebody-t-2c5544, #2C5544)' }}>이름(선택)</span>
                     <div
                       className="mebody-field"
                       style={{
@@ -637,9 +637,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                         gap: '8px',
                         padding: '0 12px',
                         height: '46px',
-                        border: '1px solid rgba(200, 214, 196,1)',
+                        border: '1px solid var(--mebody-b-g100-2, rgba(200, 214, 196,1))',
                         borderRadius: '12px',
-                        background: 'rgba(247, 250, 244,0.98)',
+                        background: 'var(--mebody-s-w98, rgba(247, 250, 244,0.98))',
                       }}
                     >
                       <UserRound size={16} color="#4A6B58" />
@@ -658,7 +658,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                           outline: 'none',
                           background: 'transparent',
                           fontSize: '1rem',
-                          color: '#014725',
+                          color: 'var(--mebody-t-014725, #014725)',
                         }}
                       />
                     </div>
@@ -687,19 +687,19 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                     justifyContent: 'center',
                     borderRadius: '12px',
                     border: 'none',
-                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                    color: '#ffffff',
+                    background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                    color: 'var(--mebody-t-ffffff-2, #ffffff)',
                     fontSize: '1rem',
                     fontWeight: 700,
                     cursor: submitBlocked ? 'not-allowed' : 'pointer',
                     opacity: submitBlocked ? 0.6 : 1,
-                    boxShadow: '0 10px 22px rgba(1,71,37,0.30)',
+                    boxShadow: '0 10px 22px var(--mebody-d-k30, rgba(1,71,37,0.30))',
                   }}
                 >
                   {loading ? '처리 중...' : mode === 'signup' ? CTA.authSignup : CTA.authLogin}
                 </button>
                 {consentPending && (
-                  <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.5, color: '#4A6B58' }}>
+                  <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>
                     위 두 가지에 동의하면 가입할 수 있습니다.
                   </p>
                 )}
@@ -712,7 +712,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                     style={{
                       border: 'none',
                       background: 'transparent',
-                      color: '#014725',
+                      color: 'var(--mebody-t-014725, #014725)',
                       fontSize: '0.8125rem',
                       fontWeight: 800,
                       textDecoration: 'underline',
@@ -726,7 +726,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                 )}
 
                 {mode === 'signup' && (
-                  <p style={{ fontSize: '0.8125rem', lineHeight: 1.5, color: '#4A6B58', wordBreak: 'keep-all' }}>
+                  <p style={{ fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
                     회원가입이 완료되면 바로 로그인 상태로 다음 단계에 연결됩니다.
                   </p>
                 )}
@@ -741,9 +741,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
               style={{
                 marginTop: '14px',
                 borderRadius: '12px',
-                border: '1px solid rgba(167, 243, 208, 1)',
-                background: 'rgba(236, 253, 245, 0.95)',
-                color: '#047857',
+                border: '1px solid var(--mebody-b-g100, rgba(167, 243, 208, 1))',
+                background: 'var(--mebody-s-w95, rgba(236, 253, 245, 0.95))',
+                color: 'var(--mebody-t-047857, #047857)',
                 fontSize: '0.8125rem',
                 padding: '12px 14px',
               }}
@@ -757,9 +757,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
               style={{
                 marginTop: '14px',
                 borderRadius: '12px',
-                border: '1px solid rgba(254, 205, 211, 1)',
-                background: 'rgba(254, 242, 242, 0.95)',
-                color: '#8E3A32',
+                border: '1px solid var(--mebody-b-w100, rgba(254, 205, 211, 1))',
+                background: 'var(--mebody-s-w95-2, rgba(254, 242, 242, 0.95))',
+                color: 'var(--mebody-t-8e3a32, #8E3A32)',
                 fontSize: '0.8125rem',
                 padding: '12px 14px',
                 wordBreak: 'break-word',

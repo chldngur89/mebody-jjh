@@ -344,6 +344,38 @@ export interface StoreProduct {
  * products 테이블(status=ACTIVE)을 조회하므로 서버에 올리면 앱에 바로 반영됩니다.
  * 조회 실패하거나 비어 있으면 빈 배열을 돌려주고 화면은 기존 안내로 폴백합니다.
  */
+/**
+ * 상품 하나. 상세 화면이 id 로 직접 읽습니다.
+ *
+ * 목록을 전부 받아 앱에서 걸러내지 않는 이유: 상세는 새로고침·공유 링크로도
+ * 바로 열리므로 목록을 거치지 않고 들어올 수 있습니다. 그때 15행을 받아
+ * 하나만 쓰는 건 낭비이고, 목록에 없는 id(비활성)면 조용히 빈 값이 나와야 합니다.
+ */
+export async function fetchStoreProduct(id: string): Promise<StoreProduct | null> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, description, price, image_url, status, category')
+    .eq('id', id)
+    .eq('status', 'ACTIVE')
+    .maybeSingle();
+
+  if (error) {
+    console.warn('fetchStoreProduct failed:', error);
+    throw error;
+  }
+  if (!data) return null;
+
+  return {
+    id: String(data.id),
+    name: String(data.name ?? ''),
+    description: String(data.description ?? ''),
+    price: data.price === null || data.price === undefined ? null : Number(data.price),
+    imageUrl: resolveStorageUrl(data.image_url),
+    status: String(data.status ?? ''),
+    category: String((data as { category?: string }).category ?? ''),
+  };
+}
+
 export async function fetchStoreProducts(options: { throwOnError?: boolean } = {}): Promise<StoreProduct[]> {
   const { data, error } = await supabase
     .from('products')

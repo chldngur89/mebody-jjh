@@ -15,6 +15,7 @@ const AuthScreen = lazy(() => lazyImportWithReload(() => import('./components/Au
 const MembershipScreen = lazy(() => lazyImportWithReload(() => import('./components/MembershipScreen').then(m => ({ default: m.MembershipScreen }))));
 const CheckoutScreen = lazy(() => lazyImportWithReload(() => import('./components/CheckoutScreen').then(m => ({ default: m.CheckoutScreen }))));
 const CartScreen = lazy(() => lazyImportWithReload(() => import('./components/market/CartScreen').then(m => ({ default: m.CartScreen }))));
+const ProductDetailScreen = lazy(() => lazyImportWithReload(() => import('./components/market/ProductDetailScreen').then(m => ({ default: m.ProductDetailScreen }))));
 const JourneyIntroScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyIntroScreen').then(m => ({ default: m.JourneyIntroScreen }))));
 const JourneyTodayScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyTodayScreen').then(m => ({ default: m.JourneyTodayScreen }))));
 const JourneyMissionScreen = lazy(() => lazyImportWithReload(() => import('./components/journey/JourneyMissionScreen').then(m => ({ default: m.JourneyMissionScreen }))));
@@ -105,11 +106,11 @@ const MIN_ANALYSIS_VISIBLE_MS = 1000;
  * 테두리 반경을 2px 크게 잡아 자식의 모서리가 선 안쪽에 앉도록 합니다.
  */
 const DESKTOP_FRAME_STYLE: CSSProperties = {
-  border: '3px solid #014725',
+  border: '3px solid var(--mebody-b-014725, #014725)',
   borderRadius: '34px',
   overflow: 'hidden',
-  boxShadow: '0 24px 60px rgba(0, 70, 40, 0.18)',
-  background: '#FFFFF3',
+  boxShadow: '0 24px 60px var(--mebody-d-k18, rgba(0, 70, 40, 0.18))',
+  background: 'var(--mebody-s-fffff3, #FFFFF3)',
   // 기기 목업처럼 높이를 고정해야 안쪽 화면의 스크롤이 프레임 안에서 동작합니다.
   // 화면 높이는 var(--mebody-app-height) 로 통일합니다.
   height: 'min(844px, calc(100vh - 32px))',
@@ -147,6 +148,8 @@ export default function App() {
       : restoredRoute?.screen === 'journeyMission' ? 'journeyToday' : restoredRoute?.screen === 'questionnaire' && questionnaireProgress.completedResultId ? 'result' : restoredRoute?.screen === 'analyzing' ? 'questionnaire' : restoredRoute?.screen ?? previewScreen ?? 'landing',
   );
   const [questionnaireId, setQuestionnaireId] = useState<string | undefined>(restoredRoute?.resultId);
+  /** 상품 상세가 열려 있을 때의 상품 id. 히스토리에 실어 하드웨어 백·새로고침에 견디게 합니다. */
+  const [productId, setProductId] = useState<string | undefined>(restoredRoute?.productId);
   const [bodyCode, setBodyCode] = useState<string | undefined>(restoredRoute?.bodyCode);
   const sharedResultIdParam = bootSearchParams.get('result');
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -186,6 +189,7 @@ export default function App() {
   const navigation = useFlowHistory({ screen: currentScreen, tab: activeTab,
     // 랜딩에서는 result id 를 URL 에 실지 않습니다(주소창 복사 시 개인 결과 노출 방지).
     resultId: currentScreen === 'landing' ? undefined : questionnaireId,
+    productId: currentScreen === 'product' ? productId : undefined,
     bodyCode,
     shareCode: currentScreen === 'landing' ? sharedCode : undefined,
     diagnosisId: questionnaireProgress.id, authSuccess: currentScreen === 'auth' ? authSuccessScreen : undefined,
@@ -197,6 +201,7 @@ export default function App() {
     setCurrentScreen(screen);
     setActiveTab(route.tab);
     setBodyCode(route.bodyCode);
+    setProductId(route.productId);
     setQuestionnaireId(completedQuestionnaire ? questionnaireProgress.completedResultId ?? latestResultId : route.resultId);
     if (route.authSuccess) setAuthSuccessScreen(route.authSuccess);
     if (screen === 'questionnaire' && route.questionIndex !== undefined) {
@@ -968,7 +973,7 @@ export default function App() {
           )}
 
           {/* 홈·미션·루틴·마켓·내 상태 + 멤버십·결제. 결제도 앱 안(탭바 유지)에서 끝납니다. */}
-          {(currentScreen === 'result' || currentScreen === 'membership' || currentScreen === 'checkout' || currentScreen === 'cart') && (
+          {(currentScreen === 'result' || currentScreen === 'membership' || currentScreen === 'checkout' || currentScreen === 'cart' || currentScreen === 'product') && (
             <AppShell
               scrollKey={`${currentScreen}:${activeTab}:${questionnaireId ?? "none"}`}
               activeTab={activeTab}
@@ -988,7 +993,7 @@ export default function App() {
                   style={{
                     border: 0,
                     background: 'transparent',
-                    color: '#014725',
+                    color: 'var(--mebody-t-014725, #014725)',
                     minHeight: '44px',
                     padding: '0 8px',
                     fontSize: '0.8125rem',
@@ -1023,6 +1028,16 @@ export default function App() {
                 />
               )}
 
+              {currentScreen === 'product' && productId && (
+                <ProductDetailScreen
+                  productId={productId}
+                  isPaid={entitlement.isPaid}
+                  onBack={() => navigation.back({ screen: 'result', tab: 'market', resultId: questionnaireId })}
+                  onOpenCart={() => setCurrentScreen('cart')}
+                  onOpenMembership={() => openMembership('product')}
+                />
+              )}
+
               {currentScreen === 'cart' && (
                 <CartScreen
                   user={currentUser}
@@ -1041,13 +1056,13 @@ export default function App() {
                     margin: '12px 16px 0',
                     padding: '14px 16px',
                     borderRadius: '16px',
-                    border: '1px solid #fecaca',
-                    background: '#fef2f2',
+                    border: '1px solid var(--mebody-b-fecaca, #fecaca)',
+                    background: 'var(--mebody-s-fef2f2, #fef2f2)',
                     display: 'grid',
                     gap: '10px',
                   }}
                 >
-                  <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#7f1d1d', wordBreak: 'keep-all' }}>
+                  <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-7f1d1d, #7f1d1d)', wordBreak: 'keep-all' }}>
                     결과를 서버에 저장하지 못했습니다. 화면에서는 계속 볼 수 있지만, 로그인·여정에는 아직 연결되지 않습니다.
                   </p>
                   <button
@@ -1058,8 +1073,8 @@ export default function App() {
                       minHeight: '44px',
                       borderRadius: '12px',
                       border: 'none',
-                      background: pendingAnalysis ? '#014725' : '#6F8C7B',
-                      color: '#fff',
+                      background: pendingAnalysis ? 'var(--mebody-s-014725, #014725)' : 'var(--mebody-s-6f8c7b, #6F8C7B)',
+                      color: 'var(--mebody-t-ffffff, #fff)',
                       fontWeight: 800,
                       fontSize: '0.875rem',
                       cursor: pendingAnalysis ? 'pointer' : 'not-allowed',
@@ -1070,7 +1085,7 @@ export default function App() {
                 </div>
               )}
               {currentScreen === 'result' && activeTab === 'home' && resultSaveStatus === 'saving' && (
-                <p role="status" style={{ margin: '12px 16px 0', fontSize: '0.8125rem', fontWeight: 700, color: '#014725' }}>
+                <p role="status" style={{ margin: '12px 16px 0', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-014725, #014725)' }}>
                   결과를 저장하는 중…
                 </p>
               )}
@@ -1135,6 +1150,10 @@ export default function App() {
                   bodyCode={bodyCode}
                   onOpenMembership={() => openMembership('result')}
                   onOpenCart={() => setCurrentScreen('cart')}
+                  onOpenProduct={(id) => {
+                    setProductId(id);
+                    setCurrentScreen('product');
+                  }}
                 />
               )}
             </AppShell>

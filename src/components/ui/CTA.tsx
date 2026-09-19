@@ -44,10 +44,10 @@ export function CTA({
   };
   const tone: CSSProperties =
     variant === 'light'
-      ? { background: '#ffffff', color: BRAND.green }
+      ? { background: 'var(--mebody-s-ffffff, #ffffff)', color: BRAND.green }
       : variant === 'outline'
-        ? { background: '#ffffff', color: BRAND.green, border: `1px solid ${BRAND.green}` }
-        : { background: BRAND.green, color: '#ffffff' };
+        ? { background: 'var(--mebody-s-ffffff, #ffffff)', color: BRAND.green, border: `1px solid ${BRAND.green}` }
+        : { background: BRAND.green, color: 'var(--mebody-t-ffffff-2, #ffffff)' };
 
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{ ...base, ...tone, ...style }}>

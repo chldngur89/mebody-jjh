@@ -219,7 +219,7 @@ export function JourneyScreenShell({
         maxHeight: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: JOURNEY_BACKGROUND,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px var(--mebody-d-k13, rgba(1, 71, 37, 0.13))' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -234,7 +234,7 @@ export function JourneyScreenShell({
             width: '300px',
             height: '300px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.035)',
+            background: 'var(--mebody-s-k04, rgba(0, 70, 40, 0.035))',
             filter: 'blur(58px)',
           }}
         />
@@ -246,7 +246,7 @@ export function JourneyScreenShell({
             width: '320px',
             height: '320px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.03)',
+            background: 'var(--mebody-s-k03, rgba(0, 70, 40, 0.03))',
             filter: 'blur(72px)',
           }}
         />
@@ -292,12 +292,12 @@ export function JourneyPrimaryButton({
         gap: '8px',
         borderRadius: '16px',
         border: 'none',
-        background: disabled ? '#6F8C7B' : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-        color: '#ffffff',
+        background: disabled ? 'var(--mebody-s-6f8c7b, #6F8C7B)' : 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+        color: 'var(--mebody-t-ffffff-2, #ffffff)',
         fontSize: '0.9375rem',
         fontWeight: 800,
         fontFamily: 'inherit',
-        boxShadow: disabled ? 'none' : '0 14px 28px rgba(1,71,37,0.22)',
+        boxShadow: disabled ? 'none' : '0 14px 28px var(--mebody-d-k22, rgba(1,71,37,0.22))',
         cursor: disabled ? 'default' : 'pointer',
       }}
     >
@@ -313,11 +313,11 @@ export function JourneyNotice({ children }: { children: React.ReactNode }) {
       style={{
         borderRadius: '18px',
         border: `1px solid ${AXIS_GREEN_THEME.border}`,
-        background: 'rgba(244,251,249,0.96)',
+        background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
         padding: '16px',
         fontSize: '0.875rem',
         lineHeight: 1.7,
-        color: '#3D6B54',
+        color: 'var(--mebody-t-3d6b54, #3D6B54)',
         wordBreak: 'keep-all',
       }}
     >

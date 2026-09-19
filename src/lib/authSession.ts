@@ -79,10 +79,9 @@ export async function getSessionWithFallback(): Promise<SessionResponse> {
     }
 
     console.debug('Supabase session lookup fallback:', error);
-    return {
-      data: { session: getStoredSupabaseSession() },
-      error: null,
-    };
+    const storedSession = getStoredSupabaseSession();
+    if (storedSession) return { data: { session: storedSession }, error: null };
+    return { data: { session: null }, error: null };
   }
 }
 

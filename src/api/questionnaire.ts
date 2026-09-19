@@ -713,7 +713,7 @@ export async function submitQuestionnaire(
   const data = await mutateQuestionnaireResponse(questionnaireId, payload as Record<string, unknown>, signal)
   await syncLatestBodyCodeToProfile(user, code)
 
-  return { ...data, body_code_meta: result }
+  return { ...data, calculated_code: code, body_code_meta: result }
 }
 
 export async function fetchQuestionnaireResult(questionnaireId: string) {

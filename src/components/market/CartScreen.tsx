@@ -166,7 +166,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
         <Card tone="green">
           <CheckCircle2 size={30} />
           <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: '12px 0 8px' }}>결제가 완료되었습니다</h2>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,.8)', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, color: 'var(--mebody-t-w80, rgba(255,255,255,.8))', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {krw(done.total)}원을 결제했습니다.
             {done.earned > 0 && ` 멤버십 적립 ${krw(done.earned)}원이 쌓였습니다.`}
           </p>
@@ -291,7 +291,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
                     style={{
                       textAlign: 'left',
                       border: a.id === addressId ? `2px solid ${BRAND.green}` : `1px solid ${SURFACE.hairline}`,
-                      background: a.id === addressId ? SURFACE.subtle : '#ffffff',
+                      background: a.id === addressId ? SURFACE.subtle : 'var(--mebody-s-ffffff, #ffffff)',
                       borderRadius: '14px',
                       padding: '12px',
                       cursor: 'pointer',
@@ -391,7 +391,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
             )}
 
             {billing?.devMode && (
-              <p style={{ margin: '12px 0 0', fontSize: '0.75rem', lineHeight: 1.6, color: '#7A5500', background: '#FFF8E8', border: '1px solid #F0DCA8', borderRadius: '12px', padding: '10px' }}>
+              <p style={{ margin: '12px 0 0', fontSize: '0.75rem', lineHeight: 1.6, color: 'var(--mebody-t-7a5500, #7A5500)', background: 'var(--mebody-s-fff8e8, #FFF8E8)', border: '1px solid var(--mebody-b-f0dca8, #F0DCA8)', borderRadius: '12px', padding: '10px' }}>
                 지금은 <b>테스트 결제</b>입니다. 실제로 돈이 빠져나가지 않습니다.
               </p>
             )}
@@ -406,7 +406,7 @@ export function CartScreen({ user, isPaid = false, onBack, onRequireAuth, onCont
               </div>
             )}
             {error && (
-              <p style={{ margin: '12px 0 0', fontSize: '0.8125rem', lineHeight: 1.6, color: '#8E3A32', background: '#FDF2F1', border: '1px solid #F3CFCB', borderRadius: '12px', padding: '10px' }}>
+              <p style={{ margin: '12px 0 0', fontSize: '0.8125rem', lineHeight: 1.6, color: 'var(--mebody-t-8e3a32, #8E3A32)', background: 'var(--mebody-s-fdf2f1, #FDF2F1)', border: '1px solid var(--mebody-b-f3cfcb, #F3CFCB)', borderRadius: '12px', padding: '10px' }}>
                 {error}
               </p>
             )}
@@ -433,7 +433,7 @@ function QtyButton({ children, onClick, label }: { children: React.ReactNode; on
         height: '32px',
         borderRadius: '8px',
         border: `1px solid ${SURFACE.hairline}`,
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         color: BRAND.muted,
         display: 'grid',
         placeItems: 'center',
@@ -479,7 +479,7 @@ function Field({
           padding: '0 12px',
           fontSize: '0.8125rem',
           fontFamily: 'inherit',
-          background: '#ffffff',
+          background: 'var(--mebody-s-ffffff, #ffffff)',
         }}
       />
     </label>

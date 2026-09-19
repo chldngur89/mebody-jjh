@@ -80,7 +80,7 @@ export function RoutineTab({
           <h2 style={{ fontSize: '1.4375rem', fontWeight: 800, margin: '12px 0 8px', wordBreak: 'keep-all' }}>
             지금 시작할 수 있어요
           </h2>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,.78)', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+          <p style={{ margin: 0, color: 'var(--mebody-t-w78, rgba(255,255,255,.78))', fontSize: '0.875rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
             {isFreeTrial
               ? '첫 14일은 무료입니다. 끝까지 해보고 이어갈지 정하세요.'
               : '멤버십 이용 중이라 언제든 새로 시작할 수 있습니다.'}

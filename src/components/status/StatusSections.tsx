@@ -43,10 +43,10 @@ function day(value: string | null | undefined): string {
 }
 
 const ORDER_STATUS: Record<MyOrder['status'], { label: string; color: string; bg: string }> = {
-  PENDING: { label: '결제 대기', color: '#7A5500', bg: '#FFF8E8' },
-  PAID: { label: '결제 완료', color: '#046B41', bg: '#E8F5EE' },
-  CANCELED: { label: '취소됨', color: '#4A6B58', bg: '#F0F4EC' },
-  FAILED: { label: '실패', color: '#8E3A32', bg: '#FDF2F1' },
+  PENDING: { label: '결제 대기', color: 'var(--mebody-t-7a5500, #7A5500)', bg: '#FFF8E8' },
+  PAID: { label: '결제 완료', color: 'var(--mebody-t-046b41, #046B41)', bg: '#E8F5EE' },
+  CANCELED: { label: '취소됨', color: 'var(--mebody-t-4a6b58, #4A6B58)', bg: '#F0F4EC' },
+  FAILED: { label: '실패', color: 'var(--mebody-t-8e3a32, #8E3A32)', bg: '#FDF2F1' },
 };
 
 /** 배송 단계. 결제만 끝나고 아직 준비 전이면 NONE 입니다. */
@@ -291,7 +291,7 @@ export function ProfileSection({ user }: { user: User }) {
               fontSize: '0.75rem',
               lineHeight: 1.45,
               fontWeight: 800,
-              color: '#8E3A32',
+              color: 'var(--mebody-t-8e3a32, #8E3A32)',
               wordBreak: 'keep-all',
             }}
           >
@@ -344,7 +344,7 @@ export function ProfileSection({ user }: { user: User }) {
           />
         </div>
         {passwordMismatch && (
-          <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 800, color: '#8E3A32' }}>
+          <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-8e3a32, #8E3A32)' }}>
             비밀번호 확인이 일치하지 않습니다.
           </p>
         )}
@@ -364,7 +364,7 @@ export function ProfileSection({ user }: { user: User }) {
               margin: 0,
               fontSize: '0.75rem',
               fontWeight: 800,
-              color: notice.ok ? BRAND.green : '#8E3A32',
+              color: notice.ok ? BRAND.green : 'var(--mebody-t-8e3a32, #8E3A32)',
               wordBreak: 'keep-all',
             }}
           >
@@ -515,7 +515,7 @@ export function OrdersSection({
                     style={{
                       marginTop: '10px',
                       border: `1px solid ${SURFACE.hairline}`,
-                      background: '#ffffff',
+                      background: 'var(--mebody-s-ffffff, #ffffff)',
                       color: BRAND.muted,
                       borderRadius: '10px',
                       padding: '7px 12px',
@@ -542,7 +542,7 @@ export function OrdersSection({
                 margin: '10px 0 0',
                 fontSize: '0.8125rem',
                 fontWeight: 800,
-                color: notice.ok ? BRAND.green : '#8E3A32',
+                color: notice.ok ? BRAND.green : 'var(--mebody-t-8e3a32, #8E3A32)',
                 wordBreak: 'keep-all',
               }}
             >
@@ -643,7 +643,7 @@ export function MembershipSection({
             </button>
           )}
           {notice && (
-            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 800, color: notice.ok ? BRAND.green : '#8E3A32' }}>
+            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 800, color: notice.ok ? BRAND.green : 'var(--mebody-t-8e3a32, #8E3A32)' }}>
               {notice.text}
             </p>
           )}
@@ -735,7 +735,7 @@ export function MeasurementSection({ user, onOpenResult }: { user: User; onOpenR
                     height: '48px',
                     borderRadius: '14px',
                     background: index === 0 ? BRAND.green : SURFACE.subtle,
-                    color: index === 0 ? '#ffffff' : BRAND.green,
+                    color: index === 0 ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.green,
                     display: 'grid',
                     placeItems: 'center',
                     fontWeight: 900,
@@ -822,11 +822,11 @@ function Field({
           boxSizing: 'border-box',
           height: compact ? '38px' : '42px',
           borderRadius: compact ? '10px' : '12px',
-          border: `1px solid ${invalid ? '#8E3A32' : SURFACE.hairline}`,
+          border: `1px solid ${invalid ? 'var(--mebody-b-8e3a32, #8E3A32)' : SURFACE.hairline}`,
           padding: compact ? '0 10px' : '0 12px',
           fontSize: compact ? '0.8125rem' : '0.8125rem',
           fontFamily: 'inherit',
-          background: '#ffffff',
+          background: 'var(--mebody-s-ffffff, #ffffff)',
         }}
       />
     </label>

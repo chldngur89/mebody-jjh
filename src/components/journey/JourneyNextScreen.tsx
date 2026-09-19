@@ -153,7 +153,7 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
           alignItems: 'center',
           gap: '12px',
           padding: '22px 24px 18px',
-          background: 'rgba(255,255,255,0.52)',
+          background: 'var(--mebody-s-w52, rgba(255,255,255,0.52))',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -165,26 +165,26 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
               width: '44px',
               height: '44px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.42)',
-              background: 'rgba(255,255,255,0.74)',
+              border: '1px solid var(--mebody-b-w42, rgba(255,255,255,0.42))',
+              background: 'var(--mebody-s-w74, rgba(255,255,255,0.74))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+              boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>다음 루틴</h1>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>다음 루틴</h1>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>불러오는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--mebody-t-4a6b58, #4A6B58)', fontSize: '0.875rem' }}>불러오는 중...</div>
         ) : !journey ? (
           <JourneyNotice>진행 중인 14일 루틴이 없습니다.</JourneyNotice>
         ) : (
@@ -192,19 +192,19 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
             <section
               style={{
                 borderRadius: '28px',
-                background: 'rgba(255,255,255,0.86)',
-                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
+                background: 'var(--mebody-s-w86, rgba(255,255,255,0.86))',
+                boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(20px)',
                 padding: '22px 20px',
               }}
             >
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px' }}>
                 RECOMMENDED
               </div>
-              <h2 style={{ fontSize: '1.375rem', lineHeight: 1.3, fontWeight: 900, color: '#014725', marginBottom: '10px', wordBreak: 'keep-all' }}>
+              <h2 style={{ fontSize: '1.375rem', lineHeight: 1.3, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px', wordBreak: 'keep-all' }}>
                 {recommendation?.title ?? '다시 체크하고 다음 루틴 이어가기'}
               </h2>
-              <p style={{ fontSize: '0.875rem', lineHeight: 1.75, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              <p style={{ fontSize: '0.875rem', lineHeight: 1.75, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                 {recommendation?.reason ??
                   '2주 동안의 변화를 32문항으로 확인한 뒤 새 우선순위로 이어가는 것을 추천합니다.'}
               </p>
@@ -214,12 +214,12 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                   style={{
                     marginTop: '14px',
                     borderRadius: '16px',
-                    background: 'rgba(228,244,240,0.86)',
+                    background: 'var(--mebody-s-w86-2, rgba(228,244,240,0.86))',
                     border: `1px solid ${AXIS_GREEN_THEME.border}`,
                     padding: '13px 15px',
                     fontSize: '0.8125rem',
                     fontWeight: 800,
-                    color: '#014725',
+                    color: 'var(--mebody-t-014725, #014725)',
                     wordBreak: 'keep-all',
                   }}
                 >
@@ -232,17 +232,17 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
               <div
                 style={{
                   borderRadius: '20px',
-                  background: 'linear-gradient(135deg, rgba(232,245,238,0.96) 0%, rgba(255,255,255,0.98) 100%)',
+                  background: 'linear-gradient(135deg, var(--mebody-s-w96-3, rgba(232,245,238,0.96)) 0%, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 100%)',
                   border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
                   padding: '18px',
                 }}
               >
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
                   14일 완주 보너스
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' }}>
-                  <div style={{ fontSize: '1.75rem', lineHeight: 1, fontWeight: 900, color: '#014725' }}>+{bonus.amount}원</div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#014725' }}>총 {bonus.balance}원</div>
+                  <div style={{ fontSize: '1.75rem', lineHeight: 1, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>+{bonus.amount}원</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>총 {bonus.balance}원</div>
                 </div>
               </div>
             )}
@@ -253,11 +253,11 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
               style={{
                 borderRadius: '24px',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
-                background: '#ffffff',
+                background: 'var(--mebody-s-ffffff, #ffffff)',
                 padding: '20px 18px',
               }}
             >
-              <h3 style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725', marginBottom: '14px' }}>어떻게 이어갈까요?</h3>
+              <h3 style={{ fontSize: '1.0625rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '14px' }}>어떻게 이어갈까요?</h3>
               <div style={{ display: 'grid', gap: '10px' }}>
                 <button
                   type="button"
@@ -270,7 +270,7 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                     gap: '12px',
                     borderRadius: '18px',
                     border: `1px solid ${recommendation?.kind === 'remeasure' ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
-                    background: recommendation?.kind === 'remeasure' ? 'rgba(228,244,240,0.9)' : '#ffffff',
+                    background: recommendation?.kind === 'remeasure' ? 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))' : 'var(--mebody-s-ffffff, #ffffff)',
                     padding: '16px',
                     textAlign: 'left',
                     fontFamily: 'inherit',
@@ -279,10 +279,10 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                 >
                   <RefreshCw size={20} color="#014725" />
                   <div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '3px' }}>
                       32문항 재측정하기
                     </div>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#587761', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-587761, #587761)', wordBreak: 'keep-all' }}>
                       2주 뒤 지금 상태로 우선순위를 새로 잡습니다
                     </div>
                   </div>
@@ -300,7 +300,7 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                     gap: '12px',
                     borderRadius: '18px',
                     border: `1px solid ${recommendation?.kind !== 'remeasure' ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
-                    background: recommendation?.kind !== 'remeasure' ? 'rgba(228,244,240,0.9)' : '#ffffff',
+                    background: recommendation?.kind !== 'remeasure' ? 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))' : 'var(--mebody-s-ffffff, #ffffff)',
                     padding: '16px',
                     textAlign: 'left',
                     fontFamily: 'inherit',
@@ -309,10 +309,10 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
                 >
                   <Repeat size={20} color="#014725" />
                   <div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '3px' }}>
                       {isWorking ? '준비하는 중...' : '재측정 없이 바로 이어가기'}
                     </div>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#587761', wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-587761, #587761)', wordBreak: 'keep-all' }}>
                       지금 결과 그대로 새 14일을 시작합니다
                     </div>
                   </div>

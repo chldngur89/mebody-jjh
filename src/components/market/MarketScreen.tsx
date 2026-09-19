@@ -48,7 +48,7 @@ function ProductImage({ url, height = 110 }: { url?: string; height?: number }) 
       {url ? (
         <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <span style={{ fontSize: '0.75rem', color: '#B4C0B6' }}>제품 이미지</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--mebody-t-b4c0b6, #B4C0B6)' }}>제품 이미지</span>
       )}
     </div>
   );
@@ -60,9 +60,11 @@ export interface MarketScreenProps {
   bodyCode?: string;
   onOpenMembership?: () => void;
   onOpenCart?: () => void;
+  /** 상품 카드 → 상세 화면. 카드 전체가 이 동작의 버튼입니다. */
+  onOpenProduct?: (productId: string) => void;
 }
 
-export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpenCart }: MarketScreenProps) {
+export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpenCart, onOpenProduct }: MarketScreenProps) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [inCart, setInCart] = useState(() => cartCount());
   /** 방금 담은 상품에 체크 표시를 잠깐 보여줍니다 */
@@ -112,7 +114,9 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
 
   return (
     <div style={{ display: 'grid', gap: '14px' }}>
-      <PageTitle eyebrow="mebody 마켓" title="마켓" lead="셀프케어와 운동에 필요한 도구를 한곳에서." />
+      {/* eyebrow 는 text-transform: uppercase 입니다 — 여기에 브랜드명을 넣으면
+          소스가 소문자여도 화면에 「MEBODY」로 찍힙니다. 다른 화면과 같이 영문 라벨을 씁니다. */}
+      <PageTitle eyebrow="MARKET" title="마켓" lead="셀프케어와 운동에 필요한 도구를 한곳에서." />
 
       {/* 검색바 */}
       <div
@@ -149,10 +153,10 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
       <div
         style={{
           background: BRAND.green,
-          color: '#ffffff',
+          color: 'var(--mebody-t-ffffff-2, #ffffff)',
           borderRadius: `${BRAND_RADIUS}px`,
           padding: '18px 18px 16px',
-          boxShadow: '0 12px 30px rgba(0,70,40,0.20)',
+          boxShadow: '0 12px 30px var(--mebody-d-k20, rgba(0,70,40,0.20))',
         }}
       >
         <Chip tone="onGreen">{bodyCode ? `${bodyCode} 맞춤 추천` : '맞춤 추천'}</Chip>
@@ -161,7 +165,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
           <br />
           관리 도구
         </h2>
-        <p style={{ margin: 0, color: '#D9E6DE', fontSize: '0.8125rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
+        <p style={{ margin: 0, color: 'var(--mebody-t-d9e6de, #D9E6DE)', fontSize: '0.8125rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>
           {isPaid
             ? '멤버십이라 구매하시면 결제액의 5%가 적립됩니다.'
             : '멤버십에 가입하면 구매액의 5%가 적립됩니다.'}
@@ -173,7 +177,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
             style={{
               marginTop: '12px',
               border: 0,
-              background: '#ffffff',
+              background: 'var(--mebody-s-ffffff, #ffffff)',
               color: BRAND.green,
               fontWeight: 900,
               borderRadius: '12px',
@@ -218,16 +222,16 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                     width: '34px',
                     height: '34px',
                     borderRadius: '12px',
-                    background: on ? 'rgba(255,255,255,0.18)' : SURFACE.subtle,
+                    background: on ? 'var(--mebody-s-w18, rgba(255,255,255,0.18))' : SURFACE.subtle,
                     display: 'grid',
                     placeItems: 'center',
                     fontSize: '0.9375rem',
-                    color: on ? '#ffffff' : BRAND.green,
+                    color: on ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.green,
                   }}
                 >
                   {c.icon}
                 </span>
-                <small style={{ fontSize: '0.75rem', fontWeight: 800, color: on ? '#ffffff' : BRAND.text }}>
+                <small style={{ fontSize: '0.75rem', fontWeight: 800, color: on ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.text }}>
                   {c.label}
                 </small>
               </button>
@@ -270,6 +274,23 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                     position: 'relative',
                   }}
                 >
+                  {onOpenProduct && (
+                    <button
+                      type="button"
+                      aria-label={`${product.name} 상세 보기`}
+                      onClick={() => onOpenProduct(product.id)}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 1,
+                        border: 0,
+                        background: 'transparent',
+                        borderRadius: `${BRAND_RADIUS}px`,
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    />
+                  )}
                   <ProductImage url={product.imageUrl || undefined} />
                   <small style={{ color: BRAND.muted, fontSize: '0.75rem' }}>
                     {CATEGORIES.find((c) => c.key === product.category)?.label ?? 'mebody 스토어'}
@@ -301,6 +322,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                     }}
                     style={{
                       position: 'absolute',
+                      zIndex: 2,
                       right: '10px',
                       bottom: '10px',
                       width: '28px',
@@ -308,7 +330,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                       borderRadius: '50%',
                       border: 0,
                       background: BRAND.green,
-                      color: '#ffffff',
+                      color: 'var(--mebody-t-ffffff-2, #ffffff)',
                       display: 'grid',
                       placeItems: 'center',
                       opacity: product.price === null ? 0.45 : 1,
@@ -331,7 +353,7 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
           style={{
             border: 0,
             background: BRAND.green,
-            color: '#ffffff',
+            color: 'var(--mebody-t-ffffff-2, #ffffff)',
             borderRadius: '14px',
             padding: '14px 16px',
             fontSize: '0.9375rem',

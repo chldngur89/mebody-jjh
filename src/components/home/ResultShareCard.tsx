@@ -233,7 +233,7 @@ export function ResultShareCard({
             fontSize: '0.8125rem',
             fontFamily: 'inherit',
             color: BRAND.text,
-            background: '#ffffff',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
             textAlign: 'left',
           }}
         />
@@ -278,7 +278,7 @@ function ShareActionButton({
         background: BRAND.green,
         borderRadius: '14px',
         padding: '13px 14px',
-        color: '#ffffff',
+        color: 'var(--mebody-t-ffffff-2, #ffffff)',
         fontWeight: 800,
         fontSize: '0.875rem',
         fontFamily: 'inherit',
@@ -292,7 +292,7 @@ function ShareActionButton({
     : {
         width: '100%',
         border: `1px solid ${SURFACE.hairline}`,
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         borderRadius: '12px',
         padding: '11px 12px',
         color: BRAND.green,

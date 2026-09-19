@@ -10,6 +10,7 @@
  */
 import { useEffect } from 'react';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
+import { BRAND } from '../theme/brand';
 import { hideBanner, isNativeApp, showBanner, type BannerPlacement } from '../lib/ads';
 import { useCookieConsent } from './CookieConsent';
 
@@ -52,12 +53,12 @@ export function AdSlot({ isPaid, placement, house }: AdSlotProps) {
       style={{
         borderRadius: '20px',
         border: `1px dashed ${AXIS_GREEN_THEME.border}`,
-        background: 'rgba(255,255,255,0.72)',
+        background: 'var(--mebody-s-w72, rgba(255,255,255,0.72))',
         padding: '16px 16px 14px',
       }}
     >
       {/* 광고 표기는 법적으로 필요합니다(표시광고법). 콘텐츠와 구분되게 둡니다. */}
-      <div style={{ fontSize: '0.6875rem', fontWeight: 900, letterSpacing: '0.12em', color: '#6F8C7B', marginBottom: '8px' }}>
+      <div style={{ fontSize: '0.6875rem', fontWeight: 900, letterSpacing: '0.12em', color: BRAND.muted, marginBottom: '8px' }}>
         AD · 광고
       </div>
 
@@ -77,20 +78,20 @@ export function AdSlot({ isPaid, placement, house }: AdSlotProps) {
             cursor: house.onClick ? 'pointer' : 'default',
           }}
         >
-          <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#014725', marginBottom: '4px', wordBreak: 'keep-all' }}>
+          <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px', wordBreak: 'keep-all' }}>
             {house.title}
           </div>
-          <div style={{ fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: '#4A6B58', wordBreak: 'keep-all' }}>
+          <div style={{ fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
             {house.body}
           </div>
         </button>
       ) : (
-        <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8125rem', fontWeight: 700, color: '#6F8C7B' }}>
+        <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8125rem', fontWeight: 700, color: BRAND.muted }}>
           광고 영역
         </div>
       )}
 
-      <div style={{ marginTop: '10px', fontSize: '0.75rem', lineHeight: 1.5, fontWeight: 700, color: '#6F8C7B', wordBreak: 'keep-all' }}>
+      <div style={{ marginTop: '10px', fontSize: '0.75rem', lineHeight: 1.5, fontWeight: 700, color: BRAND.muted, wordBreak: 'keep-all' }}>
         멤버십에 가입하면 광고 없이 이용할 수 있습니다.
       </div>
     </section>

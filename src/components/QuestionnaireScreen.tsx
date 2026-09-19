@@ -202,7 +202,7 @@ export function QuestionnaireScreen({
         <div className="flex h-full flex-col px-6 pb-8 pt-10">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-4 py-2 shadow-sm">
             <BrandMark size={16} color="#014725" />
-            <span className="text-xs font-black tracking-wide" style={{ color: '#014725' }}>{PRODUCT.mark}</span>
+            <span className="text-xs font-black tracking-wide" style={{ color: 'var(--mebody-t-014725, #014725)' }}>{PRODUCT.mark}</span>
           </div>
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">LOADING</p>
@@ -266,7 +266,7 @@ export function QuestionnaireScreen({
         <div className="flex items-center justify-between gap-3 px-6 pt-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-4 py-2 shadow-sm">
             <BrandMark size={16} color="#014725" />
-            <span className="text-xs font-black tracking-wide" style={{ color: '#014725' }}>{PRODUCT.mark}</span>
+            <span className="text-xs font-black tracking-wide" style={{ color: 'var(--mebody-t-014725, #014725)' }}>{PRODUCT.mark}</span>
           </div>
           {handleAccountAction && (
             <button

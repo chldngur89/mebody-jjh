@@ -29,7 +29,7 @@ export function AxisTrack({
     <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr', gap: '10px', alignItems: 'end' }}>
       <b style={{ fontSize: '0.875rem', color: BRAND.text }}>{label}</b>
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#5F6E65', marginBottom: '7px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--mebody-t-5f6e65, #5F6E65)', marginBottom: '7px' }}>
           <span>{leftLabel}</span>
           <span>{rightLabel}</span>
         </div>
@@ -45,10 +45,10 @@ export function AxisTrack({
               width: `${GAUGE.knobSize}px`,
               height: `${GAUGE.knobSize}px`,
               background: BRAND.green,
-              border: '3px solid #ffffff',
+              border: '3px solid var(--mebody-b-ffffff, #ffffff)',
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
-              boxShadow: '0 1px 7px rgba(0,70,40,.22)',
+              boxShadow: '0 1px 7px var(--mebody-d-k22-2, rgba(0,70,40,.22))',
             }}
           />
         </div>

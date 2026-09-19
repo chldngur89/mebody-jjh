@@ -84,9 +84,9 @@ export function CookieConsentBanner({
         zIndex: 60,
         borderRadius: '16px',
         border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-        background: 'rgba(255,255,255,0.97)',
+        background: 'var(--mebody-s-w97, rgba(255,255,255,0.97))',
         backdropFilter: 'blur(12px)',
-        boxShadow: '0 12px 30px rgba(1, 71, 37, 0.16)',
+        boxShadow: '0 12px 30px var(--mebody-d-k16, rgba(1, 71, 37, 0.16))',
         padding: '12px 14px',
         display: 'flex',
         alignItems: 'center',
@@ -94,10 +94,10 @@ export function CookieConsentBanner({
       }}
     >
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>쿠키 사용 안내</div>
-        <p style={{ fontSize: '0.75rem', lineHeight: 1.5, color: '#4A6B58', wordBreak: 'keep-all', margin: '3px 0 0' }}>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>쿠키 사용 안내</div>
+        <p style={{ fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all', margin: '3px 0 0' }}>
           무료 이용 시 광고 목적 쿠키를 함께 씁니다. 거부해도 그대로 이용할 수 있어요.{' '}
-          <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#014725', fontWeight: 800 }}>
+          <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--mebody-t-014725, #014725)', fontWeight: 800 }}>
             자세히
           </a>
         </p>
@@ -111,8 +111,8 @@ export function CookieConsentBanner({
             padding: '0 11px',
             borderRadius: '10px',
             border: `1px solid ${AXIS_GREEN_THEME.border}`,
-            background: '#ffffff',
-            color: '#3D6B54',
+            background: 'var(--mebody-s-ffffff, #ffffff)',
+            color: 'var(--mebody-t-3d6b54, #3D6B54)',
             fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
@@ -130,8 +130,8 @@ export function CookieConsentBanner({
             padding: '0 13px',
             borderRadius: '10px',
             border: 'none',
-            background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-            color: '#ffffff',
+            background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+            color: 'var(--mebody-t-ffffff-2, #ffffff)',
             fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',

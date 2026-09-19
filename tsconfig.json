@@ -13,7 +13,7 @@
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": false,
+    "strict": true,
     "types": ["vite/client"]
   },
   "include": ["src"]

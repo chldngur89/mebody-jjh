@@ -28,9 +28,9 @@ function DiceFace({ value, size = 72 }: { value: number; size?: number }) {
         width: size,
         height: size,
         borderRadius: Math.round(size * 0.22),
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         border: `2px solid ${AXIS_GREEN_THEME.borderStrong}`,
-        boxShadow: '0 10px 24px rgba(1,71,37,0.18)',
+        boxShadow: '0 10px 24px var(--mebody-d-k18-2, rgba(1,71,37,0.18))',
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gridTemplateRows: 'repeat(3, 1fr)',
@@ -46,7 +46,7 @@ function DiceFace({ value, size = 72 }: { value: number; size?: number }) {
             width: dot,
             height: dot,
             borderRadius: '999px',
-            background: pips.includes(i) ? '#014725' : 'transparent',
+            background: pips.includes(i) ? 'var(--mebody-s-014725, #014725)' : 'transparent',
           }}
         />
       ))}

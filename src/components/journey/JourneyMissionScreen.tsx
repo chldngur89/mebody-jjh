@@ -184,7 +184,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
   if (!mission) {
     return (
       <JourneyScreenShell isDesktopMockup={isDesktopMockup}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mebody-t-4a6b58, #4A6B58)', fontSize: '0.875rem' }}>
           <div>연결된 미션이 없습니다.<button type="button" onClick={onBack} style={{ display: 'block', marginTop: 16 }}>오늘의 미션으로 돌아가기</button></div>
         </div>
       </JourneyScreenShell>
@@ -199,7 +199,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
           alignItems: 'center',
           gap: '12px',
           padding: '22px 24px 18px',
-          background: 'rgba(255,255,255,0.52)',
+          background: 'var(--mebody-s-w52, rgba(255,255,255,0.52))',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -211,14 +211,14 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
               width: '44px',
               height: '44px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.42)',
-              background: 'rgba(255,255,255,0.74)',
+              border: '1px solid var(--mebody-b-w42, rgba(255,255,255,0.42))',
+              background: 'var(--mebody-s-w74, rgba(255,255,255,0.74))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+              boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
             }}
             title="뒤로"
           >
@@ -226,7 +226,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
           </button>
         )}
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#014725', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {content?.display_name ?? '미션'}
           </h1>
         </div>
@@ -234,17 +234,17 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>불러오는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--mebody-t-4a6b58, #4A6B58)', fontSize: '0.875rem' }}>불러오는 중...</div>
         ) : !content || steps.length === 0 ? (
           <div
             style={{
               borderRadius: '18px',
               border: `1px solid ${AXIS_GREEN_THEME.border}`,
-              background: 'rgba(244,251,249,0.96)',
+              background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
               padding: '16px',
               fontSize: '0.875rem',
               lineHeight: 1.7,
-              color: '#3D6B54',
+              color: 'var(--mebody-t-3d6b54, #3D6B54)',
             }}
           >
             미션 콘텐츠를 불러오지 못했습니다.
@@ -254,17 +254,17 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
             <section
               style={{
                 borderRadius: '28px',
-                background: 'rgba(255,255,255,0.86)',
-                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
+                background: 'var(--mebody-s-w86, rgba(255,255,255,0.86))',
+                boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(20px)',
                 padding: '24px 20px',
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: '#014725', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.16em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px' }}>
                 {missionTypeLabel(mission.mission_type)} · {stepIndex + 1} / {steps.length}
               </div>
-              <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#014725', marginBottom: '4px', wordBreak: 'keep-all' }}>
+              <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px', wordBreak: 'keep-all' }}>
                 {currentStep?.title}
               </div>
               <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: AXIS_GREEN_THEME.textSoft, marginBottom: '18px' }}>
@@ -277,7 +277,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
                   lineHeight: 1,
                   fontWeight: 900,
                   letterSpacing: '-0.04em',
-                  color: '#014725',
+                  color: 'var(--mebody-t-014725, #014725)',
                   fontVariantNumeric: 'tabular-nums',
                   marginBottom: '18px',
                 }}
@@ -290,12 +290,12 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
                   style={{
                     width: `${overallProgress}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                    background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
                     transition: 'width 400ms linear',
                   }}
                 />
               </div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#587761', marginBottom: '18px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mebody-t-587761, #587761)', marginBottom: '18px' }}>
                 전체 {formatDuration(totalSeconds)} · {overallProgress}%
               </div>
 
@@ -312,12 +312,12 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
                     gap: '8px',
                     borderRadius: '16px',
                     border: 'none',
-                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                    color: '#ffffff',
+                    background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                    color: 'var(--mebody-t-ffffff-2, #ffffff)',
                     fontSize: '0.9375rem',
                     fontWeight: 800,
                     fontFamily: 'inherit',
-                    boxShadow: '0 14px 28px rgba(1,71,37,0.22)',
+                    boxShadow: '0 14px 28px var(--mebody-d-k22, rgba(1,71,37,0.22))',
                     cursor: 'pointer',
                   }}
                 >
@@ -335,8 +335,8 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
                     justifyContent: 'center',
                     borderRadius: '16px',
                     border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                    background: '#ffffff',
-                    color: '#014725',
+                    background: 'var(--mebody-s-ffffff, #ffffff)',
+                    color: 'var(--mebody-t-014725, #014725)',
                     cursor: 'pointer',
                     flexShrink: 0,
                   }}
@@ -352,15 +352,15 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
               style={{
                 borderRadius: '24px',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
-                background: '#ffffff',
+                background: 'var(--mebody-s-ffffff, #ffffff)',
                 padding: '18px',
               }}
             >
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '10px' }}>
                 수행 방법
               </div>
               {stepImageUrl && !imageFailed && (
-                <div style={{ borderRadius: '14px', overflow: 'hidden', border: `1px solid ${AXIS_GREEN_THEME.border}`, background: '#ffffff', marginBottom: '12px' }}>
+                <div style={{ borderRadius: '14px', overflow: 'hidden', border: `1px solid ${AXIS_GREEN_THEME.border}`, background: 'var(--mebody-s-ffffff, #ffffff)', marginBottom: '12px' }}>
                   <img
                     src={stepImageUrl}
                     alt={`${currentStep?.title ?? '동작'} 이미지`}
@@ -369,7 +369,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
                   />
                 </div>
               )}
-              <ol style={{ display: 'grid', gap: '8px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              <ol style={{ display: 'grid', gap: '8px', paddingLeft: '18px', fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                 {(currentStep?.lines ?? []).map((line, index) => (
                   <li key={index}>{line}</li>
                 ))}
@@ -397,12 +397,12 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
               <div
                 style={{
                   borderRadius: '16px',
-                  background: 'rgba(255,251,235,0.88)',
-                  border: '1px solid rgba(245,158,11,0.22)',
+                  background: 'var(--mebody-s-w88-4, rgba(255,251,235,0.88))',
+                  border: '1px solid var(--mebody-b-r22, rgba(245,158,11,0.22))',
                   padding: '13px 14px',
                   fontSize: '0.8125rem',
                   lineHeight: 1.6,
-                  color: '#7A5500',
+                  color: 'var(--mebody-t-7a5500, #7A5500)',
                   wordBreak: 'keep-all',
                 }}
               >
@@ -422,8 +422,8 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
                 gap: '8px',
                 borderRadius: '16px',
                 border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                background: '#ffffff',
-                color: '#014725',
+                background: 'var(--mebody-s-ffffff, #ffffff)',
+                color: 'var(--mebody-t-014725, #014725)',
                 fontSize: '0.875rem',
                 fontWeight: 800,
                 fontFamily: 'inherit',

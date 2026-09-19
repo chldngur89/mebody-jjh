@@ -98,7 +98,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
         maxHeight: screenHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px var(--mebody-d-k13, rgba(1, 71, 37, 0.13))' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -113,7 +113,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             width: '280px',
             height: '280px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.035)',
+            background: 'var(--mebody-s-k04, rgba(0, 70, 40, 0.035))',
             filter: 'blur(58px)',
           }}
         />
@@ -125,7 +125,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             width: '300px',
             height: '300px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.03)',
+            background: 'var(--mebody-s-k03, rgba(0, 70, 40, 0.03))',
             filter: 'blur(72px)',
           }}
         />
@@ -150,8 +150,8 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
             flexDirection: 'column',
             overflow: 'hidden',
             borderRadius: '24px',
-            background: 'rgba(255,255,255,0.96)',
-            boxShadow: '0 18px 40px rgba(1, 71, 37, 0.1)',
+            background: 'var(--mebody-s-w96, rgba(255,255,255,0.96))',
+            boxShadow: '0 18px 40px var(--mebody-d-k10-2, rgba(1, 71, 37, 0.1))',
             position: 'relative',
           }}
         >
@@ -179,8 +179,8 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                     width: '44px',
                     height: '44px',
                     borderRadius: '999px',
-                    border: '1px solid #E1E9DA',
-                    background: '#ffffff',
+                    border: '1px solid var(--mebody-b-e1e9da, #E1E9DA)',
+                    background: 'var(--mebody-s-ffffff, #ffffff)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -192,7 +192,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                   <ArrowLeft size={18} color="#2C5544" />
                 </button>
               )}
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.04em', color: '#014725', marginBottom: '8px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.04em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '8px' }}>
                 측정 축 · {PRODUCT.codeName}
               </div>
               <h1
@@ -200,7 +200,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                   fontSize: isDesktopMockup ? '1.5rem' : '1.3125rem',
                   lineHeight: 1.3,
                   fontWeight: 850,
-                  color: '#014725',
+                  color: 'var(--mebody-t-014725, #014725)',
                   marginBottom: '8px',
                   wordBreak: 'keep-all',
                   letterSpacing: '-0.04em',
@@ -227,7 +227,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                   margin: 0,
                   fontSize: '0.8125rem',
                   lineHeight: 1.55,
-                  color: '#3D6B54',
+                  color: 'var(--mebody-t-3d6b54, #3D6B54)',
                   textAlign: 'center',
                   wordBreak: 'keep-all',
                 }}
@@ -244,12 +244,12 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
               style={{
                 marginTop: '12px',
                 borderRadius: '16px',
-                border: '1px solid rgba(1, 71, 37, 0.12)',
-                background: 'rgba(228,244,240,0.82)',
+                border: '1px solid var(--mebody-b-k12, rgba(1, 71, 37, 0.12))',
+                background: 'var(--mebody-s-w82, rgba(228,244,240,0.82))',
                 padding: '14px',
               }}
             >
-              <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: '#466e65', textAlign: 'center', wordBreak: 'keep-all' }}>
+              <p style={{ fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-466e65, #466e65)', textAlign: 'center', wordBreak: 'keep-all' }}>
                 같은 자세를 오래 유지할수록 일상에서 쓰는 몸 습관이 더 잘 드러납니다.
                 <br />
                 지금 몸이 자주 쓰는 방향을 떠올리며 답해주세요.
@@ -262,8 +262,8 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
           <div
             style={{
               padding: '12px 16px 14px',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.94) 42%, rgba(255,255,255,0.98) 100%)',
-              boxShadow: '0 -14px 24px rgba(255,255,255,0.88)',
+              background: 'linear-gradient(180deg, var(--mebody-s-w62, rgba(255,255,255,0.62)) 0%, var(--mebody-s-w94, rgba(255,255,255,0.94)) 42%, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 100%)',
+              boxShadow: '0 -14px 24px var(--mebody-d-w88, rgba(255,255,255,0.88))',
             }}
           >
             {/* 버튼 바로 위에 둡니다. 스크롤 끝에 두면 이 바에 가려 잘렸습니다. */}
@@ -273,7 +273,7 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                 fontSize: '0.75rem',
                 lineHeight: 1.45,
                 fontWeight: 700,
-                color: canBegin ? '#014725' : '#587761',
+                color: canBegin ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-587761, #587761)',
                 textAlign: 'center',
                 wordBreak: 'keep-all',
               }}
@@ -294,12 +294,12 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                 borderRadius: '16px',
                 border: 'none',
                 background: canBegin
-                  ? 'linear-gradient(90deg, #016B38 0%, #014725 100%)'
-                  : 'linear-gradient(90deg, #E1E9DA 0%, #C8D6C4 100%)',
-                color: canBegin ? '#ffffff' : '#587761',
+                  ? 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)'
+                  : 'linear-gradient(90deg, var(--mebody-s-e1e9da, #E1E9DA) 0%, var(--mebody-s-c8d6c4, #C8D6C4) 100%)',
+                color: canBegin ? 'var(--mebody-t-ffffff-2, #ffffff)' : 'var(--mebody-t-587761, #587761)',
                 fontSize: '1rem',
                 fontWeight: 800,
-                boxShadow: canBegin ? '0 14px 28px rgba(1,71,37,0.25)' : 'none',
+                boxShadow: canBegin ? '0 14px 28px var(--mebody-d-k25, rgba(1,71,37,0.25))' : 'none',
                 cursor: 'pointer',
               }}
             >

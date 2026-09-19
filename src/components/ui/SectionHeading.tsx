@@ -28,11 +28,11 @@ export function SectionHeading({
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '18px' }}>
       <div style={{ minWidth: 0 }}>
         {kicker && (
-          <div style={{ ...TYPE.sectionNumber, color: inverse ? 'rgba(255,255,255,.78)' : BRAND.green, marginBottom: '6px' }}>
+          <div style={{ ...TYPE.sectionNumber, color: inverse ? 'var(--mebody-t-w78, rgba(255,255,255,.78))' : BRAND.green, marginBottom: '6px' }}>
             {kicker}
           </div>
         )}
-        <h2 style={{ ...TYPE.sectionTitle, margin: 0, fontWeight: 800, color: inverse ? '#ffffff' : BRAND.text, wordBreak: 'keep-all' }}>
+        <h2 style={{ ...TYPE.sectionTitle, margin: 0, fontWeight: 800, color: inverse ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.text, wordBreak: 'keep-all' }}>
           {title}
         </h2>
       </div>

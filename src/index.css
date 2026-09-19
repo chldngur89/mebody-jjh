@@ -279,7 +279,7 @@
     opacity: 1;
     --lightningcss-light: initial;
     --lightningcss-dark: ;
-    color-scheme: light;
+    color-scheme: light dark;
     background-color: #0000;
     border-radius: 0;
   }
@@ -293,7 +293,7 @@
     opacity: 1;
     --lightningcss-light: initial;
     --lightningcss-dark: ;
-    color-scheme: light;
+    color-scheme: light dark;
     background-color: #0000;
     border-radius: 0;
   }
@@ -2493,8 +2493,8 @@ html {
   --mebody-cream: #fffff3;
   --mebody-green: #014725;
   --mebody-green-mid: #016b38;
-  --mebody-green-soft: #e8f5ee;
-  --mebody-green-muted: #a8d5c0;
+  /* --mebody-green-soft / --mebody-green-muted 는 쓰이는 곳이 없어 지웠습니다.
+     green-muted 는 아래 토큰 표에 brand.ts 값(#8fb9a1)으로 있습니다. */
 
   --color-emerald-50: #e8f5ee;
   --color-emerald-100: #d4ebe0;
@@ -2522,7 +2522,9 @@ html {
 
 body {
   background-color: var(--mebody-cream);
-  color: var(--mebody-green);
+  /* 본문은 ink. --mebody-green 은 '강조' 라서 다크에서 #3fa971 이 됩니다 —
+     밝은 모드에서는 두 값이 같은 #014725 이므로 보이는 변화는 없습니다. */
+  color: var(--mebody-ink);
 }
 
 /* Soft surfaces / desktop chrome: cream; phone app frame: white */
@@ -2660,6 +2662,419 @@ body, button, input, textarea, select {
   font-family: var(--mebody-font);
 }
 
+/* ===== 라이트·다크 색 토큰 ==========================================
+   앱은 색을 인라인 스타일로 넣습니다. 인라인 스타일은 미디어 쿼리에
+   반응할 수 없으므로, 색을 전부 CSS 변수로 바꾸고 여기서 두 벌을 정합니다.
+
+   읽는 법
+     · 아래 :root 값이 **밝은 모드** 이고 원래 쓰던 hex 그대로입니다.
+       호출부에도 `var(--mebody-t-014725, #014725)` 처럼 원래 hex 가 폴백으로
+       남아 있어, 밝은 모드는 이 작업 전과 같은 색이 나옵니다.
+     · @media (prefers-color-scheme: dark) 값이 다크입니다.
+       램프는 홈페이지 landing.css 의 html[data-mb-route="app"] 와 같은 값입니다 —
+       두 화면이 한 팔레트를 쓰도록 정본을 하나로 둡니다.
+
+   이름 규칙
+     의미가 있는 것은 이름으로 (--mebody-ink, --mebody-card).
+     화면에 흩어져 있던 일회성 색은 `역할-밝은값` 으로 기계 생성했습니다:
+       t = 글자(color/fill/stroke) · s = 표면(background) · b = 테두리 · d = 그림자
+     같은 hex 라도 역할이 다르면 다른 토큰입니다. #014725 는 글자로 쓰인 곳과
+     채움으로 쓰인 곳이 있고, 다크에서 글자는 밝아지고 채움은 강조초록이 됩니다.
+
+   주의
+     · 캔버스(lib/shareCardImage.ts)는 CSS 변수를 읽을 수 없어 리터럴 hex 를 유지합니다.
+     · 파일 머리의 JSDoc 이 원본 시안 CSS 를 인용한 부분은 기록이라 바꾸지 않았습니다.
+     · 새 색을 인라인으로 넣지 말고 여기에 토큰을 추가해서 쓰십시오.
+--------------------------------------------------------------------------- */
+:root {
+  /* 페이지·표면 */
+  --mebody-bg           : #FFFFF3;
+  --mebody-cream        : #FFFFF3;
+  --mebody-outer-bg     : #F2F5EE;
+  --mebody-card         : #FFFFFF;
+  --mebody-inset        : #EFF4EC;
+  --mebody-inset-2      : #F2F6EF;
+  --mebody-placeholder  : #F0F4EC;
+  --mebody-bar-bg       : rgba(255,255,243,0.95);
+  --mebody-bar-bg-strong: rgba(255,255,243,0.97);
+
+  /* 글자 */
+  --mebody-ink           : #014725;
+  --mebody-muted         : #587761;
+  --mebody-on-green      : #ffffff;
+  --mebody-on-green-muted: rgba(255,255,255,0.8);
+
+  /* 강조 */
+  --mebody-green      : #014725;
+  --mebody-green-mid  : #016B38;
+  --mebody-green-muted: #8FB9A1;
+  --mebody-mint       : #E8F3EC;
+
+  /* 선·그림자 */
+  --mebody-line         : #E1E9DA;
+  --mebody-card-border  : rgba(1, 71, 37, 0.12);
+  --mebody-shadow       : rgba(1,71,37,0.08);
+  --mebody-shadow-strong: rgba(1,71,37,0.12);
+
+  /* 게이지 */
+  --mebody-track  : #E4EDE3;
+  --mebody-track-2: #E1E9DA;
+  --mebody-tick   : #B4C7B8;
+
+  /* 글자 — 화면에 흩어져 있던 값 31종 / 341곳 */
+  --mebody-t-014725  : #014725;                        /* 141곳 */
+  --mebody-t-4a6b58  : #4A6B58;                        /* 38곳 */
+  --mebody-t-ffffff-2: #ffffff;                        /* 34곳 */
+  --mebody-t-3d6b54  : #3D6B54;                        /* 28곳 */
+  --mebody-t-2c5544  : #2C5544;                        /* 22곳 */
+  --mebody-t-587761  : #587761;                        /* 16곳 */
+  --mebody-t-8e3a32  : #8E3A32;                        /* 11곳 */
+  --mebody-t-6f8c7b  : #6F8C7B;                        /* 9곳 */
+  --mebody-t-7a5500  : #7A5500;                        /* 7곳 */
+  --mebody-t-047857  : #047857;                        /* 5곳 */
+  --mebody-t-016b38  : #016B38;                        /* 4곳 */
+  --mebody-t-w80     : rgba(255,255,255,.8);           /* 3곳 */
+  --mebody-t-b4c0b6  : #B4C0B6;                        /* 3곳 */
+  --mebody-t-w78     : rgba(255,255,255,.78);          /* 3곳 */
+  --mebody-t-7f1d1d  : #7f1d1d;                        /* 1곳 */
+  --mebody-t-ffffff  : #fff;                           /* 1곳 */
+  --mebody-t-064e3b  : #064e3b;                        /* 1곳 */
+  --mebody-t-466e65  : #466e65;                        /* 1곳 */
+  --mebody-t-3f6553  : #3f6553;                        /* 1곳 */
+  --mebody-t-w82     : rgba(255,255,255,.82);          /* 1곳 */
+  --mebody-t-b42318  : #b42318;                        /* 1곳 */
+  --mebody-t-d9e6de  : #D9E6DE;                        /* 1곳 */
+  --mebody-t-718078  : #718078;                        /* 1곳 */
+  --mebody-t-046b41  : #046B41;                        /* 1곳 */
+  --mebody-t-5f6e65  : #5F6E65;                        /* 1곳 */
+  --mebody-t-w75     : rgba(255,255,255,.75);          /* 1곳 */
+  --mebody-t-748079  : #748079;                        /* 1곳 */
+  --mebody-t-8a938d  : #8A938D;                        /* 1곳 */
+  --mebody-t-b45309  : #b45309;                        /* 1곳 */
+  --mebody-t-9ba79f  : #9BA79F;                        /* 1곳 */
+  --mebody-t-c9d2cb  : #C9D2CB;                        /* 1곳 */
+
+  /* 표면 — 화면에 흩어져 있던 값 60종 / 263곳 */
+  --mebody-s-ffffff: #ffffff;                        /* 65곳 */
+  --mebody-s-014725: #014725;                        /* 31곳 */
+  --mebody-s-016b38: #016B38;                        /* 28곳 */
+  --mebody-s-w90-2 : rgba(228,244,240,0.9);          /* 8곳 */
+  --mebody-s-w98-2 : rgba(255,255,255,0.98);         /* 7곳 */
+  --mebody-s-w96-2 : rgba(244,251,249,0.96);         /* 7곳 */
+  --mebody-s-w74   : rgba(255,255,255,0.74);         /* 6곳 */
+  --mebody-s-w86-2 : rgba(228,244,240,0.86);         /* 5곳 */
+  --mebody-s-w52   : rgba(255,255,255,0.52);         /* 5곳 */
+  --mebody-s-k04   : rgba(0, 70, 40, 0.035);         /* 4곳 */
+  --mebody-s-k03   : rgba(0, 70, 40, 0.03);          /* 4곳 */
+  --mebody-s-w84   : rgba(255,255,255,0.84);         /* 4곳 */
+  --mebody-s-w86   : rgba(255,255,255,0.86);         /* 4곳 */
+  --mebody-s-w98   : rgba(247, 250, 244,0.98);       /* 4곳 */
+  --mebody-s-w96   : rgba(255,255,255,0.96);         /* 4곳 */
+  --mebody-s-w88-4 : rgba(255,251,235,0.88);         /* 4곳 */
+  --mebody-s-w96-3 : rgba(232,245,238,0.96);         /* 4곳 */
+  --mebody-s-k10   : rgba(1,71,37,0.10);             /* 4곳 */
+  --mebody-s-w72   : rgba(255,255,255,0.72);         /* 3곳 */
+  --mebody-s-w62   : rgba(255,255,255,0.62);         /* 3곳 */
+  --mebody-s-w95   : rgba(236, 253, 245, 0.95);      /* 3곳 */
+  --mebody-s-fdf2f1: #FDF2F1;                        /* 3곳 */
+  --mebody-s-w95-3 : rgba(244,251,249,0.95);         /* 3곳 */
+  --mebody-s-6f8c7b: #6F8C7B;                        /* 3곳 */
+  --mebody-s-w88   : rgba(247, 250, 244,0.88);       /* 2곳 */
+  --mebody-s-w88-2 : rgba(240, 244, 236,0.88);       /* 2곳 */
+  --mebody-s-fff8e8: #FFF8E8;                        /* 2곳 */
+  --mebody-s-k34   : rgba(1, 31, 17, 0.34);          /* 2곳 */
+  --mebody-s-w98-3 : rgba(236,253,245,0.98);         /* 2곳 */
+  --mebody-s-k06   : rgba(1,71,37,0.06);             /* 2곳 */
+  --mebody-s-w96-4 : rgba(236,253,245,0.96);         /* 2곳 */
+  --mebody-s-w90   : rgba(255,255,255,0.9);          /* 2곳 */
+  --mebody-s-e1e9da: #E1E9DA;                        /* 2곳 */
+  --mebody-s-w84-2 : rgba(228,244,240,0.84);         /* 2곳 */
+  --mebody-s-c8d6c4: #C8D6C4;                        /* 2곳 */
+  --mebody-s-fffff3: #FFFFF3;                        /* 1곳 */
+  --mebody-s-fef2f2: #fef2f2;                        /* 1곳 */
+  --mebody-s-w92   : rgba(240, 244, 236,0.92);       /* 1곳 */
+  --mebody-s-w95-2 : rgba(254, 242, 242, 0.95);      /* 1곳 */
+  --mebody-s-f3faf6: #f3faf6;                        /* 1곳 */
+  --mebody-s-f7faf4: #F7FAF4;                        /* 1곳 */
+  --mebody-s-w97   : rgba(255,255,255,0.97);         /* 1곳 */
+  --mebody-s-w82   : rgba(228,244,240,0.82);         /* 1곳 */
+  --mebody-s-w94   : rgba(255,255,255,0.94);         /* 1곳 */
+  --mebody-s-w78   : rgba(255,255,255,0.78);         /* 1곳 */
+  --mebody-s-w72-2 : rgba(236,253,245,0.72);         /* 1곳 */
+  --mebody-s-w88-3 : rgba(236,253,245,0.88);         /* 1곳 */
+  --mebody-s-k08   : rgba(1,71,37,0.08);             /* 1곳 */
+  --mebody-s-w86-3 : rgba(232,245,238,0.86);         /* 1곳 */
+  --mebody-s-eef4f2: #eef4f2;                        /* 1곳 */
+  --mebody-s-fff8eb: #FFF8EB;                        /* 1곳 */
+  --mebody-s-eef4ec: #EEF4EC;                        /* 1곳 */
+  --mebody-s-w90-3 : rgba(254,242,242,0.9);          /* 1곳 */
+  --mebody-s-w15   : rgba(255,255,255,0.15);         /* 1곳 */
+  --mebody-s-w95-4 : rgba(248,252,248,0.95);         /* 1곳 */
+  --mebody-s-w98-4 : rgba(244,251,249,0.98);         /* 1곳 */
+  --mebody-s-k12   : rgba(1,71,37,0.12);             /* 1곳 */
+  --mebody-s-w72-3 : rgba(228,244,240,0.72);         /* 1곳 */
+  --mebody-s-w92-2 : rgba(228,244,240,0.92);         /* 1곳 */
+  --mebody-s-w18   : rgba(255,255,255,0.18);         /* 1곳 */
+
+  /* 테두리 — 화면에 흩어져 있던 값 31종 / 60곳 */
+  --mebody-b-g100-2: rgba(200, 214, 196,1);          /* 5곳 */
+  --mebody-b-w42   : rgba(255,255,255,0.42);         /* 5곳 */
+  --mebody-b-e1e9da: #E1E9DA;                        /* 4곳 */
+  --mebody-b-r22   : rgba(245,158,11,0.22);          /* 4곳 */
+  --mebody-b-6f8c7b: #6F8C7B;                        /* 4곳 */
+  --mebody-b-w90   : rgba(225, 233, 218,0.9);        /* 3곳 */
+  --mebody-b-w28   : rgba(255,255,255,0.28);         /* 2곳 */
+  --mebody-b-g100  : rgba(167, 243, 208, 1);         /* 2곳 */
+  --mebody-b-k12   : rgba(1, 71, 37, 0.12);          /* 2곳 */
+  --mebody-b-f0dca8: #F0DCA8;                        /* 2곳 */
+  --mebody-b-f3cfcb: #F3CFCB;                        /* 2곳 */
+  --mebody-b-w40   : rgba(255,255,255,0.4);          /* 2곳 */
+  --mebody-b-g95   : rgba(167,243,208,0.95);         /* 2곳 */
+  --mebody-b-g92   : rgba(167,243,208,0.92);         /* 2곳 */
+  --mebody-b-w95-2 : rgba(209,250,229,0.95);         /* 2곳 */
+  --mebody-b-8e3a32: #8E3A32;                        /* 2곳 */
+  --mebody-b-014725: #014725;                        /* 1곳 */
+  --mebody-b-fecaca: #fecaca;                        /* 1곳 */
+  --mebody-b-w95   : rgba(225, 233, 218,0.95);       /* 1곳 */
+  --mebody-b-w100  : rgba(254, 205, 211, 1);         /* 1곳 */
+  --mebody-b-f0f4ec: #F0F4EC;                        /* 1곳 */
+  --mebody-b-g95-2 : rgba(110,231,183,0.95);         /* 1곳 */
+  --mebody-b-k16   : rgba(1, 71, 37, 0.16);          /* 1곳 */
+  --mebody-b-w18   : rgba(255,255,255,.18);          /* 1곳 */
+  --mebody-b-r28   : rgba(239,68,68,0.28);           /* 1곳 */
+  --mebody-b-ffffff: #ffffff;                        /* 1곳 */
+  --mebody-b-dbe2da: #DBE2DA;                        /* 1곳 */
+  --mebody-b-r42   : rgba(185, 58, 50, 0.42);        /* 1곳 */
+  --mebody-b-k14   : rgba(0, 70, 40, 0.14);          /* 1곳 */
+  --mebody-b-k30   : rgba(0, 70, 40, 0.30);          /* 1곳 */
+  --mebody-b-016b38: #016B38;                        /* 1곳 */
+
+  /* 그림자 — 화면에 흩어져 있던 값 24종 / 53곳 */
+  --mebody-d-k08  : rgba(1, 71, 37, 0.08);          /* 11곳 */
+  --mebody-d-k10  : rgba(1, 71, 37, 0.10);          /* 8곳 */
+  --mebody-d-k13  : rgba(1, 71, 37, 0.13);          /* 6곳 */
+  --mebody-d-k22  : rgba(1,71,37,0.22);             /* 4곳 */
+  --mebody-d-k12  : rgba(1, 71, 37, 0.12);          /* 2곳 */
+  --mebody-d-k30  : rgba(1,71,37,0.30);             /* 2곳 */
+  --mebody-d-k24  : rgba(1, 31, 17, 0.24);          /* 2곳 */
+  --mebody-d-w85  : rgba(255,255,255,0.85);         /* 2곳 */
+  --mebody-d-k18  : rgba(0, 70, 40, 0.18);          /* 1곳 */
+  --mebody-d-k16  : rgba(1, 71, 37, 0.16);          /* 1곳 */
+  --mebody-d-k10-2: rgba(1, 71, 37, 0.1);           /* 1곳 */
+  --mebody-d-w88  : rgba(255,255,255,0.88);         /* 1곳 */
+  --mebody-d-k34  : rgba(1,71,37,0.34);             /* 1곳 */
+  --mebody-d-k28  : rgba(1,71,37,0.28);             /* 1곳 */
+  --mebody-d-k18-2: rgba(1,71,37,0.18);             /* 1곳 */
+  --mebody-d-g14  : rgba(5, 150, 105, 0.14);        /* 1곳 */
+  --mebody-d-k06  : rgba(0,70,40,0.06);             /* 1곳 */
+  --mebody-d-k06-2: rgba(1, 71, 37, 0.06);          /* 1곳 */
+  --mebody-d-k20  : rgba(0,70,40,0.20);             /* 1곳 */
+  --mebody-d-k22-2: rgba(0,70,40,.22);              /* 1곳 */
+  --mebody-d-r08  : rgba(142, 58, 50, 0.08);        /* 1곳 */
+  --mebody-d-k28-2: rgba(1, 31, 17, 0.28);          /* 1곳 */
+  --mebody-d-k25  : rgba(1,71,37,0.25);             /* 1곳 */
+  --mebody-d-k05  : rgba(1, 71, 37, 0.05);          /* 1곳 */
+}
+
+/* 다크. 뒤집는 것이 아니라 역할마다 값을 다시 정합니다 —
+   글자는 밝아지고, 초록 채움은 밝은 강조초록 + 어두운 글씨로 뒤집히고,
+   초록 그림자는 검정으로, 흰 유리판은 옅은 빛의 막으로 바뀝니다. */
+@media (prefers-color-scheme: dark) {
+:root {
+  /* 페이지·표면 */
+  --mebody-bg           : #0b1f15;
+  --mebody-cream        : #0b1f15;
+  --mebody-outer-bg     : #07160f;
+  --mebody-card         : #173523;
+  --mebody-inset        : #0f2619;
+  --mebody-inset-2      : #0f2619;
+  --mebody-placeholder  : #0f2619;
+  --mebody-bar-bg       : rgba(11,31,21,0.95);
+  --mebody-bar-bg-strong: rgba(11,31,21,0.97);
+
+  /* 글자 */
+  --mebody-ink           : #e9efe4;
+  --mebody-muted         : #9bb0a2;
+  --mebody-on-green      : #0b1f15;
+  --mebody-on-green-muted: rgba(11,31,21,0.9);
+
+  /* 강조 */
+  --mebody-green      : #6ecf9b;
+  --mebody-green-mid  : #8fe0b3;
+  --mebody-green-muted: #6c8a78;
+  --mebody-mint       : rgba(110,207,155,0.14);
+
+  /* 선·그림자 */
+  --mebody-line         : rgba(233,239,228,0.16);
+  --mebody-card-border  : rgba(233,239,228,0.16);
+  --mebody-shadow       : rgba(0,0,0,0.34);
+  --mebody-shadow-strong: rgba(0,0,0,0.44);
+
+  /* 게이지 */
+  --mebody-track  : #24422f;
+  --mebody-track-2: #24422f;
+  --mebody-tick   : #6c8a78;
+
+  /* 글자 — 화면에 흩어져 있던 값 31종 / 341곳 */
+  --mebody-t-014725  : #e9efe4;                        /* 141곳 */
+  --mebody-t-4a6b58  : #b6c6b8;                        /* 38곳 */
+  --mebody-t-ffffff-2: #0b1f15;                        /* 34곳 */
+  --mebody-t-3d6b54  : #b6c6b8;                        /* 28곳 */
+  --mebody-t-2c5544  : #c6d4c4;                        /* 22곳 */
+  --mebody-t-587761  : #b6c6b8;                        /* 16곳 */
+  --mebody-t-8e3a32  : #ff9a92;                        /* 11곳 */
+  --mebody-t-6f8c7b  : #9bb0a2;                        /* 9곳 */
+  --mebody-t-7a5500  : #e0b667;                        /* 7곳 */
+  --mebody-t-047857  : #b6c6b8;                        /* 5곳 */
+  --mebody-t-016b38  : #c6d4c4;                        /* 4곳 */
+  --mebody-t-w80     : rgba(11,31,21,0.9);             /* 3곳 */
+  --mebody-t-b4c0b6  : #9bb0a2;                        /* 3곳 */
+  --mebody-t-w78     : rgba(11,31,21,0.9);             /* 3곳 */
+  --mebody-t-7f1d1d  : #ff9a92;                        /* 1곳 */
+  --mebody-t-ffffff  : #0b1f15;                        /* 1곳 */
+  --mebody-t-064e3b  : #e9efe4;                        /* 1곳 */
+  --mebody-t-466e65  : #b6c6b8;                        /* 1곳 */
+  --mebody-t-3f6553  : #c6d4c4;                        /* 1곳 */
+  --mebody-t-w82     : rgba(11,31,21,0.9);             /* 1곳 */
+  --mebody-t-b42318  : #ff9a92;                        /* 1곳 */
+  --mebody-t-d9e6de  : #0b1f15;                        /* 1곳 */
+  --mebody-t-718078  : #9bb0a2;                        /* 1곳 */
+  --mebody-t-046b41  : #c6d4c4;                        /* 1곳 */
+  --mebody-t-5f6e65  : #b6c6b8;                        /* 1곳 */
+  --mebody-t-w75     : rgba(11,31,21,0.9);             /* 1곳 */
+  --mebody-t-748079  : #9bb0a2;                        /* 1곳 */
+  --mebody-t-8a938d  : #9bb0a2;                        /* 1곳 */
+  --mebody-t-b45309  : #e0b667;                        /* 1곳 */
+  --mebody-t-9ba79f  : #9bb0a2;                        /* 1곳 */
+  --mebody-t-c9d2cb  : #0b1f15;                        /* 1곳 */
+
+  /* 표면 — 화면에 흩어져 있던 값 60종 / 263곳 */
+  --mebody-s-ffffff: #173523;                        /* 65곳 */
+  --mebody-s-014725: #6ecf9b;                        /* 31곳 */
+  --mebody-s-016b38: #6ecf9b;                        /* 28곳 */
+  --mebody-s-w90-2 : #173523;                        /* 8곳 */
+  --mebody-s-w98-2 : #173523;                        /* 7곳 */
+  --mebody-s-w96-2 : #173523;                        /* 7곳 */
+  --mebody-s-w74   : rgba(233,239,228,0.074);        /* 6곳 */
+  --mebody-s-w86-2 : rgba(233,239,228,0.086);        /* 5곳 */
+  --mebody-s-w52   : rgba(233,239,228,0.052);        /* 5곳 */
+  --mebody-s-k04   : rgba(233,239,228,0.05);         /* 4곳 */
+  --mebody-s-k03   : rgba(233,239,228,0.05);         /* 4곳 */
+  --mebody-s-w84   : rgba(233,239,228,0.084);        /* 4곳 */
+  --mebody-s-w86   : rgba(233,239,228,0.086);        /* 4곳 */
+  --mebody-s-w98   : #173523;                        /* 4곳 */
+  --mebody-s-w96   : #173523;                        /* 4곳 */
+  --mebody-s-w88-4 : rgba(233,239,228,0.088);        /* 4곳 */
+  --mebody-s-w96-3 : #173523;                        /* 4곳 */
+  --mebody-s-k10   : rgba(233,239,228,0.05);         /* 4곳 */
+  --mebody-s-w72   : rgba(233,239,228,0.072);        /* 3곳 */
+  --mebody-s-w62   : rgba(233,239,228,0.062);        /* 3곳 */
+  --mebody-s-w95   : #173523;                        /* 3곳 */
+  --mebody-s-fdf2f1: #0f2619;                        /* 3곳 */
+  --mebody-s-w95-3 : #173523;                        /* 3곳 */
+  --mebody-s-6f8c7b: #1c4029;                        /* 3곳 */
+  --mebody-s-w88   : rgba(233,239,228,0.088);        /* 2곳 */
+  --mebody-s-w88-2 : rgba(233,239,228,0.088);        /* 2곳 */
+  --mebody-s-fff8e8: #0f2619;                        /* 2곳 */
+  --mebody-s-k34   : rgba(0,0,0,0.34);               /* 2곳 */
+  --mebody-s-w98-3 : #173523;                        /* 2곳 */
+  --mebody-s-k06   : rgba(233,239,228,0.05);         /* 2곳 */
+  --mebody-s-w96-4 : #173523;                        /* 2곳 */
+  --mebody-s-w90   : #173523;                        /* 2곳 */
+  --mebody-s-e1e9da: #1c4029;                        /* 2곳 */
+  --mebody-s-w84-2 : rgba(233,239,228,0.084);        /* 2곳 */
+  --mebody-s-c8d6c4: #1c4029;                        /* 2곳 */
+  --mebody-s-fffff3: #173523;                        /* 1곳 */
+  --mebody-s-fef2f2: #0f2619;                        /* 1곳 */
+  --mebody-s-w92   : #173523;                        /* 1곳 */
+  --mebody-s-w95-2 : #173523;                        /* 1곳 */
+  --mebody-s-f3faf6: #0f2619;                        /* 1곳 */
+  --mebody-s-f7faf4: #0f2619;                        /* 1곳 */
+  --mebody-s-w97   : #173523;                        /* 1곳 */
+  --mebody-s-w82   : rgba(233,239,228,0.082);        /* 1곳 */
+  --mebody-s-w94   : #173523;                        /* 1곳 */
+  --mebody-s-w78   : rgba(233,239,228,0.078);        /* 1곳 */
+  --mebody-s-w72-2 : rgba(233,239,228,0.072);        /* 1곳 */
+  --mebody-s-w88-3 : rgba(233,239,228,0.088);        /* 1곳 */
+  --mebody-s-k08   : rgba(233,239,228,0.05);         /* 1곳 */
+  --mebody-s-w86-3 : rgba(233,239,228,0.086);        /* 1곳 */
+  --mebody-s-eef4f2: #0f2619;                        /* 1곳 */
+  --mebody-s-fff8eb: #0f2619;                        /* 1곳 */
+  --mebody-s-eef4ec: #0f2619;                        /* 1곳 */
+  --mebody-s-w90-3 : #173523;                        /* 1곳 */
+  --mebody-s-w15   : rgba(233,239,228,0.015);        /* 1곳 */
+  --mebody-s-w95-4 : #173523;                        /* 1곳 */
+  --mebody-s-w98-4 : #173523;                        /* 1곳 */
+  --mebody-s-k12   : rgba(233,239,228,0.05);         /* 1곳 */
+  --mebody-s-w72-3 : rgba(233,239,228,0.072);        /* 1곳 */
+  --mebody-s-w92-2 : #173523;                        /* 1곳 */
+  --mebody-s-w18   : rgba(233,239,228,0.018);        /* 1곳 */
+
+  /* 테두리 — 화면에 흩어져 있던 값 31종 / 60곳 */
+  --mebody-b-g100-2: rgba(110,207,155,0.34);          /* 5곳 */
+  --mebody-b-w42   : rgba(233,239,228,0.22);         /* 5곳 */
+  --mebody-b-e1e9da: rgba(233,239,228,0.16);         /* 4곳 */
+  --mebody-b-r22   : rgba(255,154,146,0.34);         /* 4곳 */
+  --mebody-b-6f8c7b: rgba(233,239,228,0.16);         /* 4곳 */
+  --mebody-b-w90   : rgba(110,207,155,0.34);          /* 3곳 */
+  --mebody-b-w28   : rgba(233,239,228,0.16);         /* 2곳 */
+  --mebody-b-g100  : rgba(110,207,155,0.34);          /* 2곳 */
+  --mebody-b-k12   : rgba(233,239,228,0.16);         /* 2곳 */
+  --mebody-b-f0dca8: rgba(224,182,103,0.34);         /* 2곳 */
+  --mebody-b-f3cfcb: rgba(255,154,146,0.34);         /* 2곳 */
+  --mebody-b-w40   : rgba(233,239,228,0.22);         /* 2곳 */
+  --mebody-b-g95   : rgba(110,207,155,0.34);          /* 2곳 */
+  --mebody-b-g92   : rgba(110,207,155,0.34);          /* 2곳 */
+  --mebody-b-w95-2 : rgba(110,207,155,0.34);          /* 2곳 */
+  --mebody-b-8e3a32: rgba(255,154,146,0.34);         /* 2곳 */
+  --mebody-b-014725: #6ecf9b;                        /* 1곳 */
+  --mebody-b-fecaca: rgba(255,154,146,0.34);         /* 1곳 */
+  --mebody-b-w95   : rgba(110,207,155,0.34);          /* 1곳 */
+  --mebody-b-w100  : rgba(255,154,146,0.34);         /* 1곳 */
+  --mebody-b-f0f4ec: rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-g95-2 : rgba(110,207,155,0.34);          /* 1곳 */
+  --mebody-b-k16   : rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-w18   : rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-r28   : rgba(255,154,146,0.34);         /* 1곳 */
+  --mebody-b-ffffff: rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-dbe2da: rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-r42   : rgba(255,154,146,0.34);         /* 1곳 */
+  --mebody-b-k14   : rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-k30   : rgba(233,239,228,0.16);         /* 1곳 */
+  --mebody-b-016b38: #6ecf9b;                        /* 1곳 */
+
+  /* 그림자 — 화면에 흩어져 있던 값 24종 / 53곳 */
+  --mebody-d-k08  : rgba(0,0,0,0.21);               /* 11곳 */
+  --mebody-d-k10  : rgba(0,0,0,0.26);               /* 8곳 */
+  --mebody-d-k13  : rgba(0,0,0,0.34);               /* 6곳 */
+  --mebody-d-k22  : rgba(0,0,0,0.55);               /* 4곳 */
+  --mebody-d-k12  : rgba(0,0,0,0.31);               /* 2곳 */
+  --mebody-d-k30  : rgba(0,0,0,0.55);               /* 2곳 */
+  --mebody-d-k24  : rgba(0,0,0,0.55);               /* 2곳 */
+  --mebody-d-w85  : rgba(233,239,228,0.10);         /* 2곳 */
+  --mebody-d-k18  : rgba(0,0,0,0.47);               /* 1곳 */
+  --mebody-d-k16  : rgba(0,0,0,0.42);               /* 1곳 */
+  --mebody-d-k10-2: rgba(0,0,0,0.26);               /* 1곳 */
+  --mebody-d-w88  : rgba(233,239,228,0.10);         /* 1곳 */
+  --mebody-d-k34  : rgba(0,0,0,0.55);               /* 1곳 */
+  --mebody-d-k28  : rgba(0,0,0,0.55);               /* 1곳 */
+  --mebody-d-k18-2: rgba(0,0,0,0.47);               /* 1곳 */
+  --mebody-d-g14  : rgba(0,0,0,0.36);               /* 1곳 */
+  --mebody-d-k06  : rgba(0,0,0,0.16);               /* 1곳 */
+  --mebody-d-k06-2: rgba(0,0,0,0.16);               /* 1곳 */
+  --mebody-d-k20  : rgba(0,0,0,0.52);               /* 1곳 */
+  --mebody-d-k22-2: rgba(0,0,0,0.55);               /* 1곳 */
+  --mebody-d-r08  : rgba(0,0,0,0.21);               /* 1곳 */
+  --mebody-d-k28-2: rgba(0,0,0,0.55);               /* 1곳 */
+  --mebody-d-k25  : rgba(0,0,0,0.55);               /* 1곳 */
+  --mebody-d-k05  : rgba(0,0,0,0.13);               /* 1곳 */
+
+  /* 포커스 링도 갈라집니다. 밝은 모드의 #016b38 은 다크 배경에서 1.6:1 입니다. */
+  --mebody-focus-ring: #8fe0b3;
+  --mebody-focus-halo: #0b1f15;
+}
+}
+
 /* ===== 접근성 (Lens 1) ============================================
    이 파일에는 :focus-visible 선언이 하나도 없었고, 인라인으로
    outline:'none' 이 7곳에 걸려 있었다. 키보드·스위치 컨트롤 사용자는
@@ -2766,4 +3181,63 @@ body, button, input, textarea, select {
   .mebody-axis-demo i {
     transition: none;
   }
+}
+
+
+/* ===== 다크: 미리 컴파일된 유틸 클래스 =================================
+   index.css 는 손으로 관리하는 "컴파일된 Tailwind" 묶음입니다(이 리포에는
+   Tailwind 가 설치돼 있지 않습니다). 그래서 유틸 클래스의 색이 변수가 아니라
+   램프 값으로 굳어 있습니다.
+
+   --color-white 같은 램프 변수를 덮지 않는 이유: `bg-white` 와 `text-white` 가
+   같은 변수를 쓰는데 다크에서는 전자가 표면, 후자가 채움 위 글씨로 역할이
+   갈립니다. 한 변수로 둘을 동시에 맞출 수 없어 **앱이 실제로 쓰는 클래스만**
+   역할대로 덮습니다. 원래 규칙은 @layer utilities 안이고 이 블록은 레이어
+   밖이라, 특이도와 무관하게 이쪽이 이깁니다.
+
+   여기 없는 색 유틸을 새로 쓰면 다크에서 밝은 색이 그대로 남습니다.
+   되도록 인라인 토큰(var(--mebody-*))을 쓰고, 유틸을 쓰면 이 목록에 추가하십시오.
+--------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  .bg-emerald-100 { background-color: var(--mebody-mint); }
+  .bg-emerald-100\/80 { background-color: var(--mebody-mint); }
+  .bg-emerald-200\/30 { background-color: rgba(110,207,155,0.14); }
+  .bg-emerald-50 { background-color: var(--mebody-inset); }
+  .bg-emerald-50\/80 { background-color: var(--mebody-inset); }
+  .bg-gray-100 { background-color: var(--mebody-inset); }
+  .bg-gray-50\/80 { background-color: var(--mebody-inset); }
+  .bg-teal-200\/30 { background-color: rgba(110,207,155,0.14); }
+  .bg-white { background-color: var(--mebody-card); }
+  .bg-white\/50 { background-color: rgba(233,239,228,0.06); }
+  .border-emerald-100 { border-color: rgba(110,207,155,0.34); }
+  .border-emerald-100\/80 { border-color: rgba(110,207,155,0.34); }
+  .border-gray-100 { border-color: var(--mebody-line); }
+  .border-gray-200 { border-color: var(--mebody-line); }
+  .disabled\:border-gray-100:disabled { border-color: var(--mebody-line); }
+  .disabled\:hover\:border-gray-100:disabled:hover { border-color: var(--mebody-line); }
+  .disabled\:text-gray-300:disabled { color: #6c8a78; }
+  .from-emerald-300 { --tw-gradient-from: var(--mebody-green-mid); }
+  .from-emerald-50 { --tw-gradient-from: var(--mebody-inset); }
+  .from-emerald-500 { --tw-gradient-from: var(--mebody-green); }
+  .hover\:bg-gray-200:hover { background-color: rgba(233,239,228,0.10); }
+  .hover\:border-gray-400:hover { border-color: rgba(233,239,228,0.34); }
+  .shadow-emerald-500\/20 { --tw-shadow-color: rgba(0,0,0,0.34); }
+  .text-emerald-500 { color: var(--mebody-green); }
+  .text-emerald-600 { color: var(--mebody-green); }
+  .text-emerald-700 { color: var(--mebody-green); }
+  .text-emerald-950 { color: var(--mebody-ink); }
+  .text-gray-400 { color: var(--mebody-muted); }
+  .text-gray-500 { color: var(--mebody-muted); }
+  .text-gray-600 { color: #9bb0a2; }
+  .text-gray-700 { color: #b6c6b8; }
+  .text-gray-900 { color: var(--mebody-ink); }
+  .text-white { color: var(--mebody-on-green); }
+  .to-teal-300 { --tw-gradient-to: var(--mebody-green-mid); }
+  .to-teal-50 { --tw-gradient-to: var(--mebody-inset); }
+  .to-teal-500 { --tw-gradient-to: var(--mebody-green); }
+  .via-white { --tw-gradient-via: var(--mebody-card); }
+
+  /* 셸 표면 — 원래 규칙이 !important 라 같은 무기가 필요합니다. */
+  .mebody-desktop-backdrop { background-color: var(--mebody-outer-bg) !important; }
+  .mebody-app-surface { background-color: var(--mebody-card) !important; }
 }

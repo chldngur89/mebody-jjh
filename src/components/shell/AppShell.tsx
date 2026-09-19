@@ -22,8 +22,6 @@ export function AppShell({
   onBrandClick,
   topBarRight,
   children,
-  /** 탭바를 숨길 때(전체화면 흐름) */
-  hideTabBar = false,
   /**
    * 값이 바뀌면 본문을 맨 위로 되돌립니다.
    * 홈 탭을 누를 때 쓰입니다 — 들어오면 오늘의 미션·루틴이 먼저 보여야 하는데,
@@ -37,7 +35,6 @@ export function AppShell({
   onBrandClick?: () => void;
   topBarRight?: ReactNode;
   children: ReactNode;
-  hideTabBar?: boolean;
   scrollTopSignal?: number;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -110,16 +107,14 @@ export function AppShell({
           // .page{padding:22px 18px 30px}
           padding: '22px 18px 30px',
           // 탭바 + 배너에 가리지 않도록. --mebody-ad-inset 은 src/lib/ads.ts 가 채웁니다.
-          paddingBottom: hideTabBar
-            ? 'calc(30px + var(--mebody-ad-inset, 0px))'
-            : 'calc(var(--mebody-tabbar-h) + 24px + var(--mebody-ad-inset, 0px))',
+          paddingBottom: 'calc(var(--mebody-tabbar-h) + 24px + var(--mebody-ad-inset, 0px))',
         }}
       >
         <div ref={contentRef}>{children}</div>
       </div>
 
       <ScrollIndicator containerRef={scrollRef} bottomOffset="calc(var(--mebody-tabbar-h) + 12px)" />
-      {!hideTabBar && <TabBar active={activeTab} onChange={onTabChange} />}
+      <TabBar active={activeTab} onChange={onTabChange} />
     </div>
   );
 }

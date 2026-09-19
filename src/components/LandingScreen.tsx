@@ -87,7 +87,7 @@ export function LandingScreen({
         maxHeight: isDesktopMockup ? undefined : landingHeight,
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px var(--mebody-d-k13, rgba(1, 71, 37, 0.13))' : 'none',
         boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -102,7 +102,7 @@ export function LandingScreen({
             width: '300px',
             height: '300px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.035)',
+            background: 'var(--mebody-s-k04, rgba(0, 70, 40, 0.035))',
             filter: 'blur(58px)',
           }}
         />
@@ -114,7 +114,7 @@ export function LandingScreen({
             width: '320px',
             height: '320px',
             borderRadius: '999px',
-            background: 'rgba(0, 70, 40, 0.03)',
+            background: 'var(--mebody-s-k03, rgba(0, 70, 40, 0.03))',
             filter: 'blur(72px)',
           }}
         />
@@ -144,15 +144,15 @@ export function LandingScreen({
               alignItems: 'center',
               gap: '8px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.4)',
-              background: 'rgba(255,255,255,0.72)',
+              border: '1px solid var(--mebody-b-w40, rgba(255,255,255,0.4))',
+              background: 'var(--mebody-s-w72, rgba(255,255,255,0.72))',
               padding: '9px 16px',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+              boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
               backdropFilter: 'blur(12px)',
             }}
           >
             <BrandMark size={16} color="#014725" />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#014725' }}>{PRODUCT.mark}</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-014725, #014725)' }}>{PRODUCT.mark}</span>
           </div>
 
           {onAccount && (
@@ -161,14 +161,14 @@ export function LandingScreen({
               onClick={onAccount}
               style={{
                 borderRadius: '999px',
-                border: '1px solid rgba(255,255,255,0.4)',
-                background: 'rgba(255,255,255,0.72)',
+                border: '1px solid var(--mebody-b-w40, rgba(255,255,255,0.4))',
+                background: 'var(--mebody-s-w72, rgba(255,255,255,0.72))',
                 minHeight: '44px',
                 padding: '9px 16px',
                 fontSize: '0.8125rem',
                 fontWeight: 700,
-                color: '#2C5544',
-                boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+                color: 'var(--mebody-t-2c5544, #2C5544)',
+                boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
                 backdropFilter: 'blur(12px)',
                 cursor: 'pointer',
               }}
@@ -186,8 +186,8 @@ export function LandingScreen({
             flexDirection: 'column',
             overflow: isShortViewport ? 'visible' : 'hidden',
             borderRadius: '28px',
-            background: 'rgba(255,255,255,0.78)',
-            boxShadow: '0 24px 48px rgba(1, 71, 37, 0.12)',
+            background: 'var(--mebody-s-w78, rgba(255,255,255,0.78))',
+            boxShadow: '0 24px 48px var(--mebody-d-k12, rgba(1, 71, 37, 0.12))',
             backdropFilter: 'blur(20px)',
           }}
         >
@@ -208,8 +208,8 @@ export function LandingScreen({
                   width: isShortViewport ? '72px' : '94px',
                   height: isShortViewport ? '72px' : '94px',
                   borderRadius: '24px',
-                  background: 'linear-gradient(135deg, #016B38 0%, #014725 100%)',
-                  boxShadow: '0 14px 30px rgba(1,71,37,0.34)',
+                  background: 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                  boxShadow: '0 14px 30px var(--mebody-d-k34, rgba(1,71,37,0.34))',
                 }}
               >
                 <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
@@ -221,7 +221,7 @@ export function LandingScreen({
                     inset: 0,
                     zIndex: -1,
                     borderRadius: '24px',
-                    background: 'linear-gradient(135deg, #016B38 0%, #014725 100%)',
+                    background: 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
                     opacity: 0.55,
                     filter: 'blur(18px)',
                   }}
@@ -235,7 +235,7 @@ export function LandingScreen({
                   lineHeight: 0.96,
                   fontWeight: 800,
                   letterSpacing: '-0.04em',
-                  background: 'linear-gradient(90deg, #014725 0%, #014725 100%)',
+                  background: 'linear-gradient(90deg, var(--mebody-s-014725, #014725) 0%, var(--mebody-s-014725, #014725) 100%)',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   color: 'transparent',
@@ -260,7 +260,7 @@ export function LandingScreen({
                   fontSize: '1.375rem',
                   lineHeight: 1.35,
                   fontWeight: 850,
-                  color: '#014725',
+                  color: 'var(--mebody-t-014725, #014725)',
                   wordBreak: 'keep-all',
                   letterSpacing: '-0.03em',
                   textAlign: 'center',
@@ -282,7 +282,7 @@ export function LandingScreen({
                 style={{
                   fontSize: '0.875rem',
                   lineHeight: 1.7,
-                  color: '#3D6B54',
+                  color: 'var(--mebody-t-3d6b54, #3D6B54)',
                   wordBreak: 'keep-all',
                   textAlign: 'center',
                 }}
@@ -313,8 +313,8 @@ export function LandingScreen({
                       display: 'grid',
                       gap: '12px',
                       borderRadius: '18px',
-                      border: '1px solid rgba(167,243,208,0.95)',
-                      background: 'rgba(236,253,245,0.72)',
+                      border: '1px solid var(--mebody-b-g95, rgba(167,243,208,0.95))',
+                      background: 'var(--mebody-s-w72-2, rgba(236,253,245,0.72))',
                       padding: '16px',
                     }}
                   >
@@ -323,7 +323,7 @@ export function LandingScreen({
                         margin: 0,
                         fontSize: '0.9375rem',
                         fontWeight: 800,
-                        color: '#014725',
+                        color: 'var(--mebody-t-014725, #014725)',
                         wordBreak: 'keep-all',
                         lineHeight: 1.5,
                         textAlign: 'center',
@@ -333,7 +333,7 @@ export function LandingScreen({
                       <br />
                       이어서 분석할까요?
                     </p>
-                    <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.55, color: '#047857', wordBreak: 'keep-all', textAlign: 'center' }}>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.55, color: 'var(--mebody-t-047857, #047857)', wordBreak: 'keep-all', textAlign: 'center' }}>
                       처음부터 하면 약관 동의부터 다시 시작합니다.
                     </p>
                     <button
@@ -348,11 +348,11 @@ export function LandingScreen({
                         gap: '8px',
                         borderRadius: '16px',
                         border: 'none',
-                        background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                        color: '#ffffff',
+                        background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                        color: 'var(--mebody-t-ffffff-2, #ffffff)',
                         fontSize: '1.0625rem',
                         fontWeight: 800,
-                        boxShadow: '0 12px 24px rgba(1,71,37,0.28)',
+                        boxShadow: '0 12px 24px var(--mebody-d-k28, rgba(1,71,37,0.28))',
                         cursor: 'pointer',
                       }}
                     >
@@ -369,9 +369,9 @@ export function LandingScreen({
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: '14px',
-                        border: '1px solid rgba(167,243,208,0.95)',
-                        background: '#ffffff',
-                        color: '#014725',
+                        border: '1px solid var(--mebody-b-g95, rgba(167,243,208,0.95))',
+                        background: 'var(--mebody-s-ffffff, #ffffff)',
+                        color: 'var(--mebody-t-014725, #014725)',
                         fontSize: '0.8125rem',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -393,11 +393,11 @@ export function LandingScreen({
                       gap: '8px',
                       borderRadius: '18px',
                       border: 'none',
-                      background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                      color: '#ffffff',
+                      background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                      color: 'var(--mebody-t-ffffff-2, #ffffff)',
                       fontSize: '1.0625rem',
                       fontWeight: 800,
-                      boxShadow: '0 14px 28px rgba(1,71,37,0.30)',
+                      boxShadow: '0 14px 28px var(--mebody-d-k30, rgba(1,71,37,0.30))',
                       cursor: 'pointer',
                       textAlign: 'center',
                     }}
@@ -425,9 +425,9 @@ export function LandingScreen({
                       justifyContent: 'center',
                       gap: '8px',
                       borderRadius: '16px',
-                      border: '1px solid rgba(167,243,208,0.92)',
-                      background: 'rgba(236,253,245,0.88)',
-                      color: '#047857',
+                      border: '1px solid var(--mebody-b-g92, rgba(167,243,208,0.92))',
+                      background: 'var(--mebody-s-w88-3, rgba(236,253,245,0.88))',
+                      color: 'var(--mebody-t-047857, #047857)',
                       fontSize: '0.875rem',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -457,16 +457,16 @@ export function LandingScreen({
                       gap: '8px',
                       justifySelf: 'start',
                       borderRadius: '999px',
-                      background: 'rgba(236,253,245,0.95)',
-                      border: '1px solid rgba(167,243,208,0.92)',
+                      background: 'var(--mebody-s-w95, rgba(236,253,245,0.95))',
+                      border: '1px solid var(--mebody-b-g92, rgba(167,243,208,0.92))',
                       padding: '7px 11px',
-                      color: '#047857',
+                      color: 'var(--mebody-t-047857, #047857)',
                       fontSize: '0.8125rem',
                       fontWeight: 900,
                     }}
                   >
                     최근 코드
-                    <span style={{ color: '#014725' }}>{normalizedBodyCode}</span>
+                    <span style={{ color: 'var(--mebody-t-014725, #014725)' }}>{normalizedBodyCode}</span>
                   </div>
                 )}
                 {onAccount && (
@@ -481,11 +481,11 @@ export function LandingScreen({
                       justifyContent: 'center',
                       gap: '8px',
                       borderRadius: '14px',
-                      border: '1px solid rgba(110,231,183,0.95)',
-                      background: '#ffffff',
+                      border: '1px solid var(--mebody-b-g95-2, rgba(110,231,183,0.95))',
+                      background: 'var(--mebody-s-ffffff, #ffffff)',
                       fontSize: '0.875rem',
                       fontWeight: 700,
-                      color: '#2C5544',
+                      color: 'var(--mebody-t-2c5544, #2C5544)',
                       cursor: 'pointer',
                     }}
                   >
@@ -504,7 +504,7 @@ export function LandingScreen({
             flexShrink: 0,
             textAlign: 'center',
             fontSize: '0.8125rem',
-            color: '#4A6B58',
+            color: 'var(--mebody-t-4a6b58, #4A6B58)',
           }}
         >
           {PRODUCT.codeWithGuide}

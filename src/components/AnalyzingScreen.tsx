@@ -57,7 +57,7 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
         maxHeight: isDesktopMockup ? undefined : 'var(--mebody-app-height)',
         borderRadius: isDesktopMockup ? '32px' : 0,
         background: BRAND_PAGE_BG,
-        boxShadow: isDesktopMockup ? '0 24px 60px rgba(1, 71, 37, 0.13)' : 'none',
+        boxShadow: isDesktopMockup ? '0 24px 60px var(--mebody-d-k13, rgba(1, 71, 37, 0.13))' : 'none',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',

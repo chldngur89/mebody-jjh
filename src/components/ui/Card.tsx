@@ -32,7 +32,7 @@ export function Card({ children, tone = 'default', padding = '20px', style, clas
         border: green ? '1px solid transparent' : BRAND_CARD_BORDER,
         borderRadius: `${BRAND_RADIUS}px`,
         boxShadow: green ? 'none' : BRAND_SHADOW,
-        color: green ? '#ffffff' : BRAND.text,
+        color: green ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.text,
         padding,
         ...style,
       }}

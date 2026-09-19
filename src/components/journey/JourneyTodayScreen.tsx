@@ -58,7 +58,7 @@ function MissionCard({
       style={{
         borderRadius: '24px',
         border: `1px solid ${isCompleted ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
-        background: '#ffffff',
+        background: 'var(--mebody-s-ffffff, #ffffff)',
         overflow: 'hidden',
       }}
     >
@@ -72,7 +72,7 @@ function MissionCard({
           gap: '13px',
           width: '100%',
           padding: '18px',
-          background: isCompleted ? 'rgba(228,244,240,0.72)' : '#ffffff',
+          background: isCompleted ? 'var(--mebody-s-w72-3, rgba(228,244,240,0.72))' : 'var(--mebody-s-ffffff, #ffffff)',
           border: 'none',
           textAlign: 'left',
           fontFamily: 'inherit',
@@ -85,9 +85,9 @@ function MissionCard({
             width: '28px',
             height: '28px',
             borderRadius: '10px',
-            border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : '#6F8C7B'}`,
-            background: isCompleted ? 'linear-gradient(135deg, #016B38 0%, #014725 100%)' : '#ffffff',
-            boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.85)',
+            border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : 'var(--mebody-b-6f8c7b, #6F8C7B)'}`,
+            background: isCompleted ? 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
+            boxShadow: 'inset 0 0 0 3px var(--mebody-d-w85, rgba(255,255,255,0.85))',
           }}
         />
         <div style={{ minWidth: 0 }}>
@@ -98,23 +98,23 @@ function MissionCard({
             <span
               style={{
                 borderRadius: '999px',
-                background: '#ffffff',
+                background: 'var(--mebody-s-ffffff, #ffffff)',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
                 padding: '3px 8px',
                 fontSize: '0.6875rem',
                 lineHeight: 1,
                 fontWeight: 900,
-                color: '#587761',
+                color: 'var(--mebody-t-587761, #587761)',
               }}
             >
               {formatDuration(mission.planned_duration_sec)}
             </span>
           </div>
-          <div style={{ fontSize: '1.0625rem', lineHeight: 1.35, fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+          <div style={{ fontSize: '1.0625rem', lineHeight: 1.35, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
             {content?.display_name ?? mission.content_key}
           </div>
           {content?.target_muscle && (
-            <div style={{ marginTop: '5px', fontSize: '0.8125rem', fontWeight: 700, color: '#4A6B58' }}>
+            <div style={{ marginTop: '5px', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>
               타겟 근육: {content.target_muscle}
             </div>
           )}
@@ -128,20 +128,20 @@ function MissionCard({
             <div
               style={{
                 borderRadius: '18px',
-                background: 'rgba(244,251,249,0.96)',
+                background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
                 padding: '15px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '9px' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                   {content.release_title}
                 </div>
                 <div style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
                   {content.release_tool} · {content.release_duration_sec ?? 90}초
                 </div>
               </div>
-              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                 {splitSteps(content.release_content).map((step, stepIndex) => (
                   <li key={stepIndex}>{step}</li>
                 ))}
@@ -153,20 +153,20 @@ function MissionCard({
             <div
               style={{
                 borderRadius: '18px',
-                background: 'rgba(244,251,249,0.96)',
+                background: 'var(--mebody-s-w96-2, rgba(244,251,249,0.96))',
                 border: `1px solid ${AXIS_GREEN_THEME.border}`,
                 padding: '15px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '9px' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#014725', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                   {content.stretch_title}
                 </div>
                 <div style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 800, color: AXIS_GREEN_THEME.text }}>
                   {content.stretch_duration_sec ?? 30}초 × {content.sets ?? 3}세트
                 </div>
               </div>
-              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: '#3D6B54', wordBreak: 'keep-all' }}>
+              <ol style={{ display: 'grid', gap: '6px', paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.65, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                 {splitSteps(content.stretch_content).map((step, stepIndex) => (
                   <li key={stepIndex}>{step}</li>
                 ))}
@@ -178,12 +178,12 @@ function MissionCard({
             <div
               style={{
                 borderRadius: '16px',
-                background: 'rgba(255,251,235,0.88)',
-                border: '1px solid rgba(245,158,11,0.22)',
+                background: 'var(--mebody-s-w88-4, rgba(255,251,235,0.88))',
+                border: '1px solid var(--mebody-b-r22, rgba(245,158,11,0.22))',
                 padding: '12px',
                 fontSize: '0.8125rem',
                 lineHeight: 1.6,
-                color: '#7A5500',
+                color: 'var(--mebody-t-7a5500, #7A5500)',
                 wordBreak: 'keep-all',
               }}
             >
@@ -204,8 +204,8 @@ function MissionCard({
                 gap: '6px',
                 borderRadius: '14px',
                 border: 'none',
-                background: isCompleted ? 'rgba(228,244,240,0.9)' : 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                color: isCompleted ? '#014725' : '#ffffff',
+                background: isCompleted ? 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))' : 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                color: isCompleted ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-ffffff-2, #ffffff)',
                 fontSize: '0.875rem',
                 fontWeight: 800,
                 fontFamily: 'inherit',
@@ -245,7 +245,7 @@ export function JourneyTodayScreen({
           alignItems: 'center',
           gap: '12px',
           padding: '22px 24px 18px',
-          background: 'rgba(255,255,255,0.52)',
+          background: 'var(--mebody-s-w52, rgba(255,255,255,0.52))',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -257,26 +257,26 @@ export function JourneyTodayScreen({
               width: '44px',
               height: '44px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.42)',
-              background: 'rgba(255,255,255,0.74)',
+              border: '1px solid var(--mebody-b-w42, rgba(255,255,255,0.42))',
+              background: 'var(--mebody-s-w74, rgba(255,255,255,0.74))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2C5544',
+              color: 'var(--mebody-t-2c5544, #2C5544)',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(1, 71, 37, 0.08)',
+              boxShadow: '0 10px 20px var(--mebody-d-k08, rgba(1, 71, 37, 0.08))',
             }}
             title="뒤로"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#014725' }}>오늘의 미션</h1>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--mebody-t-014725, #014725)' }}>오늘의 미션</h1>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         {state.isLoading ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#4A6B58', fontSize: '0.875rem' }}>불러오는 중...</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--mebody-t-4a6b58, #4A6B58)', fontSize: '0.875rem' }}>불러오는 중...</div>
         ) : !user ? (
           <JourneyNotice>14일 루틴은 로그인 후 이용할 수 있습니다.</JourneyNotice>
         ) : state.unavailable ? (
@@ -294,8 +294,8 @@ export function JourneyTodayScreen({
                   height: '50px',
                   borderRadius: '16px',
                   border: 'none',
-                  background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
-                  color: '#ffffff',
+                  background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
+                  color: 'var(--mebody-t-ffffff-2, #ffffff)',
                   fontSize: '0.9375rem',
                   fontWeight: 800,
                   fontFamily: 'inherit',
@@ -311,22 +311,22 @@ export function JourneyTodayScreen({
             <section
               style={{
                 borderRadius: '28px',
-                background: 'rgba(255,255,255,0.84)',
-                boxShadow: '0 22px 46px rgba(1, 71, 37, 0.10)',
+                background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
+                boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(20px)',
                 padding: '20px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: '#014725', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
                     DAY {state.dayNo} / {totalDays}
                   </div>
-                  <div style={{ fontSize: '1.625rem', lineHeight: 1.1, fontWeight: 900, color: '#014725' }}>
+                  <div style={{ fontSize: '1.625rem', lineHeight: 1.1, fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
                     {state.progress}%
                   </div>
                 </div>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: state.progress > 0 ? AXIS_GREEN_THEME.text : '#4A6B58' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: state.progress > 0 ? AXIS_GREEN_THEME.text : 'var(--mebody-t-4a6b58, #4A6B58)' }}>
                   {state.missions.length > 0 ? `${completedCount} / ${state.missions.length} 완료` : '오늘 미션 없음'}
                 </div>
               </div>
@@ -335,7 +335,7 @@ export function JourneyTodayScreen({
                   style={{
                     width: `${state.progress}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+                    background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
                     transition: 'width 260ms ease',
                   }}
                 />
@@ -353,17 +353,17 @@ export function JourneyTodayScreen({
                         flex: 1,
                         borderRadius: '14px',
                         border: `1px solid ${selected ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
-                        background: selected ? 'rgba(228,244,240,0.9)' : '#ffffff',
+                        background: selected ? 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))' : 'var(--mebody-s-ffffff, #ffffff)',
                         padding: '10px 12px',
                         fontFamily: 'inherit',
                         cursor: 'pointer',
                         textAlign: 'left',
                       }}
                     >
-                      <div style={{ fontSize: '0.875rem', fontWeight: 900, color: selected ? '#014725' : '#014725' }}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 900, color: selected ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-014725, #014725)' }}>
                         {option.label}
                       </div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#587761', marginTop: '2px' }}>{option.desc}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--mebody-t-587761, #587761)', marginTop: '2px' }}>{option.desc}</div>
                     </button>
                   )
                 })}
@@ -374,7 +374,7 @@ export function JourneyTodayScreen({
                   fontSize: '0.75rem',
                   lineHeight: 1.5,
                   fontWeight: state.replanNotice ? 800 : 400,
-                  color: state.replanNotice === 'changed' ? '#014725' : '#6F8C7B',
+                  color: state.replanNotice === 'changed' ? 'var(--mebody-t-014725, #014725)' : 'var(--mebody-t-6f8c7b, #6F8C7B)',
                   wordBreak: 'keep-all',
                 }}
               >
@@ -395,18 +395,18 @@ export function JourneyTodayScreen({
                   justifyContent: 'space-between',
                   gap: '12px',
                   borderRadius: '16px',
-                  background: 'rgba(228,244,240,0.86)',
+                  background: 'var(--mebody-s-w86-2, rgba(228,244,240,0.86))',
                   border: `1px solid ${AXIS_GREEN_THEME.border}`,
                   padding: '13px 15px',
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#014725', marginBottom: '4px' }}>내 적립금</div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#3D6B54', wordBreak: 'keep-all' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>내 적립금</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
                     미션마다 적립 · 14일 완주까지 최대 50원 보너스
                   </div>
                 </div>
-                <div style={{ flexShrink: 0, fontSize: '1.25rem', fontWeight: 900, color: '#014725' }}>
+                <div style={{ flexShrink: 0, fontSize: '1.25rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>
                   {state.rewardBalance}원
                 </div>
               </div>
@@ -420,12 +420,12 @@ export function JourneyTodayScreen({
                   gap: '10px',
                   borderRadius: '18px',
                   border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                  background: 'rgba(228,244,240,0.9)',
+                  background: 'var(--mebody-s-w90-2, rgba(228,244,240,0.9))',
                   padding: '15px 16px',
                 }}
               >
                 <RotateCcw size={18} color="#014725" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, color: '#014725', wordBreak: 'keep-all' }}>
+                <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, color: 'var(--mebody-t-014725, #014725)', wordBreak: 'keep-all' }}>
                   오랜만이에요. 오늘은 부담을 줄인 짧은 복귀 미션 하나만 준비했습니다.
                 </div>
               </div>
@@ -460,8 +460,8 @@ export function JourneyTodayScreen({
                   gap: '8px',
                   borderRadius: '16px',
                   border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                  background: '#ffffff',
-                  color: '#014725',
+                  background: 'var(--mebody-s-ffffff, #ffffff)',
+                  color: 'var(--mebody-t-014725, #014725)',
                   fontSize: '0.9375rem',
                   fontWeight: 800,
                   fontFamily: 'inherit',

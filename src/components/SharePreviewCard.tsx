@@ -62,7 +62,7 @@ export function SharePreviewCard({
         background: BRAND.card,
         border: `1px solid ${SURFACE.hairline}`,
         borderRadius: '22px',
-        boxShadow: '0 10px 28px rgba(0,70,40,0.06)',
+        boxShadow: '0 10px 28px var(--mebody-d-k06, rgba(0,70,40,0.06))',
         padding: '22px 18px 20px',
       }}
     >
@@ -138,7 +138,7 @@ export function SharePreviewCard({
               >
                 <span style={{ color: BRAND.muted }}>{row.axis}</span>
                 <span style={{ color: BRAND.text }}>나 {row.mine}</span>
-                <span style={{ color: row.same ? BRAND.green : '#b45309' }}>
+                <span style={{ color: row.same ? BRAND.green : 'var(--mebody-t-b45309, #b45309)' }}>
                   친구 {row.friend}
                   {row.same ? ' · 같음' : ' · 다름'}
                 </span>

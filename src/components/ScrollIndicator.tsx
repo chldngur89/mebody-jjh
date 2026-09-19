@@ -82,9 +82,9 @@ export function ScrollIndicator({
         width: '44px',
         height: '44px',
         borderRadius: '999px',
-        border: '1px solid rgba(1, 71, 37, 0.16)',
-        background: 'rgba(255, 255, 255, 0.96)',
-        boxShadow: '0 6px 14px rgba(5, 150, 105, 0.14)',
+        border: '1px solid var(--mebody-b-k16, rgba(1, 71, 37, 0.16))',
+        background: 'var(--mebody-s-w96, rgba(255, 255, 255, 0.96))',
+        boxShadow: '0 6px 14px var(--mebody-d-g14, rgba(5, 150, 105, 0.14))',
         cursor: 'pointer',
         padding: 0,
       }}

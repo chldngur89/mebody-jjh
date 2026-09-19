@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>mebody 공유 링크 카드 생성기</title>
+<!--
+  공유 링크(OG) 미리보기 카드 16장을 그려서 public/share-cards/ 에 저장합니다.
+
+  왜 브라우저에서 그리는가:
+    카드는 캔버스로 그립니다. Vercel 서버리스에는 DOM 이 없어 요청 때마다 그릴 수 없고,
+    Python(PIL)으로 다시 그리면 브랜드 서체(Pretendard)를 쓸 수 없고 그림이 두 벌이 됩니다.
+    그래서 브라우저에서 한 번 그려 파일로 두고, 서버는 그 파일을 가리키기만 합니다.
+
+  왜 저장 카드(1080×1350)와 따로 만드는가:
+    링크 미리보기는 1200×630 가로입니다. 세로 카드를 그 자리에 넣으면 위아래가 잘립니다.
+    애초에 비율이 다른 별개 산출물이므로 여기서 가로로 다시 구성합니다.
+
+  왜 축에 수치를 적지 않는가:
+    코드(FRRS)는 각 축이 "어느 쪽" 인지만 담습니다. 치우친 정도는 사람마다 다르고
+    코드에는 없습니다. 그래서 손잡이는 방향 표시로만 두고 퍼센트는 적지 않습니다.
+
+  실행: python3 scripts/make-share-og.py  → 안내된 주소를 브라우저로 열면 저장됩니다.
+-->
+<style>
+  @font-face {
+    font-family: "Pretendard Variable";
+    font-weight: 100 900;
+    font-style: normal;
+    src: url("/fonts/PretendardStdVariable.woff2") format("woff2-variations"),
+         url("/fonts/PretendardStdVariable.woff2") format("woff2");
+  }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #FFFFF3;
+    color: #014725;
+    font: 500 15px/1.6 "Pretendard Variable", system-ui, sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  #log { font: 400 13px/1.7 ui-monospace, monospace; white-space: pre-wrap; }
+  canvas { width: 480px; height: 252px; border: 1px solid #E1E9DA; border-radius: 8px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h1>mebody 공유 링크 카드</h1>
+<p id="status">준비 중…</p>
+<div id="log"></div>
+<canvas id="preview" width="1200" height="630"></canvas>
+
+<script>
+const CODES = ['FRRS','FRRF','FRLS','FRLF','FLRS','FLRF','FLLS','FLLF',
+               'CRRS','CRRF','CRLS','CRLF','CLRS','CLRF','CLLS','CLLF'];
+
+/** src/utils/bodyCodeCalculator.ts 의 characterNames 와 같은 값입니다. */
+const NAMES = {
+  FRRS: '꽈악 잠금 로봇', FRRF: '기대면 흐르는 젤리인간', FRLS: '꽈배기 금속 스프링',
+  FRLF: '회전 많은 풍선인형', FLRS: '으쓱 고정 목각병정', FLRF: '리듬 타는 갈대',
+  FLLS: '한쪽에 박힌 말뚝', FLLF: '녹아내리는 소프트콘', CRRS: '닻', CRRF: '오뚝이',
+  CRLS: '큐브 탑', CRLF: '중심 귀찮은 문어', CLRS: '엇갈려 잠긴 나무인형',
+  CLRF: '아슬아슬 젠가 탑', CLLS: '한쪽 뿌리 소나무', CLLF: '출렁이는 물침대',
+};
+
+/**
+ * 축 정의 — 앱의 AxisIntroDemo·결과 화면과 같은 라벨과 같은 좌/우 배치입니다.
+ * `left` 는 그 자리의 글자이고, `leftWhen` 은 손잡이가 왼쪽에 서는 코드 글자입니다.
+ */
+const AXES = [
+  { name: '목',   left: '전방',        right: '중앙',        leftWhen: 'F' },
+  { name: '어깨', left: '오른쪽 높음', right: '왼쪽 높음',   leftWhen: 'R' },
+  { name: '골반', left: '오른쪽 회전', right: '왼쪽 회전',   leftWhen: 'R' },
+  { name: '하체', left: '유연',        right: '뻣뻣',        leftWhen: 'F' },
+];
+
+const INK = '#014725', MID = '#016B38', MUTED = '#587761';
+const CREAM = '#FFFFF3', TRACK = '#E4EDE3', TICK = '#B4C7B8';
+const F = '"Pretendard Variable", system-ui, sans-serif';
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/** 4축 바 마크 — scripts/make-icons.py 의 BARS 와 같은 비율입니다. */
+function brandMark(ctx, x, y, h) {
+  const unit = h / 308;
+  const bars = [[108, 88], [0, 304], [52, 200], [86, 132]];
+  ctx.fillStyle = INK;
+  bars.forEach(([bx, bw], i) => {
+    roundRect(ctx, x + bx * unit, y + i * 82 * unit, bw * unit, 62 * unit, 31 * unit);
+    ctx.fill();
+  });
+}
+
+function drawCard(ctx, code) {
+  const W = 1200, H = 630;
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── 왼쪽: 누구인지
+  brandMark(ctx, 72, 60, 48);
+  ctx.fillStyle = INK;
+  ctx.font = `800 30px ${F}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('mebody', 126, 96);
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `800 20px ${F}`;
+  ctx.fillText('MEBODY CODE', 72, 196);
+
+  ctx.fillStyle = INK;
+  ctx.font = `800 130px ${F}`;
+  ctx.fillText(code, 70, 316);
+
+  ctx.fillStyle = MID;
+  ctx.font = `800 36px ${F}`;
+  ctx.fillText(NAMES[code], 72, 380);
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `500 23px ${F}`;
+  ctx.fillText('친구의 결과예요. 나는 어떤 유형일까?', 72, 430);
+
+  // 바닥 안내 — 제품 정본 문구
+  ctx.fillStyle = MUTED;
+  ctx.font = `700 21px ${F}`;
+  ctx.fillText('mebody Code · 자세·체형 셀프 체크', 72, 560);
+
+  // ── 오른쪽: 4축
+  const X = 648, TRACK_W = 480;
+  ctx.fillStyle = INK;
+  ctx.font = `800 22px ${F}`;
+  ctx.fillText('4축 상세 결과', X, 118);
+  ctx.fillStyle = MUTED;
+  ctx.font = `700 17px ${F}`;
+  ctx.textAlign = 'right';
+  ctx.fillText('중앙에 가까울수록 균형', X + TRACK_W, 118);
+  ctx.textAlign = 'left';
+
+  AXES.forEach((axis, i) => {
+    const top = 168 + i * 104;
+    const letter = code[i];
+    const onLeft = letter === axis.leftWhen;
+
+    ctx.fillStyle = INK;
+    ctx.font = `800 21px ${F}`;
+    ctx.fillText(axis.name, X, top);
+
+    // 좌·우 라벨. 손잡이가 선 쪽만 진하게 — 코드가 말하는 방향입니다.
+    ctx.font = `700 17px ${F}`;
+    ctx.fillStyle = onLeft ? INK : MUTED;
+    ctx.fillText(axis.left, X, top + 28);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = onLeft ? MUTED : INK;
+    ctx.fillText(axis.right, X + TRACK_W, top + 28);
+    ctx.textAlign = 'left';
+
+    const trackY = top + 44;
+    ctx.fillStyle = TRACK;
+    roundRect(ctx, X, trackY, TRACK_W, 12, 6);
+    ctx.fill();
+    ctx.fillStyle = TICK;
+    ctx.fillRect(X + TRACK_W / 2 - 1, trackY - 3, 2, 18);
+
+    const cx = X + (onLeft ? TRACK_W * 0.26 : TRACK_W * 0.74);
+    ctx.beginPath();
+    ctx.arc(cx, trackY + 6, 13, 0, Math.PI * 2);
+    ctx.fillStyle = INK;
+    ctx.fill();
+  });
+}
+
+async function run() {
+  const log = document.getElementById('log');
+  const status = document.getElementById('status');
+  const say = (line) => { log.textContent += line + '\n'; };
+
+  try {
+    await document.fonts.load(`800 130px ${F}`, 'FRRS목어깨');
+    await document.fonts.ready;
+  } catch (e) {
+    say('폰트 로드 실패: ' + e.message);
+  }
+  say('폰트: ' + (document.fonts.check(`800 130px ${F}`) ? 'Pretendard 적용' : '폴백(주의)'));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200; canvas.height = 630;
+  const ctx = canvas.getContext('2d');
+
+  let saved = 0;
+  for (const code of CODES) {
+    drawCard(ctx, code);
+    const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+    const res = await fetch(`/save?name=${code}.png`, { method: 'POST', body: blob });
+    const text = await res.text();
+    if (!res.ok) { say(`${code} 실패: ${text}`); continue; }
+    saved += 1;
+    say(`${code}  ${text}`);
+  }
+
+  // 마지막 한 장은 눈으로 확인할 수 있게 크게 남겨 둡니다.
+  drawCard(document.getElementById('preview').getContext('2d'), 'FRRS');
+  status.textContent = `완료: ${saved} / ${CODES.length} 장 저장`;
+}
+
+run();
+</script>
+</body>
+</html>

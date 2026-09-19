@@ -160,7 +160,7 @@ export function StatusScreen({
               height: '64px',
               borderRadius: '20px',
               background: BRAND.green,
-              color: '#ffffff',
+              color: 'var(--mebody-t-ffffff-2, #ffffff)',
               display: 'grid',
               placeItems: 'center',
               fontWeight: 900,
