@@ -7,6 +7,7 @@
  * 플랜은 하나뿐입니다(basic_monthly ₩5,900). Pro 는 035 에서 비활성으로 내렸습니다.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { track } from '../lib/analytics';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, Check, ChevronRight, ShieldCheck } from 'lucide-react';
 import { fetchMembershipPlans, fetchMySubscription, type MembershipPlan, type UserSubscription } from '../api/account';
@@ -43,6 +44,14 @@ export function MembershipScreen({ user, onBack, onRequireAuth, onSelectPlan }: 
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
+
+  /**
+   * 멤버십 화면을 열었다. 수익 퍼널의 첫 칸입니다.
+   * 결제를 아직 열지 않았어도 지금부터 쌓아 둬야, 여는 날 "왜 안 사는지" 를 물을 수 있습니다.
+   */
+  useEffect(() => {
+    track('paywall_viewed');
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

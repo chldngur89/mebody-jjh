@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { track } from '../../lib/analytics';
 import type { User } from '@supabase/supabase-js'
 import { ArrowLeft, ChevronRight, TrendingUp } from 'lucide-react'
 import { AXIS_GREEN_THEME } from '../../data/axisTheme'
@@ -83,6 +84,14 @@ function Card({ title, eyebrow, children }: { title: string; eyebrow?: string; c
 }
 
 export function JourneyReportScreen({ user, reportType, dayNo, onBack, onNext }: JourneyReportScreenProps) {
+  /**
+   * 주간 리포트를 열었다. 7일차에 한 번 나오는 화면이라, 여기까지 오는 비율이
+   * "첫 주를 넘겼는가" 를 그대로 보여줍니다.
+   */
+  useEffect(() => {
+    track('weekly_report_viewed')
+  }, [])
+
   const isDesktopMockup = useMediaQuery('(min-width: 768px)')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [report, setReport] = useState<JourneyReport | null>(null)

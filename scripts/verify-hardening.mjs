@@ -62,8 +62,23 @@ check('문항 변조 차단 (questions)',
 check('상품 변조 차단 (products)',
   denied(await req('PATCH', 'products?name=eq.__none__', { price: 0 })))
 
+console.log('\n1-B. 지운 테이블이 정말 사라졌고 아무도 참조하지 않는가')
+{
+  // 061·062 에서 지운 것들. 테이블만 지우고 DB 함수를 안 훑으면 조용히 깨집니다 —
+  // 실제로 body_bti_results 를 지웠을 때 prepare_account_deletion() 이 부러져
+  // 탈퇴가 503 이 됐습니다(064 에서 고침). 그 사고를 여기서 잡습니다.
+  const dropped = ['prompts', 'sere_contents', 'body_bti_results', 'missions', 'user_mission_progress']
+  for (const t of dropped) {
+    const r = await req('GET', `${t}?select=*&limit=1`)
+    check(`${t} 테이블이 없다`, r.status === 404, `status=${r.status}`)
+  }
+}
+
 console.log('\n2. 서버 전용 테이블이 가려졌는가')
-for (const t of ['admin_audit_logs', 'missions', 'user_mission_progress', 'body_bti_results']) {
+// missions · user_mission_progress · body_bti_results 는 061·062 에서 지웠습니다.
+// 사라진 테이블은 PostgREST 가 404(PGRST205)로 답합니다 — 가려진 것보다 더 확실한 비노출이라
+// 통과로 봅니다. 아래 3번에서 "정말 없는가" 를 따로 확인합니다.
+for (const t of ['admin_audit_logs']) {
   const r = await req('GET', `${t}?select=*&limit=1`)
   const hidden = denied(r) || (Array.isArray(r.body) && r.body.length === 0)
   check(`${t} 비노출`, hidden, `status=${r.status} ${JSON.stringify(r.body)?.slice(0, 70)}`)

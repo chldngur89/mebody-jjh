@@ -3,7 +3,7 @@ import { BRAND_PAGE_BG } from '../theme/brand';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, Lock, LogOut, Mail, Smartphone, UserRound } from 'lucide-react';
 import { requestPasswordReset, signOutAccount, upsertProfileFromUser } from '../api/account';
-import { signInWithApproval, signUpWithIdentifier } from '../api/signup';
+import { requestPhonePasswordReset, signInByPhone, signInWithApproval, signUpWithIdentifier } from '../api/signup';
 import { detectKind, formatPhone, resolveLoginEmail, type IdentifierKind } from '../lib/identifier';
 import { authErrorMessage } from '../lib/authErrorMessage';
 import { preferredScrollBehavior } from '../lib/viewport';
@@ -38,6 +38,8 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [displayName, setDisplayName] = useState('');
+  /** 휴대폰 가입에서만 쓰는 복구용 이메일. 비우면 지금까지와 똑같이 가입됩니다. */
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,15 +102,31 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
     try {
       if (mode === 'signup') {
         const trimmedDisplayName = displayName.trim() || undefined;
-        const result = await signUpWithIdentifier(email, identifierKind, password, trimmedDisplayName);
+        const result = await signUpWithIdentifier(
+          email, identifierKind, password, trimmedDisplayName,
+          identifierKind === 'phone' ? recoveryEmail : undefined,
+          // 체크박스 두 개가 약관과 처리방침을 함께 묶고 있습니다. 둘 다 눌러야 여기까지 옵니다.
+          { terms: agreeLegal, privacy: agreeLegal, marketing: false },
+        );
 
         // 확인 절차를 켜 두었으면 여기서 멈춥니다(서버 설정 mebody.auth.*).
+        //
+        // 메일을 열고 돌아온 사람이 가입 화면에 그대로 남아 있으면 "가입이 된 건가" 싶어
+        // 같은 정보로 또 가입을 누릅니다. 그래서 로그인 화면으로 옮겨 두고 아이디만 남깁니다.
+        // 비밀번호와 동의 체크는 비웁니다 — 로그인에는 동의가 필요 없습니다.
         if (result.verificationRequired) {
+          setMode('signin');
+          setPassword('');
+          setPasswordConfirm('');
+          setAgreeService(false);
+          setAgreeLegal(false);
           setMessage(result.verificationHint ?? '가입 확인을 마친 뒤 로그인해주세요.');
           return;
         }
 
-        const signInData = await signInWithApproval(email, identifierKind, password);
+        const signInData = identifierKind === 'phone'
+          ? await signInByPhone(email, password)
+          : await signInWithApproval(email, identifierKind, password);
         if (signInData.user) {
           await completeSignedIn(signInData.user, trimmedDisplayName);
           setMessage(result.alreadyRegistered
@@ -119,7 +137,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
 
         setMessage('회원가입이 완료되었습니다. 로그인해주세요.');
       } else {
-        const data = await signInWithApproval(email, identifierKind, password);
+        const data = identifierKind === 'phone'
+          ? await signInByPhone(email, password)
+          : await signInWithApproval(email, identifierKind, password);
         if (data.user) {
           await completeSignedIn(data.user);
         }
@@ -148,8 +168,19 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
 
   const handlePasswordReset = async () => {
     if (identifierKind === 'phone') {
-      // 별칭 이메일은 실제로 받을 수 있는 주소가 아니라 재설정 메일이 갈 곳이 없습니다.
-      setError('휴대폰으로 가입한 계정은 아직 비밀번호 재설정을 지원하지 않습니다.');
+      // 가입할 때 복구용 이메일을 적었다면 그 주소로 갑니다. 안 적었으면 보낼 곳이 없습니다.
+      // 어느 쪽이든 같은 안내를 보여줍니다. 응답이 갈리면 번호만으로 가입 여부를 알 수 있습니다.
+      setLoading(true);
+      setError(null);
+      setMessage(null);
+      try {
+        await requestPhonePasswordReset(email);
+        setMessage('가입할 때 복구용 이메일을 적으셨다면 그 주소로 재설정 메일을 보냈습니다.');
+      } catch (err) {
+        setError((err as Error)?.message ?? '재설정 요청에 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -623,6 +654,37 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                         비밀번호가 일치하지 않습니다.
                       </span>
                     )}
+                  </label>
+                )}
+
+                {mode === 'signup' && identifierKind === 'phone' && (
+                  <label style={{ display: 'block' }}>
+                    <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--mebody-t-2c5544, #2C5544)' }}>
+                      복구용 이메일(선택)
+                    </span>
+                    <div
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', padding: '0 12px', height: '46px',
+                        border: '1px solid rgba(209,213,219,1)', borderRadius: '12px', background: 'rgba(249,250,251,0.98)',
+                      }}
+                    >
+                      <Mail size={16} color="#6b7280" />
+                      <input
+                        type="email"
+                        inputMode="email"
+                        value={recoveryEmail}
+                        onChange={(e) => setRecoveryEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        style={{
+                          width: '100%', border: 'none', outline: 'none', background: 'transparent',
+                          fontSize: '16px', color: '#111827',
+                        }}
+                      />
+                    </div>
+                    <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all' }}>
+                      비밀번호를 잊었을 때 여기로 재설정 메일을 보냅니다. 비워두면 번호로만 로그인할 수 있고 재설정은 안 됩니다.
+                    </span>
                   </label>
                 )}
 

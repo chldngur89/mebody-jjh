@@ -1,8 +1,10 @@
 /**
- * 043_archive_v3_questions.sql 검증 — 트랜잭션 안에서 적용하고 ROLLBACK 합니다.
+ * 문항·응답이 32문항 하나로 정리돼 있는지 검사합니다.
  *
- * 이 마이그레이션은 **행을 지웁니다.** 그래서 확인할 게 하나뿐입니다:
- * 활성 32문항은 하나도 건드리지 않고, 안 쓰는 53행만 보관소로 옮겨졌는가.
+ * 예전에는 043_archive_v3_questions.sql 을 트랜잭션에서 적용해 보는 스위트였습니다.
+ * 043 이 하던 일(옛 문항을 보관소로 옮기기)은 049·050·051 로 대체됐습니다.
+ * 보관소 자체를 없앴고 옛 응답도 지웠으므로, 이제 '043 이 잘 옮겼는가' 는 물을 수 없습니다.
+ * 대신 **지금 남아 있어야 하는 모습**을 검사합니다. 무엇이 다시 들어오면 여기서 걸립니다.
  *
  * 사용: npm run verify:questions-cleanup
  */
@@ -22,79 +24,50 @@ const c = new pg.Client({ host: u.hostname, port: Number(u.port || 5432),
 
 const res = []
 const ok = (l, p, d = '') => { res.push({ l, p }); console.log(`  ${p ? 'PASS' : 'FAIL'}  ${l}${d ? ` — ${d}` : ''}`) }
-const T = async (fn) => { try { await c.query('SAVEPOINT s'); const r = await fn(); await c.query('RELEASE SAVEPOINT s'); return { ok: true, r } }
-  catch (e) { await c.query('ROLLBACK TO SAVEPOINT s'); return { ok: false, code: e.code, msg: e.message } } }
+const n = async (sql, args = []) => Number((await c.query(sql, args)).rows[0].n)
 
-await c.connect(); await c.query('BEGIN')
+await c.connect()
 try {
-  console.log('\n■ 적용 전')
-  const before = await c.query(`SELECT question_set s, count(*)::int n FROM public.questions GROUP BY 1 ORDER BY 1`)
-  console.table(before.rows)
-  const activeBefore = await c.query(
-    `SELECT question_code, question_text, option_1, option_2, option_3, sort_order
+  console.log('\n■ 문항은 32개뿐인가')
+  ok('questions 32행', (await n('SELECT count(*)::int n FROM public.questions')) === 32)
+  ok('전부 활성', (await n('SELECT count(*)::int n FROM public.questions WHERE is_active')) === 32)
+  ok('전부 mebody_v1_32',
+    (await n(`SELECT count(*)::int n FROM public.questions WHERE question_set <> 'mebody_v1_32'`)) === 0)
+  ok('중복된 문항 코드 없음',
+    (await n('SELECT count(*)::int n FROM (SELECT question_code FROM public.questions GROUP BY 1 HAVING count(*)>1) t')) === 0)
+
+  console.log('\n■ 앱이 읽는 조회 (fetchQuestions 와 같은 조건)')
+  const app = await c.query(
+    `SELECT question_code, question_text, option_1, option_2, option_3
        FROM public.questions WHERE is_active AND question_set='mebody_v1_32' ORDER BY sort_order`)
-  ok('활성 32문항으로 시작', activeBefore.rowCount === 32, `${activeBefore.rowCount}개`)
-  const responsesBefore = Number((await c.query('SELECT count(*)::int n FROM public.questionnaire_responses')).rows[0].n)
+  ok('32행을 돌려준다', app.rowCount === 32, `${app.rowCount}행`)
+  ok('첫 문항이 A1', app.rows[0]?.question_code === 'A1', String(app.rows[0]?.question_code))
+  ok('마지막 문항이 D7', app.rows[31]?.question_code === 'D7', String(app.rows[31]?.question_code))
+  ok('빈 질문·선택지가 없다',
+    app.rows.every((r) => r.question_text?.trim() && r.option_1?.trim() && r.option_2?.trim() && r.option_3?.trim()))
 
-  console.log('\n■ 마이그레이션 적용')
-  await c.query(readFileSync(new URL('../db/journey/043_archive_v3_questions.sql', import.meta.url).pathname, 'utf8'))
-  ok('043 적용', true)
+  console.log('\n■ 채점표')
+  ok('mebody_v1_32 96행 (32×3)',
+    (await n(`SELECT count(*)::int n FROM public.question_choice_scores WHERE question_set='mebody_v1_32'`)) === 96)
+  ok('다른 세트 점수는 없다',
+    (await n(`SELECT count(*)::int n FROM public.question_choice_scores WHERE question_set <> 'mebody_v1_32'`)) === 0)
+  ok('모든 문항에 점수가 있다',
+    (await n(`SELECT count(*)::int n FROM public.questions q
+       WHERE NOT EXISTS (SELECT 1 FROM public.question_choice_scores s WHERE s.question_code = q.question_code)`)) === 0)
 
-  console.log('\n■ 활성 문항은 손대지 않았는가 (가장 중요)')
-  const activeAfter = await c.query(
-    `SELECT question_code, question_text, option_1, option_2, option_3, sort_order
-       FROM public.questions WHERE is_active AND question_set='mebody_v1_32' ORDER BY sort_order`)
-  ok('활성 문항 수 그대로 32개', activeAfter.rowCount === 32, `${activeAfter.rowCount}개`)
-  ok('문항 내용이 한 글자도 바뀌지 않았다',
-    JSON.stringify(activeBefore.rows) === JSON.stringify(activeAfter.rows))
-  ok('questions 에는 32행만 남았다',
-    Number((await c.query('SELECT count(*)::int n FROM public.questions')).rows[0].n) === 32)
+  console.log('\n■ 옛 것이 남아 있지 않은가')
+  ok('보관 테이블 questions_archive 없음 (050)',
+    (await c.query(`SELECT to_regclass('public.questions_archive') IS NULL AS v`)).rows[0].v === true)
+  ok('옛 문항 세트 응답 0건 (051)',
+    (await n(`SELECT count(*)::int n FROM public.questionnaire_responses
+       WHERE question_version IS NULL OR question_version <> 'mebody_v1_32'`)) === 0)
+  const live = await n('SELECT count(*)::int n FROM public.questionnaire_responses')
+  ok('남은 응답은 전부 지금 문항 세트', live > 0, `${live}건`)
 
-  console.log('\n■ 보관')
-  const archived = await c.query(`SELECT count(*)::int n, count(DISTINCT question_set)::int sets,
-    min(question_set) s FROM public.questions_archive`)
-  ok('53행이 보관소로 옮겨졌다', archived.rows[0].n === 53, `${archived.rows[0].n}행`)
-  ok('보관된 것은 v3_full 세트뿐', archived.rows[0].sets === 1 && archived.rows[0].s === 'v3_full', archived.rows[0].s)
-  ok('보관 사유가 남는다',
-    (await c.query(`SELECT count(*)::int n FROM public.questions_archive WHERE archived_reason IS NOT NULL`)).rows[0].n === 53)
-  ok('활성 문항은 보관소에 들어가지 않았다',
-    Number((await c.query(`SELECT count(*)::int n FROM public.questions_archive WHERE question_set='mebody_v1_32'`)).rows[0].n) === 0)
-
-  console.log('\n■ 옛 응답은 그대로인가')
-  const responsesAfter = Number((await c.query('SELECT count(*)::int n FROM public.questionnaire_responses')).rows[0].n)
-  ok('응답 수가 줄지 않았다', responsesAfter === responsesBefore, `${responsesBefore} → ${responsesAfter}`)
-  ok('v3 로 저장된 응답도 그대로 남아 있다',
-    Number((await c.query(`SELECT count(*)::int n FROM public.questionnaire_responses
-      WHERE question_version='v3_49_precheck'`)).rows[0].n) === 120)
-  ok('보관소에서 옛 문항을 다시 찾을 수 있다',
-    Number((await c.query(`SELECT count(*)::int n FROM public.questions_archive WHERE question_code='P1'`)).rows[0].n) >= 0)
-
-  console.log('\n■ 앱이 읽는 조회가 그대로 동작하는가')
-  const appQuery = await c.query(
-    `SELECT id, question_code, question_text, option_1, option_2, option_3, media_url
-       FROM public.questions WHERE is_active AND question_set='mebody_v1_32' ORDER BY sort_order`)
-  ok('앱 조회가 32행을 돌려준다', appQuery.rowCount === 32)
-  ok('첫 문항이 A1', appQuery.rows[0].question_code === 'A1', appQuery.rows[0].question_code)
-  ok('마지막 문항이 D7', appQuery.rows[31].question_code === 'D7', appQuery.rows[31].question_code)
-
-  console.log('\n■ 채점표는 영향 없는가')
-  ok('채점표는 mebody_v1_32 96행 그대로',
-    Number((await c.query(`SELECT count(*)::int n FROM public.question_choice_scores WHERE question_set='mebody_v1_32'`)).rows[0].n) === 96)
-
-  console.log('\n■ 두 번 실행해도 안전한가')
-  const twice = await T(() => c.query(readFileSync(new URL('../db/journey/043_archive_v3_questions.sql', import.meta.url).pathname, 'utf8')))
-  ok('같은 파일을 다시 실행해도 통과', twice.ok, twice.ok ? '' : twice.msg)
-  ok('두 번 실행해도 보관소가 늘지 않는다',
-    Number((await c.query('SELECT count(*)::int n FROM public.questions_archive')).rows[0].n) === 53)
-  ok('두 번 실행해도 활성 문항 32개',
-    Number((await c.query(`SELECT count(*)::int n FROM public.questions WHERE is_active`)).rows[0].n) === 32)
-
-  console.log('\n■ 보관소 권한')
-  ok('앱 역할에 보관소 권한이 없다',
-    Number((await c.query(`SELECT count(*)::int n FROM information_schema.role_table_grants
-      WHERE table_schema='public' AND table_name='questions_archive' AND grantee IN ('anon','authenticated')`)).rows[0].n) === 0)
+  console.log('\n■ 문항 테이블의 역할 주석 (지우지 말라는 표시)')
+  const comment = (await c.query(`SELECT obj_description('public.questions'::regclass) AS d`)).rows[0].d
+  ok('questions 에 주석이 있다', Boolean(comment), comment ? comment.slice(0, 40) + '…' : '없음')
 } finally {
-  await c.query('ROLLBACK')
   await c.end()
 }
 

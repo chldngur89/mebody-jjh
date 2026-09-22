@@ -5,13 +5,15 @@
  * 미션 실행 타이머와 피드백은 Phase 4 에서 onOpenMission 으로 연결합니다.
  */
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { track } from '../../lib/analytics';
 import type { User } from '@supabase/supabase-js'
 import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, RotateCcw } from 'lucide-react'
 import { AXIS_GREEN_THEME } from '../../data/axisTheme'
 import { useMediaQuery } from '../../utils/useMediaQuery'
 import { ScrollIndicator } from '../ScrollIndicator'
 import type { UserMission } from '../../api/journey'
+import { fetchRewardRules } from '../../api/routineReward'
 import type { ImmediateActionContent } from '../../api/content'
 import {
   DURATION_OPTIONS,
@@ -116,6 +118,28 @@ function MissionCard({
           {content?.target_muscle && (
             <div style={{ marginTop: '5px', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>
               타겟 근육: {content.target_muscle}
+            </div>
+          )}
+          {/*
+            전문가가 배정한 미션이면 그 사실과 메모를 보여줍니다.
+            출처를 감추면 모르는 미션이 갑자기 생긴 것처럼 보이고, 그건 앱을 의심할 이유가 됩니다.
+          */}
+          {mission.assigned_by && (
+            <div
+              style={{
+                marginTop: '8px',
+                borderRadius: '12px',
+                background: 'var(--mebody-mint, #E8F3EC)',
+                padding: '8px 10px',
+                fontSize: '0.78125rem',
+                lineHeight: 1.6,
+                fontWeight: 700,
+                color: 'var(--mebody-t-014725, #014725)',
+                wordBreak: 'keep-all',
+              }}
+            >
+              담당 전문가가 추가한 동작입니다
+              {mission.prescription?.note ? ` — “${mission.prescription.note}”` : ''}
             </div>
           )}
         </div>
@@ -232,7 +256,30 @@ export function JourneyTodayScreen({
   const isDesktopMockup = useMediaQuery('(min-width: 768px)')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [availableMinutes, setAvailableMinutes] = useState<number>(DURATION_OPTIONS[0].minutes)
+  /** 14일 완주 보너스 금액. 규칙에서 읽습니다 — 화면에 숫자를 박으면 규칙이 바뀔 때 어긋납니다. */
+  const [journeyBonus, setJourneyBonus] = useState<number | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void fetchRewardRules().then((rules) => {
+      if (cancelled) return
+      const rule = rules.journey_complete
+      setJourneyBonus(rule?.fixedAmount ?? rule?.maxAmount ?? null)
+    })
+    return () => { cancelled = true }
+  }, [])
   const state = useJourneyToday(user, availableMinutes)
+
+  /**
+   * 오늘 화면을 열었다. "결과까지 왔지만 루틴은 안 본다" 를 가르는 칸입니다.
+   * 한 번만 남깁니다 — 화면이 다시 그려질 때마다 쌓으면 비율이 부풀어 오릅니다.
+   */
+  const seenDayRef = useRef<number | null>(null)
+  useEffect(() => {
+    const dayNo = state.dayNo
+    if (!dayNo || seenDayRef.current === dayNo) return
+    seenDayRef.current = dayNo
+    track('journey_viewed', { day_no: dayNo })
+  }, [state.dayNo])
 
   const totalDays = state.template?.duration_days ?? 14
   const completedCount = state.missions.filter((mission) => mission.status === 'completed').length
@@ -403,7 +450,12 @@ export function JourneyTodayScreen({
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '4px' }}>내 적립금</div>
                   <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all' }}>
-                    미션마다 적립 · 14일 완주까지 최대 50원 보너스
+                    {/*
+                      금액을 문구에 박아 넣지 않습니다. 057 에서 금액을 내렸을 때
+                      "최대 50원" 이라는 옛 문구만 남아 줄 수 없는 금액을 약속하고 있었습니다.
+                      숫자는 reward_rules 한 곳에서만 나옵니다.
+                    */}
+                    미션마다 적립{journeyBonus == null ? '' : ` · 14일 완주 보너스 ${journeyBonus}원`}
                   </div>
                 </div>
                 <div style={{ flexShrink: 0, fontSize: '1.25rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>

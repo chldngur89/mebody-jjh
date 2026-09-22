@@ -3221,6 +3221,20 @@ body, button, input, textarea, select {
   .from-emerald-500 { --tw-gradient-from: var(--mebody-green); }
   .hover\:bg-gray-200:hover { background-color: rgba(233,239,228,0.10); }
   .hover\:border-gray-400:hover { border-color: rgba(233,239,228,0.34); }
+
+  /* 문항 선택지에 마우스를 올렸을 때 (QuestionCard).
+     hover:bg-emerald-50 이 이 목록에 없어서 원래의 밝은 민트(#ecfdf5)가 그대로 깔렸고,
+     글씨는 밝은 잉크라 배경과 겹쳐 읽을 수 없었습니다.
+     초록으로 채우고 글씨를 짙게 뒤집어, 지금 가리키는 항목이 분명히 보이게 합니다. */
+  .hover\:bg-emerald-50:hover {
+    background-color: var(--mebody-green);
+    color: var(--mebody-on-green);
+  }
+  .hover\:border-emerald-500:hover { border-color: var(--mebody-green); }
+  /* 오른쪽 동그라미와 체크도 같이 뒤집습니다 — 밝은 채움 위에 밝은 동그라미면 안 보입니다 */
+  .group-hover\:bg-emerald-500:is(:where(.group):hover *) { background-color: var(--mebody-on-green); }
+  .group-hover\:border-emerald-500:is(:where(.group):hover *) { border-color: var(--mebody-on-green); }
+  .group-hover\:text-white:is(:where(.group):hover *) { color: var(--mebody-green); }
   .shadow-emerald-500\/20 { --tw-shadow-color: rgba(0,0,0,0.34); }
   .text-emerald-500 { color: var(--mebody-green); }
   .text-emerald-600 { color: var(--mebody-green); }

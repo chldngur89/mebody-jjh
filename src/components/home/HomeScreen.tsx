@@ -1,7 +1,7 @@
 /**
  * 홈 탭 — 오늘 할 일 1개를 최상단에 고정하고, 결과는 한 줄 액션 + 접기로 정리합니다.
  */
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChevronDown, ChevronRight, ChevronUp, ExternalLink } from 'lucide-react';
 import { AdSlot } from '../AdSlot';
 import { AxisTrack, Card, CTA, Chip, DirectionCard, PageTitle, SectionHeading } from '../ui';
@@ -9,6 +9,7 @@ import { BRAND, SURFACE } from '../../theme/brand';
 import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl, preloadCharacterImage } from '../../utils/characterImages';
 import { ResultShareCard } from './ResultShareCard';
+import { track } from '../../lib/analytics';
 import { useResultData } from './resultData';
 import type { CodePlanJourneyProgress } from '../codePlanShared';
 
@@ -89,6 +90,22 @@ export function HomeScreen({
   // 홈은 기본으로 전부 펼쳐 둡니다. 접기는 원할 때만 쓰는 선택지입니다.
   const [detailsOpen, setDetailsOpen] = useState(true);
   const data = useResultData(questionnaireId, isLoggedIn, onResultLoad, initialBodyCode);
+
+  /**
+   * 결과가 실제로 그려진 순간에만 남깁니다. 코드가 없으면 아직 화면이 아닙니다.
+   *
+   * **이 두 훅은 반드시 아래의 조기 return 보다 위에 있어야 합니다.** 예전에는
+   * `if (data.isLoading) return ...` 뒤에 있었습니다. 그러면 불러오는 동안의 렌더에서는
+   * 훅이 19개, 불러온 뒤의 렌더에서는 21개가 되어 React 가 "Rendered more hooks than
+   * during the previous render" 로 던지고 **결과 화면이 통째로 하얗게 죽었습니다.**
+   * 훅은 렌더마다 같은 순서로 같은 개수가 돌아야 합니다.
+   */
+  const seenCodeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!data.bodyCode || seenCodeRef.current === data.bodyCode) return;
+    seenCodeRef.current = data.bodyCode;
+    track('result_viewed', { body_code: data.bodyCode });
+  }, [data.bodyCode]);
 
   if (initialBodyCode) preloadCharacterImage(initialBodyCode);
 
@@ -271,18 +288,41 @@ export function HomeScreen({
             <div style={{ marginTop: '16px', textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
                 <strong style={{ fontSize: '0.9375rem', fontWeight: 800, color: BRAND.text }}>4축 상세 결과</strong>
-                <span style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 700, flexShrink: 0 }}>중앙에 가까울수록 균형</span>
+                <span style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 700, flexShrink: 0 }}>내 답변 기준</span>
               </div>
               <div style={{ display: 'grid', gap: '14px' }}>
-                {data.axisRows.map((row) => (
-                  <AxisTrack
-                    key={row.key}
-                    label={row.title.replace(/\s*(위치|높이|회전|유연성)$/, '')}
-                    leftLabel={row.labelLeft}
-                    rightLabel={row.labelRight}
-                    value={knobPercent(row.percentLeft)}
-                  />
-                ))}
+                {data.axisRows.map((row) => {
+                  const reasons = data.axisReasons[row.key] ?? [];
+                  return (
+                    <div key={row.key}>
+                      <AxisTrack
+                        label={row.title.replace(/\s*(위치|높이|회전|유연성)$/, '')}
+                        leftLabel={row.labelLeft}
+                        rightLabel={row.labelRight}
+                        value={knobPercent(row.percentLeft)}
+                      />
+                      {/* 왜 이쪽으로 기울었는지 — 내 답변에서 가장 크게 가른 것 */}
+                      {reasons.length > 0 && (
+                        <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: '4px' }}>
+                          {reasons.map((reason) => (
+                            <li
+                              key={reason.questionCode}
+                              style={{
+                                fontSize: '0.75rem', lineHeight: 1.5, color: BRAND.muted,
+                                wordBreak: 'keep-all', display: 'flex', gap: '6px',
+                              }}
+                            >
+                              <span style={{ flexShrink: 0, fontWeight: 800, color: BRAND.green }}>
+                                {reason.side === 'left' ? row.labelLeft : row.labelRight}
+                              </span>
+                              <span>{reason.summary}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

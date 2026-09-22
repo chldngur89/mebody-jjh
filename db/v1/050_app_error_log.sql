@@ -77,3 +77,17 @@ drop trigger if exists app_error_log_rate_limit_trg on public.app_error_log;
 create trigger app_error_log_rate_limit_trg
   before insert on public.app_error_log
   for each row execute function public.app_error_log_rate_limit();
+
+-- ---------------------------------------------------------------------------
+-- 권한 — 기본값(GRANT ALL)을 그대로 두면 안 됩니다
+--
+-- Supabase 는 public 스키마의 새 테이블에 anon·authenticated 로 GRANT ALL 을 줍니다.
+-- 거기에는 TRUNCATE 가 들어 있고 **TRUNCATE 는 RLS 를 우회**합니다. 정책과 무관하게
+-- 방문자가 기록 전체를 날릴 수 있어, 회수하고 필요한 것만 돌려줍니다.
+-- (운영 DB 에는 048_app_error_log_grants.sql 로 따로 적용했습니다)
+-- ---------------------------------------------------------------------------
+REVOKE ALL ON public.app_error_log FROM anon, authenticated;
+
+GRANT INSERT         ON public.app_error_log TO anon, authenticated;
+GRANT SELECT         ON public.app_error_log TO authenticated;
+GRANT ALL PRIVILEGES ON public.app_error_log TO service_role;

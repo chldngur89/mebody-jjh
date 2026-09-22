@@ -1,4 +1,5 @@
 import { readTimerProgress, saveTimerProgress } from '../../lib/timerProgress'
+import { track } from '../../lib/analytics'
 /**
  * Journey Mission — 미션 실행 화면
  *
@@ -120,6 +121,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
     if (!mission) return
 
     await completeMission(mission.id)
+    track('mission_completed')
     // 금액은 서버가 정한다. 실패해도 미션 완료는 유지된다.
     const [claim, rules] = await Promise.all([claimMissionReward(mission.id), fetchRewardRules()])
     setReward(claim)
@@ -156,6 +158,9 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
   const handleStart = async () => {
     if (!hasStarted && mission) {
       setHasStarted(true)
+      // 시작과 완료를 따로 셉니다. 둘의 차이가 "시작은 했는데 끝내지 못한" 미션이고,
+      // 그 비율이 높으면 미션이 길거나 어렵다는 뜻입니다.
+      track('mission_started', { day_no: mission.day_no })
       await startMission(mission.id)
     }
     setIsRunning(true)
@@ -172,6 +177,8 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
     setFeedbackError(null)
     try {
       await saveMissionFeedback({ missionId: mission.id, userId: user.id, feeling, difficulty })
+      // 저장이 끝난 뒤에 남깁니다. 실패한 시도를 세면 피드백률이 실제보다 높아집니다.
+      track('feedback_submitted', { day_no: mission.day_no, feeling })
       if (aliveRef.current) onDone?.()
     } catch {
       setFeedbackError('저장하지 못했습니다. 선택한 답변은 유지됩니다. 다시 시도해 주세요.')

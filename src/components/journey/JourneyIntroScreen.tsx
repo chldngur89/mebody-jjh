@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { track } from '../../lib/analytics'
 import type { User } from '@supabase/supabase-js'
 import { ArrowLeft, CalendarDays, ChevronRight, Sparkles } from 'lucide-react'
 import { useCodePlanData } from '../codePlanShared'
@@ -138,6 +139,7 @@ export function JourneyIntroScreen({
         bodyCode: data.bodyCode,
         axisPriority,
       })
+      if (journey) track('journey_started')
       if (journey === NEEDS_SUBSCRIPTION) {
         onRequireSubscription?.()
         return

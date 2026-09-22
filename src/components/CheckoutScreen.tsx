@@ -9,6 +9,7 @@
  * 성공했다면 그게 더 큰 문제였습니다 — 누구나 공짜로 멤버십을 켤 수 있으니까요.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { track } from '../lib/analytics';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, CheckCircle2, CreditCard, Info, ShieldCheck } from 'lucide-react';
 import { fetchMembershipPlans, type MembershipPlan } from '../api/account';
@@ -35,8 +36,18 @@ function formatKrw(value: number): string {
 
 /**
  * 스토어 결제에서 받아올 구매 토큰 자리.
- * 실제 연동 전까지는 이 기기·이 시점의 임시 값을 씁니다. 서버가 이 값을 거래 ID 로 삼아
- * 같은 결제가 두 번 반영되지 않게 하므로, 재시도해도 안전합니다.
+ *
+ * ⚠️ 이 값은 **결제 증명이 아닙니다.** 앱이 스스로 만들어 낸 문자열입니다.
+ *    원래는 사용자가 Google Play 에서 결제를 마쳤을 때 Play 가 발급하는 purchaseToken 을 받아,
+ *    서버가 그 토큰을 Google Play Developer API 에 물어봐서 실제로 돈이 들어왔는지 확인해야 합니다.
+ *    지금은 Play Billing 연동이 없어서 앱이 만든 문자열을 서버가 그대로 믿습니다.
+ *    즉 이 경로를 열어 두면 **돈을 내지 않고도 유료 기능을 켤 수 있습니다.**
+ *
+ *    사업자 등록 후 Play Billing 을 붙일 때 이 함수를 통째로 걷어내고, 결제 성공 콜백이 준
+ *    purchaseToken 을 그대로 넘기도록 바꿉니다. 그때까지 실사용자에게 결제 화면을 열지 않습니다.
+ *    (docs/MEBODY_RELEASE_READINESS.md 의 RR-09)
+ *
+ * 서버가 이 값을 거래 ID 로 삼아 같은 결제가 두 번 반영되지 않게 하므로, 재시도 자체는 안전합니다.
  */
 function purchaseTokenFor(userId: string, planCode: string): string {
   return `${userId}:${planCode}:${new Date().toISOString().slice(0, 10)}`;
@@ -76,8 +87,11 @@ export function CheckoutScreen({ user, planCode, onBack, onComplete, onRequireAu
 
     setSubmitting(true);
     setError(null);
+    // 누른 것과 끝난 것을 나눠 셉니다. 둘의 차이가 결제 실패율입니다.
+    track('checkout_clicked', { plan_code: plan.code });
     try {
       const state = await verifySubscription(plan.code, purchaseTokenFor(user.id, plan.code));
+      track('subscription_started', { plan_code: plan.code });
       setDone({ until: state?.currentPeriodEnd ?? null });
       onComplete?.();
     } catch (err) {

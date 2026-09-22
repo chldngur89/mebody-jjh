@@ -119,11 +119,12 @@ try{
     [uid,rid,JSON.stringify(prio)]))
   ok('저니 생성', jStart.ok, jStart.ok?'':jStart.code)
   const jid=jStart.ok?jStart.r.rows[0].id:null
-  // 034 적용 후에는 자격 RLS(can_start_journey)가 유니크 인덱스보다 먼저 막는다.
-  // 무구독 사용자는 이미 저니 1건이 있으므로 42501 이 정상이다.
+  // 중복 저니는 두 겹으로 막힙니다. 자격 RLS(can_start_journey, 42501)와
+  // 활성 저니 유니크 인덱스(23505)입니다. 어느 쪽이 먼저 걸리는지는 그 시점 데이터에
+  // 따라 달라지므로, 막혔다는 사실만 봅니다. 코드를 하나로 못박으면 헛되이 깨집니다.
   const dup=await T(()=>c.query(`INSERT INTO public.user_journeys (user_id,body_code,axis_priority)
     VALUES ($1,'FRRS','[]'::jsonb)`,[uid]))
-  ok('무구독 중복 저니 차단 (자격 RLS)', !dup.ok&&dup.code==='42501', dup.ok?'중복 생성됨':dup.code)
+  ok('무구독 중복 저니 차단', !dup.ok&&['42501','23505'].includes(dup.code), dup.ok?'중복 생성됨':dup.code)
 
   // 구독이 있어 RLS 를 통과해도 "활성 저니 1개" 유니크 인덱스는 살아 있어야 한다.
   await svc()
@@ -162,7 +163,8 @@ try{
   await T(()=>c.query(`UPDATE public.user_missions SET status='completed',completed_at=now() WHERE id=$1`,[mid]))
   const claim=await T(()=>c.query(`SELECT * FROM public.claim_mission_reward($1)`,[mid]))
   const amt=claim.ok?claim.r.rows[0].amount:0
-  ok('미션 완료 적립 (1~7원)', claim.ok&&amt>=1&&amt<=7, claim.ok?`+${amt}원 잔액 ${claim.r.rows[0].balance}`:claim.code)
+  // 057 부터 0원(꽝)이 정상입니다. 100번 중 75번은 적립이 없습니다.
+  ok('미션 완료 적립 (0~2원)', claim.ok&&amt>=0&&amt<=2, claim.ok?`+${amt}원 잔액 ${claim.r.rows[0].balance}`:claim.code)
   const again=await T(()=>c.query(`SELECT * FROM public.claim_mission_reward($1)`,[mid]))
   ok('중복 적립 차단', again.ok&&again.r.rows[0].already_claimed===true&&again.r.rows[0].amount===amt,
      again.ok?`재요청 ${again.r.rows[0].amount}원 (already=${again.r.rows[0].already_claimed})`:again.code)
@@ -194,7 +196,10 @@ try{
   ok('완주 전에는 보너스 불가', !earlyBonus.ok, earlyBonus.ok?'지급됨':earlyBonus.code)
   await T(()=>c.query(`UPDATE public.user_journeys SET status='completed',completed_at=now() WHERE id=$1`,[jid]))
   const bonus=await T(()=>c.query(`SELECT * FROM public.claim_journey_reward($1)`,[jid]))
-  ok('14일 완주 50원', bonus.ok&&bonus.r.rows[0].amount===50, bonus.ok?`+50원 잔액 ${bonus.r.rows[0].balance}`:bonus.code)
+  // 금액을 문구에 박아 넣지 않습니다. 예전에는 실패해도 "+50원" 이라고 찍혀서
+  // 실제로 얼마가 나왔는지 알 수 없었습니다.
+  const jAmt = bonus.ok ? bonus.r.rows[0].amount : null
+  ok('14일 완주 적립 (규칙값)', bonus.ok&&jAmt===3, bonus.ok?`+${jAmt}원 잔액 ${bonus.r.rows[0].balance}`:bonus.code)
 
   const nextRec=recommendNextJourney(payload)
   ok('다음 저니 추천 생성', Boolean(nextRec.title), `${nextRec.kind} — ${nextRec.title}`)
@@ -202,8 +207,10 @@ try{
   // ══ 회원: 주문 · 차감 ══
   console.log('\n■ 회원 — 주문 · 적립금 차감')
   await svc()
+  // 057 의 월 상한은 무료 적립(earn_subscription 포함)을 49원으로 묶습니다.
+  // 차감 테스트에는 큰 잔액이 필요하므로, 상한 밖인 구매 적립으로 충전합니다.
   await c.query(`INSERT INTO public.user_rewards (user_id,entry_type,amount,issue_type,source_type,source_id,memo)
-    VALUES ($1,'earn_subscription',20000,'paid','subscription',gen_random_uuid(),'E2E 테스트 충전')`,[uid])
+    VALUES ($1,'earn_purchase',20000,'paid','order',gen_random_uuid(),'E2E 테스트 충전')`,[uid])
   const prod=(await c.query(`SELECT id,name,price FROM public.products WHERE status='ACTIVE' ORDER BY price LIMIT 1`)).rows[0]
   await auth(uid)
   const items=JSON.stringify([{product_id:prod.id,quantity:1}])

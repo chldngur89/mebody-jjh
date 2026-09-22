@@ -30,6 +30,16 @@ await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
   await c.query(readFileSync(new URL('../db/journey/036_routine_bonus_reward.sql', import.meta.url).pathname, 'utf8'))
+  // 이 스위트는 옛 마이그레이션을 트랜잭션 안에서 재적용해 검증합니다. 그런데 그 파일은
+  // user_rewards_sign_check 를 "적립은 amount > 0" 으로 되돌리고 적립 규칙·고지도 옛 값으로
+  // 덮습니다. 우리가 보려는 것은 **지금 운영 상태**이므로 그 뒤 파일까지 이어 붙입니다.
+  //
+  // ★ 순서가 중요합니다. 번호순으로 붙여야 나중 것이 이깁니다.
+  //   057 이 고지를 새로 쓰고, 063 이 거기 빠진 "선택 · 보지 않아도" 를 되살립니다.
+  //   거꾸로 붙이면 057 이 063 을 덮어 고지 검사가 실패합니다(실제로 그랬습니다).
+  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure', '067_ssv_bonus_payout']) {
+    await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
+  }
   ok('036 적용', true)
 
   const uid = (await c.query('SELECT id FROM auth.users WHERE email=$1', [EMAIL])).rows[0].id
@@ -46,13 +56,18 @@ try {
 
   console.log('\n■ 기본 → 보너스 순서')
   const base = (await c.query('SELECT * FROM public.claim_daily_routine_reward()')).rows[0]
-  ok('기본 주사위 지급', base.amount >= 1 && base.amount <= 6, `주사위 ${base.dice} → ${base.amount}원`)
+  // 057 부터 눈과 금액이 분리됐습니다. 0원(꽝)이 정상이고, 월 상한에 닿으면 6눈도 0원입니다.
+  const basePayout = (await c.query(`SELECT public.reward_payout_for('daily_routine_dice',$1) v`,[base.dice])).rows[0].v
+  ok('기본 주사위 지급', base.amount >= 0 && base.amount <= basePayout,
+     `주사위 ${base.dice} → ${base.amount}원 (표 ${basePayout}원)`)
   const s1 = (await c.query('SELECT * FROM public.today_routine_bonus()')).rows[0]
   ok('이제 eligible=true', s1.eligible === true && s1.reason === 'ready', s1.reason)
 
   const b1 = (await c.query('SELECT * FROM public.claim_routine_bonus_reward()')).rows[0]
   ok('보너스 주사위 1~6', b1.dice >= 1 && b1.dice <= 6, `주사위 ${b1.dice} → ${b1.amount}원`)
-  ok('보너스는 배수 없이 눈 그대로', b1.amount === b1.dice, `${b1.dice} = ${b1.amount}`)
+  const bonusPayout = (await c.query(`SELECT public.reward_payout_for('routine_bonus_dice',$1) v`,[b1.dice])).rows[0].v
+  ok('보너스는 배수 없이 표 그대로', b1.amount >= 0 && b1.amount <= bonusPayout,
+     `${b1.dice}눈 → 표 ${bonusPayout}원 → ${b1.amount}원`)
   ok('잔액 = 기본 + 보너스', Number(b1.balance) === base.amount + b1.amount,
      `${base.amount} + ${b1.amount} = ${b1.balance}`)
   ok('하루 최대 12원 이내', Number(b1.balance) <= 12, `${b1.balance}원`)
@@ -98,7 +113,10 @@ try {
 
   console.log('\n■ 고지 문구')
   const rule = (await c.query(`SELECT display_label, disclosure, max_amount FROM public.reward_rules WHERE code='routine_bonus_dice'`)).rows[0]
-  ok('표시 최대 6원이 실제 도달 가능', rule.max_amount === 6, `${rule.max_amount}원`)
+  // 받을 수 없는 숫자를 표시하면 그게 곧 과장입니다. payout 표의 실제 최대와 같아야 합니다.
+  const realMax = (await c.query(`SELECT max((value)::int) v FROM jsonb_each_text(
+    (SELECT payout FROM public.reward_rules WHERE code='routine_bonus_dice'))`)).rows[0].v
+  ok('표시 최대치가 실제 도달 가능', rule.max_amount === realMax, `표시 ${rule.max_amount}원 · 실제 ${realMax}원`)
   ok('선택이라는 점이 고지에 있음', /선택/.test(rule.disclosure))
   ok('안 봐도 기본 적립은 받는다는 점이 고지에 있음', /보지 않아도/.test(rule.disclosure))
 } finally {

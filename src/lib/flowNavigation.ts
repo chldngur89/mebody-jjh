@@ -1,4 +1,4 @@
-export const SCREENS = ['landing', 'consent', 'intro', 'questionnaire', 'analyzing', 'result', 'auth', 'membership', 'checkout', 'cart', 'product', 'journeyIntro', 'journeyToday', 'journeyMission', 'journeyReport', 'journeyNext'] as const;
+export const SCREENS = ['landing', 'consent', 'intro', 'questionnaire', 'analyzing', 'result', 'auth', 'membership', 'checkout', 'cart', 'product', 'journeyIntro', 'journeyToday', 'journeyMission', 'journeyReport', 'journeyNext', 'professionalConsent'] as const;
 export type Screen = typeof SCREENS[number];
 export type FlowTab = 'home' | 'mission' | 'routine' | 'market' | 'status';
 export interface FlowRoute {

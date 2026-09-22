@@ -8,6 +8,7 @@
  * 시안은 EXP 였지만 우리는 적립금입니다(사용자 확정).
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchRewardRules } from '../../api/routineReward';
 import { Gift } from 'lucide-react';
 import {
   claimMonthlyChallenge,
@@ -58,6 +59,20 @@ export interface MissionScreenProps {
 export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = false, onRequireAuth }: MissionScreenProps) {
   const data = useCodePlanData(questionnaireId);
   const [history, setHistory] = useState<RoutineDay[]>([]);
+  /** 월간 챌린지 보너스 금액. 규칙에서 읽습니다 — 화면에 숫자를 박으면 어긋납니다. */
+  const [monthlyBonus, setMonthlyBonus] = useState<number | null>(null);
+  const [weeklyBonus, setWeeklyBonus] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void fetchRewardRules().then((rules) => {
+      if (cancelled) return;
+      const monthly = rules.monthly_challenge;
+      setMonthlyBonus(monthly?.fixedAmount ?? monthly?.maxAmount ?? null);
+      const weekly = rules.weekly_challenge;
+      setWeeklyBonus(weekly?.fixedAmount ?? weekly?.maxAmount ?? null);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [status, setStatus] = useState<ChallengeStatus | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
@@ -142,7 +157,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
         <ProgressTrack
           percent={((status?.monthDone ?? 0) / Math.max(1, status?.monthRequired ?? 20)) * 100}
           label="월간 완주"
-          value={status?.monthClaimed ? '보너스 받음' : `${status?.monthRequired ?? 20}일 달성 시 50원`}
+          value={status?.monthClaimed ? '보너스 받음' : `${status?.monthRequired ?? 20}일 달성${monthlyBonus == null ? '' : ` · ${monthlyBonus}원`}`}
         />
         {status && !status.monthClaimed && status.monthDone >= status.monthRequired && (
           <CTA onClick={() => void claim('monthly')} disabled={working}>
@@ -204,7 +219,9 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
           }}
         >
           <span>7일 모두 완료하면</span>
-          <b style={{ color: BRAND.green }}>주간 보너스 20원</b>
+          <b style={{ color: BRAND.green }}>
+            주간 보너스{weeklyBonus == null ? '' : ` ${weeklyBonus}원`}
+          </b>
         </div>
         {status && !status.weekClaimed && status.weekDone >= status.weekRequired && (
           <CTA onClick={() => void claim('weekly')} disabled={working}>

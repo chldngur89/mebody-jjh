@@ -52,6 +52,11 @@ await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
   await c.query(readFileSync(new URL('../db/journey/042_fulfillment_and_ssv.sql', import.meta.url).pathname, 'utf8'))
+  // 042 이후 적립금 구조가 바뀌었습니다. 057 의 상한 트리거가 memo 를 건드리고
+  // 065 가 그 방식을 고쳤으므로, 번호순으로 이어 붙여 운영과 같은 상태로 맞춥니다.
+  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure', '067_ssv_bonus_payout']) {
+    await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
+  }
   ok('042 적용', true)
 
   await svc()
@@ -104,8 +109,11 @@ try {
 
   console.log('\n■ 결제 완료 주문 취소 — 적립금 정산')
   // 적립금을 만들어 두고, 그걸 일부 사용한 주문을 만든다
+  // 057 의 월 상한(49원)은 무료 적립을 묶습니다. earn_mission 으로 5000원을 넣으면
+  // 트리거가 49원으로 깎아서, 1000원을 쓰는 이 검증이 성립하지 않습니다.
+  // 구매 적립은 돈을 쓴 것에 대한 환원이라 상한 밖입니다 — 충전은 그 경로로 합니다.
   await c.query(`INSERT INTO public.user_rewards (user_id, entry_type, amount, issue_type, source_type, source_id, memo)
-    VALUES ($1,'earn_mission',5000,'free','mission',gen_random_uuid(),'검증용 잔액')`, [uid])
+    VALUES ($1,'earn_purchase',5000,'paid','order',gen_random_uuid(),'검증용 잔액')`, [uid])
   const before = Number((await c.query(`SELECT public.reward_balance($1) b`, [uid])).rows[0].b)
 
   const o2 = await paidOrder(uid, product.id, 1000)
@@ -167,13 +175,21 @@ try {
   // 기본 적립을 만든다
   await auth(uid)
   const base = await c.query(`SELECT * FROM public.claim_daily_routine_reward()`)
-  ok('기본 적립 지급', Number(base.rows[0].amount) > 0, `${base.rows[0].amount}원`)
+  // 057 부터 0원(꽝)이 정상입니다. 5눈 미만은 적립이 없습니다.
+  // 여기서 보려는 것은 "기본 적립 행이 생겼는가" 이고, 그게 있어야 보너스를 받을 수 있습니다.
+  ok('기본 적립 행이 생긴다', base.rows[0].already_claimed === false,
+     `주사위 ${base.rows[0].dice} → ${base.rows[0].amount}원`)
 
   await svc()
   const bonus = await c.query(`SELECT * FROM public.grant_routine_bonus_admin($1)`, [uid])
-  ok('서버가 보너스를 지급', bonus.rows[0].already_claimed === false && Number(bonus.rows[0].amount) >= 1,
+  // 금액은 눈→금액 표가 정합니다(067). 6눈이 아니면 0원이 정상입니다.
+  ok('서버가 보너스를 지급', bonus.rows[0].already_claimed === false && Number(bonus.rows[0].amount) >= 0,
     `주사위 ${bonus.rows[0].dice} · ${bonus.rows[0].amount}원`)
-  ok('보너스는 1~6원', Number(bonus.rows[0].amount) >= 1 && Number(bonus.rows[0].amount) <= 6)
+  // 057·067 부터 눈과 금액이 분리됐습니다. 6눈일 때만 1원이고 나머지는 0원입니다.
+  const bonusPayout = Number((await c.query(
+    `SELECT public.reward_payout_for('routine_bonus_dice',$1) v`, [bonus.rows[0].dice])).rows[0].v)
+  ok('보너스가 눈→금액 표대로', Number(bonus.rows[0].amount) === bonusPayout,
+     `${bonus.rows[0].dice}눈 → 표 ${bonusPayout}원 → ${bonus.rows[0].amount}원`)
 
   const bonusAgain = await c.query(`SELECT * FROM public.grant_routine_bonus_admin($1)`, [uid])
   ok('서버가 두 번 불러도 한 번만 지급(멱등)', bonusAgain.rows[0].already_claimed === true)

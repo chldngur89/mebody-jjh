@@ -56,8 +56,30 @@ ok('몸BTI 코드 형식만 허용', /\^\[FC\]\[RL\]\[RL\]\[SF\]\$/.test(shareSr
 
 const analyticsSrc = readFileSync(new URL('../src/lib/analytics.ts', import.meta.url).pathname, 'utf8')
 const props = [...analyticsSrc.matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1])
-ok('이벤트 payload 에 개인 식별 값이 없다',
-  props.every((p) => ['body_code', 'share_channel', 'ref', 'reason'].includes(p)), props.join(', '))
+/**
+ * 이벤트에 실어도 되는 값의 목록. **여기에 없는 이름이 생기면 실패합니다.**
+ *
+ * 054 의 전제는 "analytics_events 로는 사람을 되짚을 수 없다" 입니다. 그래서 값을 더할 때마다
+ * 이 목록을 손으로 늘리게 해 두었습니다 — 자동으로 통과시키면 언젠가 이메일이나 id 가 섞입니다.
+ *
+ * 지금 허용하는 것과 그 근거:
+ *   body_code      공유 링크에 이미 들어가는 공개 값. 16가지뿐이라 사람을 좁히지 못한다
+ *   share_channel  kakao·native·copy·image 중 하나
+ *   ref            유입 표시(share 등)
+ *   reason         실패 사유 분류. 원문 오류가 아니라 짧은 라벨
+ *   day_no         14일 루틴의 며칠차. 1~14 뿐이고 어느 사용자인지와 무관하다
+ *   plan_code      멤버십 플랜 코드. 상품 식별자이지 사람 식별자가 아니다
+ *   feeling        BETTER·SAME·UNCOMFORTABLE 중 하나. 건강 관련이지만 세 값뿐이고
+ *                  누구의 것인지 이어 붙일 방법이 없다(이 표에는 user_id 가 없다)
+ */
+const ALLOWED_PROPS = ['body_code', 'share_channel', 'ref', 'reason', 'day_no', 'plan_code', 'feeling']
+const extraProps = props.filter((p) => !ALLOWED_PROPS.includes(p))
+ok('이벤트 payload 에 개인 식별 값이 없다', extraProps.length === 0,
+  extraProps.length ? `허용 목록에 없는 값: ${extraProps.join(', ')}` : props.join(', '))
+
+// 이름만 보고 위험한 것은 따로 막습니다. 목록을 늘리다 실수로 넣는 경우가 있습니다.
+const risky = props.filter((p) => /email|phone|name|user|auth|token|address|birth|id$/i.test(p))
+ok('사람을 가리키는 이름이 없다', risky.length === 0, risky.join(', ') || '없음')
 
 await c.connect(); await c.query('BEGIN')
 try {

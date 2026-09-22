@@ -78,6 +78,14 @@ export interface UserMission {
   status: UserMissionStatus
   started_at: string | null
   completed_at: string | null
+  /**
+   * 전문가가 배정한 미션이면 그 전문가 id. 자동 배정이면 null.
+   * 화면은 "누가 준 미션인지" 를 반드시 보여줘야 합니다 — 안 그러면 모르는 미션이
+   * 갑자기 생긴 것처럼 보이고, 그건 사용자가 앱을 의심할 이유가 됩니다.
+   */
+  assigned_by: string | null
+  /** 전문가가 붙인 메모. { note, assigned_at } */
+  prescription: { note?: string | null } | null
 }
 
 export interface JourneyReport {
@@ -160,6 +168,9 @@ function mapMissionRow(row: Record<string, unknown>): UserMission {
     status: (row.status as UserMissionStatus) ?? 'scheduled',
     started_at: row.started_at ? String(row.started_at) : null,
     completed_at: row.completed_at ? String(row.completed_at) : null,
+    // 059 미적용 환경에서는 컬럼이 없습니다. 그래도 화면이 죽지 않아야 합니다.
+    assigned_by: row.assigned_by ? String(row.assigned_by) : null,
+    prescription: (row.prescription as { note?: string | null } | null) ?? null,
   }
 }
 
@@ -433,16 +444,27 @@ export async function ensureDayMissions(
   const existing = allMissions.filter((mission) => mission.day_no === dayNo)
   const dayKind = getDaySpec(template.day_plan, dayNo)?.kind ?? 'normal'
 
-  if (existing.length > 0) {
-    const visible = existing.filter((mission) => mission.status !== 'skipped')
-    if (visible.length > 0) {
-      return {
-        journey,
-        dayNo,
-        dayKind,
-        missions: visible,
-        isRestart: visible.some((mission) => mission.source_rule === 'restart'),
-      }
+  const visibleExisting = existing.filter((mission) => mission.status !== 'skipped')
+
+  /**
+   * 전문가가 배정한 것만 있는 날은 **앱이 자기 몫을 아직 안 만든 것**입니다.
+   *
+   * 예전에는 "그날 미션이 하나라도 있으면 앱이 이미 만든 것" 으로 봤습니다. 059 부터
+   * 전문가도 같은 테이블·같은 day_no 에 넣으므로 그 전제가 깨졌습니다.
+   * 전문가가 고객보다 먼저 1개를 배정하면, 고객은 그날 그 1개만 받고 원래 받을
+   * 2~3개는 영영 생성되지 않았습니다.
+   *
+   * 그래서 "앱이 만든 것(assigned_by 가 없는 것)" 이 있는지로 판단합니다.
+   */
+  const appMade = visibleExisting.filter((mission) => !mission.assigned_by)
+
+  if (appMade.length > 0) {
+    return {
+      journey,
+      dayNo,
+      dayKind,
+      missions: visibleExisting,
+      isRestart: visibleExisting.some((mission) => mission.source_rule === 'restart'),
     }
   }
 
@@ -464,17 +486,27 @@ export async function ensureDayMissions(
   })
 
   if (planned.length === 0) {
-    return { journey, dayNo, dayKind, missions: [], isRestart: false }
+    // 규칙이 고른 게 없어도 전문가 배정은 보여줘야 합니다.
+    return { journey, dayNo, dayKind, missions: visibleExisting, isRestart: false }
   }
 
-  const inserted = await insertPlannedMissions(journey, dayNo, planned)
+  // 전문가가 이미 배정한 동작은 다시 넣지 않습니다. 같은 걸 두 번 하라고 하면 안 됩니다.
+  const assignedKeys = new Set(visibleExisting.map((mission) => mission.content_key))
+  const fresh = planned.filter((mission) => !assignedKeys.has(mission.content_key))
+
+  // 슬롯 번호가 겹치지 않게 전문가 배정 뒤로 밀어 둡니다.
+  const slotBase = visibleExisting.reduce((max, mission) => Math.max(max, mission.slot_no), 0)
+  const shifted = fresh.map((mission, index) => ({ ...mission, slot_no: slotBase + index + 1 }))
+
+  const inserted = shifted.length > 0 ? await insertPlannedMissions(journey, dayNo, shifted) : []
   await touchJourney(journey.id, dayNo)
 
   return {
     journey,
     dayNo,
     dayKind,
-    missions: inserted,
+    // 전문가 배정이 먼저, 앱이 만든 것이 뒤. 순서가 뒤집히면 고객이 "왜 이게 먼저지" 합니다.
+    missions: [...visibleExisting, ...inserted],
     isRestart: planned.some((mission) => mission.source_rule === 'restart'),
   }
 }

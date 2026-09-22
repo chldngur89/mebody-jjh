@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { track } from '../../lib/analytics'
 import type { User } from '@supabase/supabase-js'
 import { ArrowLeft, ChevronRight, RefreshCw, Repeat } from 'lucide-react'
 import { AXIS_GREEN_THEME } from '../../data/axisTheme'
@@ -41,6 +42,14 @@ interface JourneyNextScreenProps {
 }
 
 export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, onRequireSubscription }: JourneyNextScreenProps) {
+  /**
+   * 14일이 끝난 뒤 "다음" 화면을 열었다. 여기까지 오는 비율이 완주율이고,
+   * 여기서 journey_started 로 넘어가는 비율이 재시작률입니다.
+   */
+  useEffect(() => {
+    track('next_journey_viewed')
+  }, [])
+
   const isDesktopMockup = useMediaQuery('(min-width: 768px)')
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -115,6 +124,7 @@ export function JourneyNextScreen({ user, onBack, onRemeasure, onStartedNext, on
         axisPriority: rotated,
         templateCode: journey.template_code,
       })
+      if (next) track('journey_started')
       if (next === NEEDS_SUBSCRIPTION) {
         // 무료 체험(첫 저니)을 이미 썼다. 여기가 주 결제 지점이다.
         onRequireSubscription?.()

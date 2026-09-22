@@ -80,7 +80,7 @@ export interface CalculateBodyCodeOptions {
   stoppedQuestionCodes?: string[]
 }
 
-const AXIS_SIDES: Record<AxisKey, { a: string; b: string; max: number; low: number; mid: number }> = {
+export const AXIS_SIDES: Record<AxisKey, { a: string; b: string; max: number; low: number; mid: number }> = {
   neck: { a: 'F', b: 'C', max: 10, low: 2, mid: 6 },
   shoulder: { a: 'R', b: 'L', max: 10, low: 2, mid: 6 },
   pelvis: { a: 'R', b: 'L', max: 16, low: 3, mid: 8 },
@@ -89,7 +89,7 @@ const AXIS_SIDES: Record<AxisKey, { a: string; b: string; max: number; low: numb
 
 const AXIS_ORDER: AxisKey[] = ['neck', 'shoulder', 'pelvis', 'flexibility']
 
-function normalizeChoice(value: AnswerValue | undefined): V1Choice | null {
+export function normalizeChoice(value: AnswerValue | undefined): V1Choice | null {
   if (typeof value !== 'string') return null
   if (value === '①' || value === '1') return '①'
   if (value === '②' || value === '2') return '②'

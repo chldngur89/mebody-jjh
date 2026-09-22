@@ -41,6 +41,10 @@ export async function signUpWithIdentifier(
   kind: IdentifierKind,
   password: string,
   displayName?: string,
+  /** 휴대폰 가입에서만 씁니다. 적으면 이 주소가 계정 이메일이 되어 비밀번호 재설정이 가능해집니다. */
+  recoveryEmail?: string,
+  /** 동의한 사실을 남기기 위해 함께 보냅니다. 화면의 체크박스 상태 그대로입니다. */
+  consent?: { terms?: boolean; privacy?: boolean; marketing?: boolean },
 ): Promise<SignupResult> {
   const resolved = resolveLoginEmail(identifier, kind)
   if ('error' in resolved) throw new Error(resolved.error)
@@ -51,7 +55,15 @@ export async function signUpWithIdentifier(
       response = await fetch(`${API_BASE}/api/public/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: identifier.trim(), password, displayName: displayName ?? null }),
+        body: JSON.stringify({
+          identifier: identifier.trim(),
+          password,
+          displayName: displayName ?? null,
+          recoveryEmail: recoveryEmail?.trim() || null,
+          agreedTerms: Boolean(consent?.terms),
+          agreedPrivacy: Boolean(consent?.privacy),
+          agreedMarketing: Boolean(consent?.marketing),
+        }),
       })
     } catch {
       response = null // 서버에 못 붙음 — 아래 폴백으로 갑니다
@@ -129,5 +141,66 @@ export async function signInWithApproval(identifier: string, kind: IdentifierKin
     const approved = await requestApproval(identifier)
     if (!approved) throw error
     return await signInWithEmail(resolved.email, password)
+  }
+}
+
+/**
+ * 번호로 로그인.
+ *
+ * 복구 이메일을 적고 가입하면 계정 이메일이 별칭이 아니어서, 번호를 별칭으로 바꾸는
+ * 앱 계산만으로는 찾을 수 없습니다. 서버가 번호로 계정을 찾아 비밀번호까지 확인해 줍니다.
+ * 서버에 못 붙으면 예전처럼 별칭으로 직접 로그인해 봅니다.
+ */
+export async function signInByPhone(identifier: string, password: string) {
+  if (API_BASE) {
+    let response: Response | null = null
+    try {
+      response = await fetch(`${API_BASE}/api/public/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
+      })
+    } catch {
+      response = null
+    }
+
+    if (response) {
+      const body = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(String(body?.message ?? '휴대폰 번호 또는 비밀번호가 올바르지 않습니다.'))
+
+      const session = body?.data ?? body
+      if (session?.access_token && session?.refresh_token) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: String(session.access_token),
+          refresh_token: String(session.refresh_token),
+        })
+        if (error) throw error
+        return data
+      }
+    }
+  }
+
+  // 폴백: 별칭 이메일로 직접
+  const resolved = resolveLoginEmail(identifier, 'phone')
+  if ('error' in resolved) throw new Error(resolved.error)
+  return signInWithEmail(resolved.email, password)
+}
+
+/**
+ * 번호로 비밀번호 재설정 요청.
+ *
+ * 계정이 있든 없든 같은 결과를 돌려줍니다. 응답이 갈리면 번호만 넣어 가입 여부를 알 수 있습니다.
+ */
+export async function requestPhonePasswordReset(identifier: string): Promise<void> {
+  if (!API_BASE) throw new Error('지금은 재설정 요청을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.')
+  const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined
+  try {
+    await fetch(`${API_BASE}/api/public/auth/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: identifier.trim(), redirectTo: redirectTo ?? null }),
+    })
+  } catch {
+    throw new Error('서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요.')
   }
 }

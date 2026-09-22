@@ -38,6 +38,13 @@ await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
   await c.query(readFileSync(new URL('../db/journey/037_redesign.sql', import.meta.url).pathname, 'utf8'))
+  // 번호순으로 이어 붙입니다 — 나중 파일이 앞 파일의 값을 덮어야 운영과 같아집니다.
+  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure', '067_ssv_bonus_payout']) {
+    await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
+  }
+  // 이 스위트는 옛 마이그레이션을 트랜잭션 안에서 재적용해 검증합니다. 그런데 그 파일들은
+  // user_rewards_sign_check 를 "적립은 amount > 0" 으로 되돌리고, 적립 규칙·고지도 옛 값으로
+  // 덮습니다. 우리가 보려는 것은 **지금 운영 상태**이므로 그 뒤 파일까지 이어 붙입니다.
   ok('037 적용', true)
 
   const uid = (await c.query('SELECT id FROM auth.users WHERE email=$1', [EMAIL])).rows[0].id
@@ -75,7 +82,10 @@ try {
   }
   await auth(uid)
   const w2 = (await c.query('SELECT * FROM public.claim_weekly_challenge()')).rows[0]
-  ok('7일 채우면 지급', w2.amount === 20 && w2.already_claimed === false, `${w2.amount}원 (${w2.done_days}/7)`)
+  // 금액을 박지 않습니다. 057 에서 20원 → 2원 으로 내렸을 때 이 단언만 남아 실패했습니다.
+  const weeklyRule = (await c.query(`SELECT fixed_amount FROM public.reward_rules WHERE code='weekly_challenge'`)).rows[0]
+  ok('7일 채우면 규칙 금액대로 지급', w2.amount === Number(weeklyRule.fixed_amount) && w2.already_claimed === false,
+     `${w2.amount}원 (규칙 ${weeklyRule.fixed_amount}원 · ${w2.done_days}/7)`)
   const w3 = (await c.query('SELECT * FROM public.claim_weekly_challenge()')).rows[0]
   ok('같은 주 재요청 미지급', w3.already_claimed === true && w3.balance === w2.balance,
      `already=${w3.already_claimed}, 잔액 ${w2.balance}→${w3.balance}`)
@@ -103,7 +113,9 @@ try {
   }
   await auth(uid)
   const m2 = (await c.query('SELECT * FROM public.claim_monthly_challenge()')).rows[0]
-  ok('20일 이상이면 지급', m2.amount === 50 && m2.already_claimed === false, `${m2.amount}원 (${m2.done_days}/20)`)
+  const monthlyRule = (await c.query(`SELECT fixed_amount FROM public.reward_rules WHERE code='monthly_challenge'`)).rows[0]
+  ok('20일 이상이면 규칙 금액대로 지급', m2.amount === Number(monthlyRule.fixed_amount) && m2.already_claimed === false,
+     `${m2.amount}원 (규칙 ${monthlyRule.fixed_amount}원 · ${m2.done_days}/20)`)
   const m3 = (await c.query('SELECT * FROM public.claim_monthly_challenge()')).rows[0]
   ok('같은 달 재요청 미지급', m3.already_claimed === true && m3.balance === m2.balance)
 
@@ -149,8 +161,10 @@ try {
   await svc()
   const rules = (await c.query(`SELECT code, fixed_amount, disclosure FROM public.reward_rules
     WHERE code IN ('weekly_challenge','monthly_challenge') ORDER BY code`)).rows
-  ok('주간 20원 · 월간 50원', rules.find(r => r.code === 'weekly_challenge')?.fixed_amount === 20
-     && rules.find(r => r.code === 'monthly_challenge')?.fixed_amount === 50)
+  // 금액 자체가 아니라 "정해져 있고 0 이 아닌가" 를 봅니다. 값은 운영에서 바뀔 수 있습니다.
+  ok('주간·월간 금액이 정해져 있다',
+     rules.every(r => r.fixed_amount != null && Number(r.fixed_amount) > 0),
+     rules.map(r => `${r.code}=${r.fixed_amount}원`).join(' · '))
   ok('오전 5시 기준 고지', rules.every(r => /오전 5시/.test(r.disclosure)))
 } finally {
   await c.query('ROLLBACK')

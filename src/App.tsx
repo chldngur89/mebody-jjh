@@ -49,6 +49,8 @@ import {
 import { supabase } from './lib/supabase';
 import type { AnswerMap } from './utils/bodyCodeCalculator';
 import { readFlowEntry, type Screen, type FlowRoute } from './lib/flowNavigation';
+import { ProfessionalConsentScreen } from './components/ProfessionalConsentScreen';
+import { readInviteToken } from './api/professionalInvite';
 import { withDeadline } from './lib/deadline';
 import { flowSession, useFlowHistory } from './utils/useFlowHistory';
 import { emptyQuestionnaireProgress, hasIncompleteProgress, readQuestionnaireProgress, persistQuestionnaireProgress } from './lib/questionnaireProgress';
@@ -136,14 +138,27 @@ export default function App() {
   ).current;
   useEffect(() => {
     if (sharedCode) track('shared_link_opened', { ref: SHARE_REF, body_code: sharedCode });
+    // 퍼널의 첫 칸. 여기서 몇 명이 시작으로 넘어가는지 봅니다.
+    track('landing_viewed', sharedCode ? { ref: SHARE_REF } : {});
   }, [sharedCode]);
+  /**
+   * 전문가 초대 토큰. 공유 링크의 ref/code 와 같은 자리에서 **첫 진입에 한 번만** 읽습니다.
+   * 그 뒤 URL 에서 사라지므로(flowUrl), 새로고침해도 동의를 다시 묻지 않습니다.
+   *
+   * 토큰이 있다고 연결되는 것이 아닙니다. 화면에서 직접 눌러야 동의입니다
+   * — 카카오톡 미리보기 크롤러가 링크를 열어도 아무 일도 일어나지 않아야 합니다.
+   */
+  const inviteToken = useRef(readInviteToken(window.location.search)).current;
+  const [inviteHandled, setInviteHandled] = useState(false);
   const previewScreenParam = bootSearchParams.get('ui');
   // ?ui=<screen> 로 특정 화면을 바로 여는 QA 용 파라미터. 결제 화면도 로그인 없이 확인할 수 있어야
   // 검증이 가능해서 membership·checkout 을 함께 둡니다(결제 자체는 로그인이 필요합니다).
   const previewScreen = import.meta.env.DEV ? (['landing', 'auth', 'result', 'membership', 'checkout', 'cart', 'journeyIntro', 'journeyToday'] as const).find((screen) => screen === previewScreenParam) : undefined;
   const bootAuthMode = bootSearchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [currentScreen, setCurrentScreen] = useState<Screen>(
-    sharedCode
+    inviteToken
+      ? 'professionalConsent'
+      : sharedCode
       ? 'landing'
       : restoredRoute?.screen === 'journeyMission' ? 'journeyToday' : restoredRoute?.screen === 'questionnaire' && questionnaireProgress.completedResultId ? 'result' : restoredRoute?.screen === 'analyzing' ? 'questionnaire' : restoredRoute?.screen ?? previewScreen ?? 'landing',
   );
@@ -311,6 +326,7 @@ export default function App() {
       await attachQuestionnaireResultToUser(dbResultId, currentUser.id);
     }
 
+    track('questionnaire_completed', { body_code: resultCode });
     if (sharedCode) track('shared_questionnaire_completed', { ref: SHARE_REF, body_code: resultCode });
 
     return { resultId: dbResultId, resultCode };
@@ -547,6 +563,15 @@ export default function App() {
 
         const user = session?.user ?? null;
         setCurrentUser(user);
+
+        // 전문가 초대 링크로 들어왔으면 그 화면을 먼저 보여줍니다. 아래의 복구 로직은
+        // "마지막에 보던 것" 으로 돌려보내는 일을 하는데, 그게 초대 화면을 덮어쓰면
+        // 고객은 트레이너 링크를 열고도 자기 결과 화면만 보게 됩니다.
+        // (공유 링크 sharedCode 를 같은 이유로 먼저 막고 있습니다)
+        if (inviteToken && !inviteHandled) {
+          setCurrentScreen('professionalConsent');
+          return;
+        }
 
         if (!user) {
           // 공유 링크(?ref=share&code=XXXX)는 개인 결과가 아니라 공개 미리보기 랜딩으로 보냅니다.
@@ -800,6 +825,7 @@ export default function App() {
   };
 
   const startNewDiagnosis = () => {
+    track('questionnaire_started', sharedCode ? { ref: SHARE_REF } : {});
     if (sharedCode) track('shared_questionnaire_started', { ref: SHARE_REF, body_code: sharedCode });
     setDiagnosisReturnScreen(currentScreen);
     setQuestionnaireProgress(emptyQuestionnaireProgress());
@@ -877,6 +903,22 @@ export default function App() {
     }
   };
 
+  /**
+   * 탈퇴 직후. 서버가 이미 인증 계정을 지웠으므로 원격 로그아웃은 실패합니다.
+   * 이 기기에 남은 세션만 지우고 첫 화면으로 보냅니다.
+   */
+  const handleAccountDeleted = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      console.warn('local signOut after account deletion failed:', error);
+    }
+    setCurrentUser(null);
+    resetAnonymousState(true);
+    setActiveTab('home');
+    setCurrentScreen('landing');
+  };
+
   if (isBootstrapping) {
     return (
       <div className={isDesktopMockup ? "mebody-desktop-backdrop min-h-screen flex items-center justify-center p-4" : ""}>
@@ -947,6 +989,27 @@ export default function App() {
             <AnalyzingScreen onAnalyze={handleAnalyzePendingAnswers} />
           )}
 
+          {currentScreen === 'professionalConsent' && inviteToken && !inviteHandled && (
+            <ProfessionalConsentScreen
+              token={inviteToken}
+              signedIn={Boolean(currentUser)}
+              onRequireAuth={() => {
+                // 로그인 뒤 이 화면으로 돌아옵니다. 다른 목적지로 보내면 동의가 유실되고,
+                // 고객은 "동의했다" 고 생각하는데 트레이너에게는 아무것도 안 보입니다.
+                setAuthInitialMode('signin');
+                setAuthReturnScreen('professionalConsent');
+                setAuthSuccessScreen('professionalConsent');
+                setCurrentScreen('auth');
+              }}
+              onDone={({ accepted, hasResult }) => {
+                setInviteHandled(true);
+                // 동의했는데 결과가 없으면 32문항부터 해야 트레이너가 볼 것이 생깁니다.
+                // 결과가 있거나 동의하지 않았으면 평소의 첫 화면으로 돌아갑니다.
+                setCurrentScreen(accepted && !hasResult ? 'intro' : 'landing');
+              }}
+            />
+          )}
+
           {currentScreen === 'auth' && (
             <AuthScreen
               user={currentUser}
@@ -956,7 +1019,7 @@ export default function App() {
               onSignedIn={async (signedInUser) => {
                 setAuthPurpose('default');
                 const explicitDestination = (
-                  ['membership', 'journeyIntro', 'checkout', 'cart', 'journeyToday', 'journeyMission', 'journeyReport', 'journeyNext'] as Screen[]
+                  ['membership', 'journeyIntro', 'checkout', 'cart', 'journeyToday', 'journeyMission', 'journeyReport', 'journeyNext', 'professionalConsent'] as Screen[]
                 ).includes(authSuccessScreen);
 
                 if (explicitDestination) {
@@ -1141,6 +1204,7 @@ export default function App() {
                   onStartDiagnosis={startNewDiagnosis}
                   onRequireAuth={() => openAuth('result')}
                   onLogout={handleLogout}
+                  onAccountDeleted={handleAccountDeleted}
                   onSubscriptionChanged={() => { void refreshEntitlement(); }}
                 />
               )}

@@ -30,6 +30,16 @@ await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
   await c.query(readFileSync(new URL('../db/journey/033_daily_routine_reward.sql', import.meta.url).pathname, 'utf8'))
+  // 번호순으로 이어 붙입니다 — 나중 파일이 앞 파일의 값을 덮어야 운영과 같아집니다.
+  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure', '067_ssv_bonus_payout']) {
+    await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
+  }
+  // 이 스위트는 옛 마이그레이션을 트랜잭션 안에서 재적용해 검증합니다. 그런데 그 파일들은
+  // user_rewards_sign_check 를 "적립은 amount > 0" 으로 되돌리고, 적립 규칙·고지도 옛 값으로
+  // 덮습니다. 우리가 보려는 것은 **지금 운영 상태**이므로 그 뒤 파일까지 이어 붙입니다.
+  // 033 은 user_rewards_sign_check 를 "적립은 amount > 0" 으로 다시 겁니다. 057 이 그걸
+  // "적립은 amount >= 0"(꽝도 기록) 으로 바꿨으므로, 033 만 재적용하면 운영과 다른 상태가 됩니다.
+  // 여기서 보려는 것은 "지금 운영 상태" 이므로 057 까지 이어 붙입니다.
   ok('033 적용', true)
 
   const uid = (await c.query('SELECT id FROM auth.users WHERE email=$1', [EMAIL])).rows[0].id
@@ -75,8 +85,18 @@ try {
   const r1 = (await c.query('SELECT * FROM public.claim_daily_routine_reward()')).rows[0]
   ok('1회차 적립됨', r1.already_claimed === false, `주사위 ${r1.dice} → ${r1.amount}원`)
   ok('주사위 1~6', r1.dice >= 1 && r1.dice <= 6, String(r1.dice))
-  ok('적립액 = 주사위 x 배수', r1.amount === Math.max(1, Math.round(r1.dice * Number(r1.multiplier))),
-     `${r1.dice} x ${r1.multiplier} = ${r1.amount}`)
+  // 057 부터 눈과 금액이 분리됐습니다. 눈은 1~6 고르게, 금액은 payout 표가 정합니다.
+  // 예전처럼 "눈 x 배수 = 금액" 이 아니므로 표를 기준으로 검사합니다.
+  const payout = (await c.query(`SELECT public.reward_payout_for('daily_routine_dice', $1) v`, [r1.dice])).rows[0].v
+  // 057 의 월 상한이 걸리면 표보다 적게 들어갑니다. 상한에 닿은 사람은 6눈이 나와도 0원입니다.
+  // 검증용 계정이 이미 이번 달 적립이 있을 수 있으므로, 남은 한도를 같이 봅니다.
+  // 인자 있는 조회는 회원에게 닫혀 있습니다(남의 적립액을 못 보게 057 에서 막았습니다).
+  // 지금 이 연결은 그 회원으로 돌고 있으므로 본인용 창구를 씁니다.
+  const remaining = (await c.query(`SELECT remaining FROM public.my_reward_month_status()`)).rows[0].remaining
+  const expected = Math.min(Math.round(payout * Number(r1.multiplier)), Number(remaining) + r1.amount)
+  ok('적립액 = 표(눈→원) x 배수, 월 상한 안에서',
+     r1.amount === expected,
+     `${r1.dice}눈 → 표 ${payout}원 x ${r1.multiplier} · 남은한도 ${remaining}원 → ${r1.amount}원`)
   ok('잔액 증가', Number(r1.balance) === Number(before) + r1.amount, `${before} → ${r1.balance}`)
 
   const r2 = (await c.query('SELECT * FROM public.claim_daily_routine_reward()')).rows[0]
@@ -117,9 +137,15 @@ try {
   console.log('\n■ 고지 문구')
   const disc = (await c.query(`SELECT display_label, disclosure, min_amount, max_amount
     FROM public.reward_rules WHERE code='daily_routine_dice'`)).rows[0]
-  ok('최대치가 실제 도달 가능', disc.max_amount === 6, `표시 최대 ${disc.max_amount}원`)
+  // 표시 최대치는 실제로 받을 수 있는 금액이어야 합니다. 받을 수 없는 숫자를 적으면
+  // 그게 곧 과장 광고입니다.
+  const reachable = (await c.query(`SELECT max((value)::int) v FROM jsonb_each_text(
+    (SELECT payout FROM public.reward_rules WHERE code='daily_routine_dice'))`)).rows[0].v
+  ok('최대치가 실제 도달 가능', disc.max_amount === reachable,
+     `표시 ${disc.max_amount}원 · 실제 최대 ${reachable}원`)
   ok('확률 고지 포함', /1\/6|확률/.test(disc.disclosure), disc.disclosure.slice(0, 40) + '...')
   ok('하루 기준 고지 포함', /오전 5시/.test(disc.disclosure))
+  ok('월 상한 고지 포함', /한 달|월 상한|49원/.test(disc.disclosure))
 } finally {
   await c.query('ROLLBACK')
   await c.end()

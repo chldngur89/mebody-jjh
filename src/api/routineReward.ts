@@ -133,3 +133,66 @@ export async function claimRoutineBonus(): Promise<RoutineRewardResult | typeof 
     multiplier: 1,
   }
 }
+
+/**
+ * 이번 달 적립 현황.
+ *
+ * 무료 적립에는 월 상한이 있습니다. 그 사실을 숨기면 상한에 닿은 뒤의 0원이
+ * "운이 나빴다" 로 보이고, 그건 사실이 아닙니다. 화면이 솔직하게 말할 수 있도록
+ * 남은 한도를 내려 줍니다.
+ *
+ * 인자가 없는 RPC 입니다 — 서버가 auth.uid() 로 본인만 계산합니다.
+ */
+export interface RewardMonthStatus {
+  cap: number
+  earned: number
+  remaining: number
+}
+
+export async function fetchRewardMonthStatus(): Promise<RewardMonthStatus | null> {
+  const { data, error } = await supabase.rpc('my_reward_month_status')
+  if (error) return null
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) return null
+  return {
+    cap: Number(row.cap ?? 0),
+    earned: Number(row.earned ?? 0),
+    remaining: Number(row.remaining ?? 0),
+  }
+}
+
+/**
+ * 적립 규칙의 공개값 — 화면 문구가 **실제 지급액과 어긋나지 않도록** 서버에서 읽습니다.
+ *
+ * 예전에는 화면에 "14일 완주까지 최대 50원" 처럼 숫자를 박아 두었습니다. 057 에서 금액을
+ * 내린 뒤 그 문구만 남아, 줄 수 없는 금액을 약속하는 상태가 됐습니다. 그게 곧 과장입니다.
+ * 숫자는 한 곳(reward_rules)에서만 나오게 합니다.
+ */
+export interface RewardRuleInfo {
+  code: string
+  maxAmount: number | null
+  fixedAmount: number | null
+  disclosure: string | null
+}
+
+export async function fetchRewardRules(): Promise<Record<string, RewardRuleInfo>> {
+  const { data, error } = await supabase
+    .from('reward_rules')
+    .select('code, max_amount, fixed_amount, disclosure, is_active')
+    .eq('is_active', true)
+  if (error || !data) return {}
+
+  const out: Record<string, RewardRuleInfo> = {}
+  for (const row of data as Array<Record<string, unknown>>) {
+    const code = String(row.code ?? '')
+    if (!code) continue
+    out[code] = {
+      code,
+      maxAmount: row.max_amount == null ? null : Number(row.max_amount),
+      fixedAmount: row.fixed_amount == null ? null : Number(row.fixed_amount),
+      disclosure: row.disclosure == null ? null : String(row.disclosure),
+    }
+  }
+  return out
+}
+

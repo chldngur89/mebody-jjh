@@ -56,7 +56,7 @@ export function QuestionCard({
         {question.question_text}
       </h2>
 
-      <div className="space-y-3">
+      <div className="space-y-3" data-question-options>
         {options.map((option) => {
           const isSelected = selectedAnswer === option.value
 

@@ -2,7 +2,7 @@ import { useOverlayBack } from '../utils/useOverlayBack';
 import { readTimerProgress, saveTimerProgress } from '../lib/timerProgress';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Gift, Pause, Play, RotateCcw, X } from 'lucide-react';
-import {
+import { fetchRewardRules,
   claimRoutineBonus,
   claimRoutineReward,
   fetchTodayRoutineBonus,
@@ -1436,6 +1436,16 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
   // 주사위 적립 — 눈과 금액은 전부 서버가 정합니다. 하루 1회, 한국시간 오전 5시 기준.
   const [rewardDice, setRewardDice] = useState<number | null>(null);
   const [rewardAmount, setRewardAmount] = useState<number | null>(null);
+  /** 주사위 규칙 고지. 화면에 눈별 금액을 적지 않고 규칙에서 읽어옵니다. */
+  const [rewardDisclosure, setRewardDisclosure] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void fetchRewardRules().then((rules) => {
+      if (!cancelled) setRewardDisclosure(rules.daily_routine_dice?.disclosure ?? null);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const [rewardRolling, setRewardRolling] = useState(false);
   const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
   const [rewardNotice, setRewardNotice] = useState<string | null>(null);
@@ -1977,12 +1987,21 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       {rewardRolling
                         ? '주사위를 굴리는 중...'
                         : rewardAmount != null
-                          ? `주사위 ${rewardDice} · ${rewardAmount}원 적립!`
+                          // 0원은 정상입니다. 5눈부터 적립이라 대부분의 눈은 꽝입니다.
+                          // "0원 적립!" 이라고 쓰면 고장난 것처럼 보이므로 다르게 말합니다.
+                          ? rewardAmount > 0
+                            ? `주사위 ${rewardDice} · ${rewardAmount}원 적립!`
+                            : `주사위 ${rewardDice} · 오늘은 아쉽네요`
                           : '오늘의 공통 스트레칭 성공!'}
                     </div>
                     <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, fontWeight: 700, color: 'var(--mebody-t-3f6553, #3f6553)', wordBreak: 'keep-all' }}>
                       {rewardAmount != null && !rewardRolling
-                        ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
+                        ? rewardAmount > 0
+                          ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
+                          // 왜 꽝인지 규칙을 같이 말합니다. 규칙을 숨기면 운이 아니라 속임수로 보입니다.
+                          // 눈별 금액은 규칙의 고지 문구를 그대로 씁니다. 여기에 숫자를 적으면
+                          // 규칙을 바꿀 때 화면만 남아 거짓말이 됩니다(057 에서 실제로 그랬습니다).
+                          : (rewardDisclosure ?? '내일 오전 5시에 다시 굴릴 수 있습니다.')
                         : `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
                     </div>
                     {rewardNotice && (
@@ -2008,7 +2027,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         }}
                       >
                         <RewardDice value={bonusDice} rolling={false} size={34} />
-                        보너스 {bonusDice} · {bonusAmount}원 추가 적립
+                        {bonusAmount != null && bonusAmount > 0
+                          ? `보너스 ${bonusDice} · ${bonusAmount}원 추가 적립`
+                          : `보너스 ${bonusDice} · 이번엔 아쉽네요`}
                       </div>
                     ) : bonusEligible && isNativeApp() ? (
                       <div style={{ marginTop: '14px', borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, paddingTop: '12px' }}>

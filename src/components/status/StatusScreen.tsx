@@ -11,14 +11,17 @@
  */
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { AlertTriangle, ChevronRight, LogOut, RotateCw } from 'lucide-react';
 import { fetchRewardBalance } from '../../api/journey';
+import { fetchRewardMonthStatus, fetchRewardRules, type RewardMonthStatus } from '../../api/routineReward';
 import { fetchChallengeStatus, type ChallengeStatus } from '../../api/routineHistory';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl } from '../../utils/characterImages';
 import { Card, CTA, Chip, PageTitle, ProgressTrack, SectionHeading, TextLink } from '../ui';
-import { MeasurementSection, MembershipSection, OrdersSection, ProfileSection } from './StatusSections';
+import { MeasurementSection, MembershipSection, OrdersSection, ProfessionalSection, ProfileSection } from './StatusSections';
+import { confirmDialog } from '../../lib/confirmDialog';
+import { AccountDeletionError, deleteMyAccount } from '../../api/accountDeletion';
 
 export interface StatusScreenProps {
   user: User | null;
@@ -35,6 +38,8 @@ export interface StatusScreenProps {
   onStartDiagnosis?: () => void;
   onRequireAuth?: () => void;
   onLogout?: () => void | Promise<void>;
+  /** 탈퇴가 끝난 뒤. 세션을 지우고 첫 화면으로 보냅니다. */
+  onAccountDeleted?: () => void | Promise<void>;
   /** 멤버십을 해지하면 자격을 다시 읽도록 알립니다 */
   onSubscriptionChanged?: () => void;
 }
@@ -58,31 +63,105 @@ export function StatusScreen({
   onStartDiagnosis,
   onRequireAuth,
   onLogout,
+  onAccountDeleted,
   onSubscriptionChanged,
 }: StatusScreenProps) {
   const [balance, setBalance] = useState(0);
+  /** 월간 챌린지 보너스 금액. 규칙에서 읽습니다 — 화면에 숫자를 박으면 어긋납니다. */
+  const [monthlyBonus, setMonthlyBonus] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void fetchRewardRules().then((rules) => {
+      if (cancelled) return;
+      const rule = rules.monthly_challenge;
+      setMonthlyBonus(rule?.fixedAmount ?? rule?.maxAmount ?? null);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [challenge, setChallenge] = useState<ChallengeStatus | null>(null);
+  /**
+   * 불러오기 실패를 따로 들고 다닙니다.
+   *
+   * 예전에는 실패를 0원으로 바꿔 그렸습니다. 사용자는 "적립금이 없다" 와 구분할 수 없었고,
+   * 챌린지 쪽은 실패를 받는 곳이 아예 없어 Promise.all 이 거부되면 화면이 멈췄습니다.
+   */
+  const [loadFailed, setLoadFailed] = useState(false);
+  /** 이번 달 무료 적립 현황. 상한을 숨기면 꽝이 운처럼 보입니다. */
+  const [monthStatus, setMonthStatus] = useState<RewardMonthStatus | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user?.id) {
       setBalance(0);
       setChallenge(null);
+      setLoadFailed(false);
       return;
     }
     let cancelled = false;
     void (async () => {
-      const [b, c] = await Promise.all([
-        fetchRewardBalance(user.id).catch(() => 0),
-        fetchChallengeStatus(),
+      const [b, c, m] = await Promise.all([
+        fetchRewardBalance(user.id).then((v) => ({ ok: true as const, v })).catch(() => ({ ok: false as const })),
+        fetchChallengeStatus().then((v) => ({ ok: true as const, v })).catch(() => ({ ok: false as const })),
+        // 이번 달 현황은 보조 정보입니다. 못 읽어도 나머지 화면은 그대로 그립니다
+        // (057 미적용 환경에서도 죽지 않아야 합니다).
+        fetchRewardMonthStatus().catch(() => null),
       ]);
       if (cancelled) return;
-      setBalance(b);
-      setChallenge(c);
+      setBalance(b.ok ? b.v : 0);
+      setChallenge(c.ok ? c.v : null);
+      setMonthStatus(m);
+      setLoadFailed(!b.ok || !c.ok);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, reloadKey]);
+
+  const removeAccount = async () => {
+    // 되돌릴 수 없으므로 두 번 묻습니다. 첫 번째는 무엇이 사라지고 무엇이 남는지,
+    // 두 번째는 마지막 확인입니다.
+    const understood = await confirmDialog({
+      title: '정말 탈퇴하시겠어요?',
+      body: '진단 결과, 14일 관리 기록, 적립금, 배송지가 모두 삭제되고 되돌릴 수 없습니다. '
+        + '주문과 결제 기록은 법에 따라 보관 기간 동안 남지만, 누구의 것인지는 알 수 없게 됩니다.',
+      confirmLabel: '계속',
+      destructive: true,
+    });
+    if (!understood) return;
+
+    const finalOk = await confirmDialog({
+      title: '마지막 확인입니다',
+      body: '이 계정과 기록을 지금 삭제합니다. 같은 이메일로 다시 가입할 수는 있지만 기록은 돌아오지 않습니다.',
+      confirmLabel: '탈퇴하기',
+      destructive: true,
+    });
+    if (!finalOk) return;
+
+    setDeleting(true);
+    try {
+      const result = await deleteMyAccount();
+      const kept = result.keptOrders + result.keptPayments;
+      await confirmDialog({
+        title: '탈퇴가 완료되었습니다',
+        body: kept > 0
+          ? `그동안 이용해주셔서 감사합니다. 주문 ${result.keptOrders}건과 결제 ${result.keptPayments}건은 법에 따라 보관 기간 동안 남습니다.`
+          : '그동안 이용해주셔서 감사합니다.',
+        confirmLabel: '확인',
+        destructive: false,
+      });
+      await onAccountDeleted?.();
+    } catch (err) {
+      await confirmDialog({
+        title: '탈퇴하지 못했습니다',
+        body: err instanceof AccountDeletionError ? err.message : '잠시 후 다시 시도해주세요.',
+        confirmLabel: '확인',
+        destructive: false,
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -104,6 +183,28 @@ export function StatusScreen({
   return (
     <div style={{ display: 'grid', gap: '14px' }}>
       <PageTitle eyebrow="MY STATUS" title="내 상태" />
+
+      {loadFailed && (
+        <Card padding="14px 16px">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <AlertTriangle size={16} color="#dc2626" />
+            <span style={{ flex: 1, minWidth: '160px', fontSize: '0.8125rem', lineHeight: 1.55, color: BRAND.text, wordBreak: 'keep-all' }}>
+              적립금과 관리 기록을 불러오지 못했습니다. 아래 숫자가 실제와 다를 수 있어요.
+            </span>
+            <button
+              type="button"
+              onClick={() => setReloadKey((n) => n + 1)}
+              style={{
+                border: `1px solid ${SURFACE.hairline}`, background: '#ffffff', borderRadius: '10px',
+                padding: '8px 12px', fontSize: '0.8125rem', fontWeight: 800, color: BRAND.green,
+                fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+              }}
+            >
+              <RotateCw size={14} /> 다시 시도
+            </button>
+          </div>
+        </Card>
+      )}
 
       {/* .status-user-summary — 최상단 */}
       <Card>
@@ -135,6 +236,11 @@ export function StatusScreen({
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <small style={{ fontSize: '0.6875rem', color: BRAND.muted, letterSpacing: '0.08em' }}>적립금</small>
             <div style={{ fontSize: '1.25rem', fontWeight: 900, color: BRAND.green }}>{balance.toLocaleString()}원</div>
+            {monthStatus && (
+              <small style={{ fontSize: '0.625rem', color: BRAND.muted, display: 'block', marginTop: '2px' }}>
+                이번 달 {monthStatus.earned} / {monthStatus.cap}원
+              </small>
+            )}
           </div>
         </div>
 
@@ -203,6 +309,8 @@ export function StatusScreen({
       {/* 측정 기록 — 지난 진단과 변화 */}
       <MeasurementSection user={user} onOpenResult={onOpenResult} />
 
+      <ProfessionalSection user={user} />
+
       {/* 관리 기록 */}
       <Card>
         <SectionHeading
@@ -229,7 +337,7 @@ export function StatusScreen({
         <ProgressTrack
           percent={((challenge?.monthDone ?? 0) / Math.max(1, challenge?.monthRequired ?? 20)) * 100}
           label="월간 완주"
-          value={challenge?.monthClaimed ? '보너스 받음' : `${challenge?.monthRequired ?? 20}일 달성 시 50원`}
+          value={challenge?.monthClaimed ? '보너스 받음' : `${challenge?.monthRequired ?? 20}일 달성${monthlyBonus == null ? '' : ` · ${monthlyBonus}원`}`}
         />
       </Card>
 
@@ -260,6 +368,28 @@ export function StatusScreen({
               }}
             >
               <LogOut size={15} /> 로그아웃
+            </button>
+          )}
+          {onAccountDeleted && (
+            <button
+              type="button"
+              onClick={() => void removeAccount()}
+              disabled={deleting}
+              style={{
+                border: 0,
+                background: 'transparent',
+                padding: '4px 4px 2px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#dc2626',
+                fontFamily: 'inherit',
+                cursor: deleting ? 'default' : 'pointer',
+                opacity: deleting ? 0.55 : 1,
+                textDecoration: 'underline',
+                textUnderlineOffset: '3px',
+              }}
+            >
+              {deleting ? '탈퇴 처리 중...' : '회원 탈퇴'}
             </button>
           )}
         </div>

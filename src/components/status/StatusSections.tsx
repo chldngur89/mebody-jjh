@@ -1,11 +1,13 @@
 /**
- * 내 상태 화면의 확장 섹션 네 가지.
+ * 내 상태 화면의 확장 섹션 다섯 가지.
  *
  *   1) 프로필 편집   — 이름 · 이메일 · 비밀번호 · 휴대폰 · 키 · 몸무게
  *                      (미등록이면 빨간 경고 + 펼침, 완료면 접힘)
  *   2) 주문 내역     — fetchMyOrders() 는 있었는데 부르는 화면이 없었습니다
  *   3) 멤버십 관리   — 다음 결제일 · 해지. **해지도 서버가 합니다**(앱은 구독을 못 바꿉니다)
  *   4) 측정 기록     — 지난 진단 목록과 직전 대비 변화(compareJourneyResults 재사용)
+ *   5) 연결된 전문가 — 내 결과를 보여주기로 한 트레이너. **여기서 끊을 수 있어야 합니다**
+ *                      (끊을 자리가 없으면 그건 동의가 아닙니다)
  *
  * 카드가 많아져서 접이식으로 묶었습니다.
  */
@@ -28,6 +30,7 @@ import {
   type MyProfile,
 } from '../../api/profile';
 import { compareJourneyResults } from '../../utils/journeyCompare';
+import { listMyProfessionals, withdrawConsent, type MyProfessional } from '../../api/professionalInvite';
 import { formatPhone, isEmail, normalizePhone, phoneFromLoginEmail } from '../../lib/identifier';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { PRODUCT } from '../../theme/copy';
@@ -830,5 +833,135 @@ function Field({
         }}
       />
     </label>
+  );
+}
+
+
+const PRO_TYPE_LABEL: Record<string, string> = {
+  PERSONAL_TRAINER: '퍼스널 트레이너',
+  PHYSIO: '물리치료사',
+};
+
+/**
+ * 연결된 전문가.
+ *
+ * <p>초대 링크로 "내 결과를 보여주겠다" 고 누른 상대가 여기 쌓입니다. 끊으면 그 순간부터
+ * 그 사람은 0행을 받습니다(서버의 get_client_response 가 consented_at 을 봅니다).
+ *
+ * <p>끊은 기록(REVOKED)도 지우지 않고 보여줍니다. 내가 언제 무엇을 허락했고 언제 거뒀는지는
+ * 내 기록이고, 사라지면 확인할 방법이 없습니다.
+ *
+ * <p>불러오기에 실패하면 "없음" 이 아니라 **실패**라고 말합니다. 연결이 없는 것과 못 읽은 것을
+ * 같게 보여주면, 끊어야 할 연결이 있는데도 없는 줄 알게 됩니다.
+ */
+export function ProfessionalSection({ user }: { user: User }) {
+  const [rows, setRows] = useState<MyProfessional[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setFailed(false);
+    listMyProfessionals()
+      .then(setRows)
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(load, [load, user.id]);
+
+  const handleWithdraw = async (row: MyProfessional) => {
+    const confirmed = await confirmDialog({
+      title: `${row.professionalName} 님과의 연결을 끊을까요?`,
+      body: '끊으면 그 순간부터 내 결과가 보이지 않습니다. 다시 연결하려면 새 초대 링크가 필요합니다.',
+      confirmLabel: '연결 끊기',
+    });
+    if (!confirmed) return;
+    setBusyId(row.relationId);
+    try {
+      await withdrawConsent(row.relationId);
+      load();
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const active = rows.filter((row) => row.status === 'ACTIVE');
+
+  return (
+    <Collapsible
+      kicker="공유"
+      title="연결된 전문가"
+      hint={active.length > 0 ? `${active.length}명` : undefined}
+    >
+      {loading ? (
+        <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted }}>불러오는 중...</p>
+      ) : failed ? (
+        <div>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#B3261E' }}>
+            연결 정보를 불러오지 못했습니다. 연결이 없는 것과 다릅니다.
+          </p>
+          <button
+            type="button"
+            onClick={load}
+            style={{
+              marginTop: '10px', border: `1px solid ${BRAND.line}`, background: BRAND.card,
+              color: BRAND.text, borderRadius: '10px', padding: '8px 14px',
+              fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            다시 시도
+          </button>
+        </div>
+      ) : rows.length === 0 ? (
+        <p style={{ margin: 0, fontSize: '0.8125rem', color: BRAND.muted, lineHeight: 1.7 }}>
+          아직 결과를 보여주기로 한 전문가가 없습니다.
+          트레이너가 보낸 링크를 열면 여기에 표시됩니다.
+        </p>
+      ) : (
+        <div style={{ display: 'grid', gap: '10px' }}>
+          {rows.map((row) => {
+            const revoked = row.status === 'REVOKED';
+            return (
+              <div
+                key={row.relationId}
+                style={{
+                  border: `1px solid ${BRAND.line}`, borderRadius: '12px', padding: '12px 14px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                  opacity: revoked ? 0.6 : 1,
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 700, color: BRAND.text }}>
+                    {row.professionalName}
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: BRAND.muted }}>
+                    {PRO_TYPE_LABEL[row.professionalType] ?? '전문가'}
+                    {revoked ? ' · 연결 끊김' : row.consentedAt ? ` · ${row.consentedAt.slice(0, 10)} 동의` : ' · 수락 대기'}
+                  </p>
+                </div>
+                {!revoked && (
+                  <button
+                    type="button"
+                    onClick={() => handleWithdraw(row)}
+                    disabled={busyId === row.relationId}
+                    style={{
+                      flexShrink: 0, border: `1px solid ${BRAND.line}`, background: BRAND.card,
+                      color: '#B3261E', borderRadius: '10px', padding: '8px 12px',
+                      fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    {busyId === row.relationId ? '처리 중' : '연결 끊기'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Collapsible>
   );
 }

@@ -8,6 +8,7 @@
  * body_code_result_sections 는 코드 플랜 전용 — Home 에서는 읽지 않습니다.
  */
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getAxisContributions } from '../../utils/axisContributions';
 import { focusLabel } from '../../theme/focusLabels';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { fetchQuestionnaireResult, fetchQuestions, fetchBodyCodeContentWithFallback, type BodyCodeContent, type Question, type QuestionnaireResponse } from '../../api/questionnaire';
@@ -372,6 +373,8 @@ export interface ResultData {
   recommendedStartMinutes: number;
   axisRows: AxisRow[];
   axisDetails: Array<{ key: AxisKey; code: string; title: string; description: string }>;
+  /** 각 축을 가장 크게 가른 내 답변. "왜 이 코드인지" 를 보여주는 데 씁니다. */
+  axisReasons: Record<AxisKey, Array<{ questionCode: string; summary: string; side: 'left' | 'right' }>>;
   youtubeVideos: YoutubeVideo[];
   storeItems: ReturnType<typeof buildStoreItems>;
   rewardBalance: number;
@@ -550,6 +553,22 @@ export function useResultData(
     });
   }, [axisPercent, content]);
 
+  /**
+   * 왜 이 코드가 나왔는지 — 내 답변에서 다시 셉니다.
+   * 점수 계산에는 손대지 않고 같은 표를 읽기만 합니다.
+   */
+  const axisReasons = useMemo(() => {
+    const all = getAxisContributions(result?.answers);
+    const pick = (list: typeof all.neck) =>
+      list.slice(0, 2).map((x) => ({ questionCode: x.questionCode, summary: x.summary, side: x.side }));
+    return {
+      neck: pick(all.neck),
+      shoulder: pick(all.shoulder),
+      pelvis: pick(all.pelvis),
+      flexibility: pick(all.flexibility),
+    };
+  }, [result?.answers]);
+
   const axisDetails = useMemo(() => {
     if (bodyCode.length !== 4) return [];
     return [
@@ -574,6 +593,6 @@ export function useResultData(
     isLoading, error, result, content, bodyCode, characterName, characterImage,
     identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
     strategyTitle, strategySummary, journeyTitle, oneLineAction, recommendedStartMinutes,
-    axisRows, axisDetails, youtubeVideos, storeItems, rewardBalance, handleImageError,
+    axisRows, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
   };
 }
