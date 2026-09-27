@@ -23,7 +23,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && npm run verify:no-sample-link && vite build",
+    "build": "npm run typecheck && npm run verify:no-sample-link && vite build && npm run check:bundle",
     "preview": "vite preview",
     "verify:v1-excel": "node scripts/run-python.mjs scripts/verify-v1-excel-spec.py",
     "verify:v1-excel-db": "VERIFY_DB=1 node scripts/run-python.mjs scripts/verify-v1-excel-spec.py",
@@ -40,7 +40,7 @@
     "verify:plan-cashback": "node scripts/verify-plan-cashback.mjs",
     "verify:routine-bonus": "node scripts/verify-routine-bonus.mjs",
     "ads:check": "node scripts/check-ads-config.mjs",
-    "app:build": "npm run env:check && npm run typecheck && npm run verify:no-sample-link && vite build && cap sync android",
+    "app:build": "npm run env:check && npm run typecheck && npm run verify:no-sample-link && vite build && npm run check:bundle && cap sync android",
     "app:open": "cap open android",
     "app:apk": "npm run env:check && vite build && cap sync android && cd android && JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ./gradlew assembleDebug",
     "verify:redesign": "node scripts/verify-redesign.mjs",
@@ -71,6 +71,9 @@
     "seed:analytics": "node scripts/seed-analytics-demo.mjs",
     "verify:metrics": "node scripts/verify-metrics.mjs",
     "build:rules": "node scripts/build-rules-bundle.mjs",
-    "verify:rules-bundle": "node scripts/verify-rules-bundle.mjs"
+    "verify:rules-bundle": "node scripts/verify-rules-bundle.mjs",
+    "verify:attention": "node scripts/verify-attention.mjs",
+    "build:axis-icons": "node scripts/build-axis-icons.mjs",
+    "check:bundle": "node scripts/check-bundle-secrets.mjs"
   }
 }

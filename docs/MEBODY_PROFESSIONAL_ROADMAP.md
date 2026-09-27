@@ -223,6 +223,39 @@ Plan 작성 소요 시간 (초안 제공 전후 비교)
 ### FAILURE CONDITION
 초안을 쓰지 않고 처음부터 직접 만드는 전문가가 절반을 넘으면 추천 품질이 문제다.
 
+### 구현 결과 (069 · AI 없음)
+
+**AI 를 넣지 않았다.** 로드맵의 순서 1(규칙 엔진 초안)까지만 했다. 초안이 시간을 줄이는지
+먼저 보고, 안 줄면 그때 AI 를 얹는다. `plan_source` 의 `AI_DRAFT` 도 아직 없다.
+
+재검증에서 **네 가지가 나왔다.** 전부 "되는 줄 알았는데 안 되던" 것들이다.
+
+**① 전문가가 배정하면 앱이 그날 미션을 안 만들었다.** 가장 컸다.
+`ensureDayMissions` 가 "그날 미션 행이 이미 있으면 그대로 둔다" 로 판단했는데, 전문가 배정도
+같은 테이블의 행이라 앱이 자기 몫을 만들 차례를 건너뛰었다. 고객은 2~3개 대신 1개만 받았다.
+`assigned_by` 가 없는 행(=앱이 만든 것)이 있는지로 갈라 고쳤다. 실제로 재현해서 확인했다.
+
+**② 축 우선순위를 `["neck"]` 로 심고 있었다.** 시드와 테스트 둘 다.
+엔진은 `{axis, rank, direction}` 을 읽으므로 초안이 **늘 0개**로 나왔는데,
+테스트가 `planned.length === 0 ||` 로 그걸 통과시키고 있었다. 두 군데를 같이 고쳤다.
+
+**③ 배정이 이미 지난 날에 꽂혔다** (060 에서 수정). `user_journeys.current_day` 는 낡은 값이라
+앱이 계산하는 날(`computeCurrentDay()`)과 최대 11일까지 벌어져 있었다. `journey_current_day()` 를
+만들어 양쪽이 같은 날을 보게 했다.
+
+**④ 시간 선택이 다시 그릴 때마다 초기화됐다.** `draftMinutes` 를 모듈 상태로 올렸다.
+
+| 만든 것 | 자리 |
+|---|---|
+| `get_client_plan_input()` | `db/journey/069_plan_draft_input.sql` |
+| 규칙 엔진 브라우저 번들 | `scripts/build-rules-bundle.mjs` → `static/assets/journey-rules.js` |
+| 콘솔 초안 블록 | `web.js` `loadPlanDraft()` · `renderPlanDraft()` |
+| 검증 | `npm run verify:rules-bundle` · `verify:professional-api` |
+
+규칙 엔진(`journeyRules.ts`)은 import 가 하나도 없어서 그대로 브라우저로 옮길 수 있었다.
+앱과 콘솔이 **같은 파일**을 쓴다. 직접 고치면 안 되는 산출물이라 헤더에 그렇게 적어 뒀고,
+`verify:rules-bundle` 이 원본과 번들이 어긋나면 잡는다.
+
 ---
 
 ## Phase 5 — 주의 대시보드
@@ -240,6 +273,50 @@ Plan 작성 소요 시간 (초안 제공 전후 비교)
 
 ### PRIMARY METRIC
 주의 목록에서 시작된 개입 비율
+
+### 구현 결과 (070 · 2026-09-22)
+
+로드맵의 판단대로 **새 테이블 없이** 됐다. 다만 만들면서 두 가지가 달라졌다.
+
+**① 창(window)을 `created_at` 이 아니라 `day_no` 로 잡는다.**
+처음엔 "최근 7일" 을 `user_missions.created_at` 으로 셌다. 실제 데이터로 돌려 보니
+미션 32건을 가진 고객이 `planned = 0` 으로 나왔다. `created_at` 은 **행이 쓰인 시각**이지
+그 미션이 어느 날 것인가가 아니다. `replanDayMissions` 가 슬롯을 다시 쓰거나, 사용자가
+3일차를 5일차에 늦게 열거나, 데이터를 옮겨 넣으면 둘이 어긋난다.
+`day_no` 는 어떤 경우에도 그 미션의 날짜다.
+
+**② 신호를 하나 더했다 — `not_started`.**
+로드맵의 4개에는 없지만, 동의까지 해 놓고 루틴을 시작하지 않은 고객이 전문가가 가장 먼저
+연락해야 할 사람이다. 새 데이터 없이 판별되고(저니 0건), 빼면 그 사람은 어느 목록에도
+안 잡혀 영영 방치된다.
+
+**`last_active_at` 은 쓸 수 있다 — 다만 "열었다" 지 "했다" 가 아니다.**
+`touchJourney()` 가 `ensureDayMissions` · `replanDayMissions` 에서 불리므로 값은 살아 있다.
+하지만 그 뜻은 "마지막으로 앱을 열어 그날 미션을 받은 시각" 이다.
+데모 고객 박준호가 그 경우다 — **어제도 앱을 열었지만 최근 16개 중 0개를 했다.**
+미활동 신호만 봤으면 놓쳤을 사람이라, 수행률 신호가 반드시 같이 가야 한다.
+
+**문턱은 앱과 맞춰 둔다.** `attention_thresholds().inactive_days = 3` 은
+`src/utils/journeyRules.ts` 의 `RESTART_THRESHOLD_DAYS` 와 같은 값이다. 앱이 "쉬었다 오셨네요"
+하고 가벼운 미션을 내주는 시점과 전문가 목록에 뜨는 시점이 어긋나면 두 화면이 서로 다른 말을
+한다. `verify:attention` 이 두 값이 같은지 매번 확인한다.
+
+**의료 표현을 쓰지 않는다.** 여기서 "주의" 는 운영 신호다 — 연락이 끊겼다, 수행이 밀렸다.
+몸 상태에 대한 판단이 아니다. 그래서 플래그 이름도 증상이 아니라 행동으로 썼고
+(`inactive` · `not_started` · `low_completion` · `hard_streak` · `ending_soon`),
+화면에도 "수행 기록에서 나온 운영 신호입니다" 를 적어 둔다.
+
+| 만든 것 | 자리 |
+|---|---|
+| `attention_thresholds()` · `get_client_attention_list()` | `db/journey/070_client_attention.sql` |
+| `attention_viewed` 활동 기록 | 같은 파일 (`professional_activity_log` CHECK 확장) |
+| `GET /api/professional/attention` | `ProfessionalController` · `ProfessionalService.clientAttention()` |
+| 콘솔 「오늘 볼 사람」 블록 | `static/index.html` `#attentionBlock` · `web.js` `renderAttention()` |
+| 검증 스위트 | `npm run verify:attention` |
+| 데모 데이터 (신호 5개 전부) | `npm run seed:professional` |
+
+권한 경계는 053 · 056 · 059 와 **같은 세 조건**이고, 함수가 인자를 받지 않으므로
+남의 고객 id 를 넣어 떠볼 방법 자체가 없다.
 
 ---
 

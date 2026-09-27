@@ -63,7 +63,15 @@ try {
   ok('휴대폰 인증 절차 꺼짐 (SMS 제공자가 없어 켤 수 없음)', c.phoneVerificationRequired === false)
   ok('휴대폰은 별칭 방식', c.phoneMode === 'alias', c.phoneMode)
   ok('별칭 도메인이 앱 기본값과 같다', c.phoneAliasDomain === 'phone.mebody.net', c.phoneAliasDomain)
-  ok('비밀번호 길이 제한 없음 (1자)', c.minPasswordLength === 1, `${c.minPasswordLength}자`)
+  // 2026-09-22 감사 P0-3 으로 8자가 됐습니다. 예전에는 이 줄이 "제한 없음(1자)" 을 정답으로
+  // 지키고 있었습니다 — 감사가 문제라고 한 동작을 테스트가 붙잡고 있었던 셈입니다.
+  ok('비밀번호 최소 8자 (2026-09-22 정책)', c.minPasswordLength >= 8, `${c.minPasswordLength}자`)
+  ok('휴대폰 가입에 복구용 이메일 필수', c.phoneRecoveryEmailRequired === true,
+     String(c.phoneRecoveryEmailRequired))
+  const phoneSignup = c.phoneSignupEnabled !== false
+  ok('휴대폰 가입 스위치가 응답에 있다', c.phoneSignupEnabled !== undefined, String(c.phoneSignupEnabled))
+  const minPw = Number(c.minPasswordLength) || 8
+  const recoveryRequired = c.phoneRecoveryEmailRequired === true
 
   let r, s
   if (!emailVerify) {
@@ -140,14 +148,33 @@ try {
   }
 
   console.log('\n■ 휴대폰 가입 → 바로 로그인 (확인 절차와 무관)')
-  r = await signup({ identifier: PHONE_RAW, password: PW, displayName: '휴대폰가입' })
+  // 복구용 이메일이 필수가 됐습니다(감사 P0-3). 별칭 주소로는 재설정 메일을 받을 수 없어서,
+  // 이게 없으면 비밀번호를 잊는 순간 계정을 되찾을 방법이 아예 없습니다.
+  if (recoveryRequired) {
+    const noRecovery = await signup({ identifier: PHONE_RAW, password: PW, displayName: '복구없음' })
+    ok('복구용 이메일 없이 휴대폰 가입 → 400', noRecovery.status === 400, `status=${noRecovery.status}`)
+  }
+  r = await signup({
+    identifier: PHONE_RAW, password: PW, displayName: '휴대폰가입',
+    recoveryEmail: `recover-${stamp}@example.com`,
+  })
   const phoneData = r.body?.data ?? r.body
   if (phoneData?.authUserId) created.push(phoneData.authUserId)
   ok('하이픈 넣은 번호로 가입 성공', r.status === 200, `status=${r.status} ${JSON.stringify(r.body).slice(0, 90)}`)
   ok('확인 절차 없음', phoneData?.verificationRequired === false)
-  ok('별칭 이메일이 번호+도메인', phoneData?.loginEmail === `${PHONE_DIGITS}@phone.mebody.net`, String(phoneData?.loginEmail))
+  // 복구 이메일을 적으면 **그 주소가 계정 이메일이 됩니다**(SignupIdentifier.withRecoveryEmail).
+  // 별칭은 복구 이메일 없이 가입한 계정에만 쓰입니다. 복구 이메일이 필수가 된 뒤로는
+  // 새 계정은 전부 이쪽입니다. 번호 로그인은 서버가 auth.users.phone 으로 찾아 그대로 동작합니다.
+  ok('복구 이메일이 계정 이메일이 된다', phoneData?.loginEmail === `recover-${stamp}@example.com`,
+     String(phoneData?.loginEmail))
   s = await login(phoneData?.loginEmail, PW)
-  ok('별칭으로 바로 로그인된다', s.status === 200 && Boolean(s.body?.access_token), `status=${s.status} ${s.body?.error_code ?? ''}`)
+  ok('그 주소로 바로 로그인된다', s.status === 200 && Boolean(s.body?.access_token), `status=${s.status} ${s.body?.error_code ?? ''}`)
+  // 번호로도 로그인되어야 합니다. 이게 깨지면 휴대폰 가입의 의미가 없습니다.
+  const byPhone = await fetch(`${BASE}/api/public/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifier: PHONE_RAW, password: PW }),
+  })
+  ok('번호로도 로그인된다 (복구 이메일이 있어도)', byPhone.status === 200, `status=${byPhone.status}`)
   ok('메타데이터에 실제 번호가 남는다', s.body?.user?.user_metadata?.phone_number === PHONE_DIGITS,
     String(s.body?.user?.user_metadata?.phone_number))
   ok('가입 경로가 phone 으로 기록된다', s.body?.user?.user_metadata?.signup_channel === 'phone')
@@ -164,7 +191,8 @@ try {
   ok('user_profiles 생성', Boolean(prof), prof ? `${prof.display_name} / ${prof.email}` : '없음')
 
   console.log('\n■ 같은 번호로 다시 가입하면')
-  r = await signup({ identifier: PHONE_DIGITS, password: 'AnotherPw!12345', displayName: '덮어쓰기시도' })
+  r = await signup({ identifier: PHONE_DIGITS, password: 'AnotherPw!12345', displayName: '덮어쓰기시도',
+                     recoveryEmail: `recover-${stamp}@example.com` })
   const dup = r.body?.data ?? r.body
   ok('이미 가입됨으로 응답', r.status === 200 && dup?.alreadyRegistered === true, `status=${r.status}`)
   const profAfter = (await db.query('SELECT display_name FROM public.user_profiles WHERE auth_user_id=$1',
@@ -180,13 +208,17 @@ try {
   //
   // 확인 절차가 켜져 있으면 "성공하는 이메일 가입" 은 매번 확인 메일을 한 통 씁니다.
   // 그래서 켜져 있을 때는 메일이 나가지 않는 휴대폰 경로로 같은 것을 봅니다.
-  const simplePw = 'abcdef'
+  // 예전에는 "6자로도 가입된다" 가 정답이었습니다. 이제는 거부되는 것이 정답입니다.
+  const shortPw = 'abcdef'
+  const simplePw = 'abcdefgh1234'   // 새 기준(8자)을 넘는 값
   if (!emailVerify) {
     const simpleEmail = `simple-${stamp}@phone.mebody.net`
+    const tooShort = await signup({ identifier: simpleEmail, password: shortPw })
+    ok(`${minPw}자 미만은 거부된다 (${shortPw.length}자)`, tooShort.status === 400, `status=${tooShort.status}`)
     r = await signup({ identifier: simpleEmail, password: simplePw })
     const simple = r.body?.data ?? r.body
     if (simple?.authUserId) created.push(simple.authUserId)
-    ok('대문자·숫자·기호 없이 6자만으로 가입된다', r.status === 200, `status=${r.status} ${JSON.stringify(r.body).slice(0, 70)}`)
+    ok('기준을 넘기면 대문자·기호 없이도 가입된다', r.status === 200, `status=${r.status} ${JSON.stringify(r.body).slice(0, 70)}`)
     s = await login(simpleEmail, simplePw)
     ok('그 계정으로 로그인도 된다', s.status === 200 && Boolean(s.body?.access_token), `status=${s.status}`)
 
@@ -197,15 +229,19 @@ try {
     ok('이름 없이도 가입된다', r.status === 200, `status=${r.status}`)
   } else {
     const simplePhone = `010-${String(stamp + 31).slice(-8, -4)}-${String(stamp + 31).slice(-4)}`
-    r = await signup({ identifier: simplePhone, password: simplePw })
+    const rec = { recoveryEmail: `recover2-${stamp}@example.com` }
+    const tooShort = await signup({ identifier: simplePhone, password: shortPw, ...rec })
+    ok(`${minPw}자 미만은 거부된다 (${shortPw.length}자)`, tooShort.status === 400, `status=${tooShort.status}`)
+    r = await signup({ identifier: simplePhone, password: simplePw, ...rec })
     const simple = r.body?.data ?? r.body
     if (simple?.authUserId) created.push(simple.authUserId)
-    ok('대문자·숫자·기호 없이 6자만으로 가입된다', r.status === 200, `status=${r.status} ${JSON.stringify(r.body).slice(0, 70)}`)
+    ok('기준을 넘기면 대문자·기호 없이도 가입된다', r.status === 200, `status=${r.status} ${JSON.stringify(r.body).slice(0, 70)}`)
     s = await login(simple?.loginEmail, simplePw)
     ok('그 계정으로 로그인도 된다', s.status === 200 && Boolean(s.body?.access_token), `status=${s.status}`)
 
     const noNamePhone = `010-${String(stamp + 57).slice(-8, -4)}-${String(stamp + 57).slice(-4)}`
-    r = await signup({ identifier: noNamePhone, password: simplePw })
+    r = await signup({ identifier: noNamePhone, password: simplePw,
+                      recoveryEmail: `recover3-${stamp}@example.com` })
     const noName = r.body?.data ?? r.body
     if (noName?.authUserId) created.push(noName.authUserId)
     ok('이름 없이도 가입된다', r.status === 200, `status=${r.status}`)
@@ -213,8 +249,11 @@ try {
 
   // 비밀번호 거절은 Supabase 가 메일을 보내기 전에 판정하므로 한도를 쓰지 않습니다.
   r = await signup({ identifier: `tooshort-${stamp}@phone.mebody.net`, password: 'ab' })
-  ok('Supabase 가 거절하면 사유를 우리 문장으로 옮긴다',
-    r.status === 400 && /짧|길게/.test(String(r.body?.message ?? '')),
+  // 예전에는 이 짧은 비밀번호가 우리 검사를 지나 Supabase 까지 가서 거절당했습니다.
+  // 이제는 **우리가 먼저 막습니다**(8자). Supabase 까지 보내지 않는 것이 옳습니다 —
+  // 왕복 한 번과 계정 생성 시도를 아낍니다. 문장이 우리 것인지만 봅니다.
+  ok('짧은 비밀번호를 우리 문장으로 먼저 막는다',
+    r.status === 400 && /자 이상|짧|길게/.test(String(r.body?.message ?? '')),
     `status=${r.status} ${r.body?.message ?? ''}`)
 
   console.log('\n■ 휴대폰 가입 + 복구용 이메일')
@@ -350,7 +389,8 @@ try {
 
     // 휴대폰 경로는 확인 메일을 쓰지 않아 항상 돕니다. 기본 검사는 여기서 합니다.
     const consentPhone = `010-${String(stamp + 91).slice(-8, -4)}-${String(stamp + 91).slice(-4)}`
-    r = await signup({ identifier: consentPhone, password: PW, agreedTerms: true, agreedPrivacy: true })
+    r = await signup({ identifier: consentPhone, password: PW, agreedTerms: true, agreedPrivacy: true,
+                       recoveryEmail: `consent-${stamp}@example.com` })
     const consentUser = r.body?.data ?? r.body
     if (consentUser?.authUserId) created.push(consentUser.authUserId)
     const row = await consentRow(consentUser?.authUserId)
@@ -359,8 +399,35 @@ try {
       `약관 ${row?.terms_agreed_at ? 'O' : 'X'} 처리방침 ${row?.privacy_agreed_at ? 'O' : 'X'}`)
     ok('동의하지 않은 마케팅은 비어 있다', row?.marketing_agreed_at === null)
 
+    // 071 원장에도 남는지. 컬럼은 "지금 상태" 고 원장은 "무엇에 언제 동의했나" 입니다.
+    const hasLedger = Number((await db.query(`SELECT count(*)::int n FROM pg_proc p
+       JOIN pg_namespace ns ON ns.oid=p.pronamespace
+      WHERE ns.nspname='public' AND p.proname='record_consent'`)).rows[0].n) === 1
+    if (!hasLedger) {
+      console.log('    대기  동의 원장 — 071 미적용이라 생략')
+    } else {
+      const led = (await db.query(`SELECT consent_type, policy_version, channel
+         FROM public.user_consents
+        WHERE user_id = (SELECT id FROM public.user_profiles WHERE auth_user_id=$1)
+        ORDER BY consent_type`, [consentUser?.authUserId])).rows
+      const types = led.map((x) => x.consent_type).sort()
+      ok('원장에 약관·처리방침 두 줄', JSON.stringify(types) === JSON.stringify(['privacy', 'terms']),
+         JSON.stringify(types))
+      ok('원장에 문서 판이 남는다', led.every((x) => x.policy_version && x.policy_version !== 'unknown'),
+         led.map((x) => x.policy_version).join(','))
+      ok('동의 안 한 마케팅은 원장에도 없다', !types.includes('marketing'))
+
+      // 원장은 증적이므로 앱이 직접 쓸 수 없어야 합니다.
+      const priv = (await db.query(`SELECT
+          has_table_privilege('authenticated','public.user_consents','INSERT') a,
+          has_table_privilege('anon','public.user_consents','SELECT') b`)).rows[0]
+      ok('회원이 원장에 직접 쓸 수 없다', priv.a === false)
+      ok('anon 은 원장을 볼 수 없다', priv.b === false)
+    }
+
     const noConsentPhone = `010-${String(stamp + 113).slice(-8, -4)}-${String(stamp + 113).slice(-4)}`
-    r = await signup({ identifier: noConsentPhone, password: PW })
+    r = await signup({ identifier: noConsentPhone, password: PW,
+                       recoveryEmail: `noconsent-${stamp}@example.com` })
     const noConsentUser = r.body?.data ?? r.body
     if (noConsentUser?.authUserId) created.push(noConsentUser.authUserId)
     const row2 = await consentRow(noConsentUser?.authUserId)

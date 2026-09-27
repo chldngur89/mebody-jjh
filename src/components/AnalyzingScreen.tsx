@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BRAND_PAGE_BG } from '../theme/brand';
 import { PRODUCT } from '../theme/copy';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { AXIS_ICON_SRC } from '../data/axisIcons';
+import { AXIS_ICON_SMALL_SRC, AXIS_ICON_SMALL_SRCSET } from '../data/axisIcons';
 import { useMediaQuery } from '../utils/useMediaQuery';
 
 interface AnalyzingScreenProps {
@@ -126,25 +126,33 @@ export function AnalyzingScreen({ onBack, onAnalyze }: AnalyzingScreenProps) {
             <div className="flex items-center justify-center gap-4">
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-white animate-pulse">
-                  <img src={AXIS_ICON_SRC.neck} alt="" className="w-full h-full object-contain" />
+                  <img src={AXIS_ICON_SMALL_SRC.neck} srcSet={AXIS_ICON_SMALL_SRCSET.neck}
+                       width={48} height={48} loading="eager" decoding="async"
+                       alt="" className="w-full h-full object-contain" />
                 </div>
                 <span className="text-xs text-gray-600">목</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-white animate-pulse" style={{ animationDelay: '0.2s' }}>
-                  <img src={AXIS_ICON_SRC.shoulder} alt="" className="w-full h-full object-contain" />
+                  <img src={AXIS_ICON_SMALL_SRC.shoulder} srcSet={AXIS_ICON_SMALL_SRCSET.shoulder}
+                       width={48} height={48} loading="eager" decoding="async"
+                       alt="" className="w-full h-full object-contain" />
                 </div>
                 <span className="text-xs text-gray-600">어깨</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-white animate-pulse" style={{ animationDelay: '0.4s' }}>
-                  <img src={AXIS_ICON_SRC.pelvis} alt="" className="w-full h-full object-contain" />
+                  <img src={AXIS_ICON_SMALL_SRC.pelvis} srcSet={AXIS_ICON_SMALL_SRCSET.pelvis}
+                       width={48} height={48} loading="eager" decoding="async"
+                       alt="" className="w-full h-full object-contain" />
                 </div>
                 <span className="text-xs text-gray-600">골반</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-white animate-pulse" style={{ animationDelay: '0.6s' }}>
-                  <img src={AXIS_ICON_SRC.flexibility} alt="" className="w-full h-full object-contain" />
+                  <img src={AXIS_ICON_SMALL_SRC.flexibility} srcSet={AXIS_ICON_SMALL_SRCSET.flexibility}
+                       width={48} height={48} loading="eager" decoding="async"
+                       alt="" className="w-full h-full object-contain" />
                 </div>
                 <span className="text-xs text-gray-600">하체</span>
               </div>

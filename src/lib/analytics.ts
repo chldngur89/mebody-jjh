@@ -97,9 +97,50 @@ function sessionId(): string | null {
 
 const SESSION_KEY = 'mebody:analytics-session'
 
+/**
+ * 동의 전에는 빼는 props.
+ *
+ * `body_code` 는 체형 코드(FRRS 같은 값)입니다. 사람을 식별하지는 않지만 **건강과 관련된 값**이고,
+ * `session_id` 와 붙으면 "이 방문자는 이런 몸" 이 되는 가명 정보가 됩니다.
+ * 그래서 동의 전에는 이 둘을 같이 보내지 않습니다.
+ */
+const CONSENT_ONLY_PROPS = ['body_code'] as const
+
+/**
+ * 동의 상태에 따라 무엇을 보낼지.
+ *
+ * 2026-09-22 감사 P1-2: 배너는 "광고 목적 쿠키" 만 말하는데 실제로는 이용 통계도 쌓고 있었고,
+ * `track()` 은 동의를 아예 보지 않았습니다. 문구와 수집 범위가 어긋난 것이 문제였습니다.
+ *
+ * 고른 답은 **둘 다 하는 쪽**입니다.
+ *   · 이용 통계 자체는 멈추지 않습니다. 어디서 이탈하는지 모르면 제품을 고칠 수 없습니다.
+ *   · 다만 동의 전에는 **연결 가능한 부분을 떼고** 보냅니다 — session_id 없음, body_code 없음.
+ *     그러면 남는 것은 "이 화면에서 이 일이 몇 번 있었다" 뿐이고 사람이나 몸에 붙지 않습니다.
+ *   · 동의하면 방문을 잇는 session_id 와 body_code 까지 보냅니다.
+ *   · **아직 고르지 않았으면 거부와 같게 봅니다.** 배너가 뜨기 전에 보수적으로 갑니다.
+ *
+ * 배너 문구와 개인정보처리방침에도 이 범위를 그대로 적어 두었습니다.
+ */
+function consentAccepted(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem('mebody.cookieConsent.v1') === 'accepted'
+  } catch {
+    return false  // 저장이 막힌 환경도 거부로 봅니다
+  }
+}
+
 export function track(event: AnalyticsEvent, props: AnalyticsProps = {}): void {
   if (import.meta.env.DEV) {
     console.debug('[analytics]', event, props)
+  }
+
+  const accepted = consentAccepted()
+  let payloadProps: AnalyticsProps = props
+  if (!accepted) {
+    const trimmed: Record<string, unknown> = { ...props }
+    for (const key of CONSENT_ONLY_PROPS) delete trimmed[key]
+    payloadProps = trimmed as AnalyticsProps
   }
 
   // 수집이 화면을 막으면 안 됩니다. 실패해도 조용히 지나갑니다.
@@ -108,8 +149,9 @@ export function track(event: AnalyticsEvent, props: AnalyticsProps = {}): void {
       .from('analytics_events')
       .insert({
         event,
-        props,
-        session_id: sessionId(),
+        props: payloadProps,
+        // 동의 전에는 방문을 잇지 않습니다. 이벤트가 서로 묶이지 않습니다.
+        session_id: accepted ? sessionId() : null,
         // 쿼리스트링은 넣지 않습니다. 결과 id 가 들어갑니다.
         path: typeof window === 'undefined' ? null : window.location.pathname,
         app_version: import.meta.env.VITE_APP_VERSION ?? null,

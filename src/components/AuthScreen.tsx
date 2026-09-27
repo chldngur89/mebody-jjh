@@ -6,6 +6,7 @@ import { requestPasswordReset, signOutAccount, upsertProfileFromUser } from '../
 import { requestPhonePasswordReset, signInByPhone, signInWithApproval, signUpWithIdentifier } from '../api/signup';
 import { detectKind, formatPhone, resolveLoginEmail, type IdentifierKind } from '../lib/identifier';
 import { authErrorMessage } from '../lib/authErrorMessage';
+import { fetchAuthConfig, FALLBACK_AUTH_CONFIG, type AuthConfig } from '../api/authConfig';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { CTA, PRODUCT } from '../theme/copy';
 import { BrandMark, ConsentCheckbox, LegalConsentLabel } from './ui';
@@ -47,12 +48,36 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
   const [agreeService, setAgreeService] = useState(false);
   const [agreeLegal, setAgreeLegal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  /**
+   * 서버의 가입 조건. 화면이 조건을 말할 때는 박아 둔 문구가 아니라 이 값을 씁니다.
+   * 못 읽으면 보수적인 기본값(8자·복구 이메일 필수)으로 갑니다 — api/authConfig.ts 참고.
+   */
+  const [authConfig, setAuthConfig] = useState<AuthConfig>(FALLBACK_AUTH_CONFIG);
+
+  useEffect(() => {
+    let alive = true;
+    fetchAuthConfig().then((c) => { if (alive) setAuthConfig(c); });
+    return () => { alive = false; };
+  }, []);
+
+  const minPassword = authConfig.minPasswordLength;
+  /** 가입에서만 봅니다. 로그인에 걸면 기준을 올린 순간 기존 계정이 잠깁니다. */
+  const passwordTooShort =
+    mode === 'signup' && password.length > 0 && password.length < minPassword;
+  /** 별칭 주소로는 재설정 메일을 받을 수 없으므로 휴대폰 가입에는 복구 이메일이 필요합니다. */
+  const recoveryEmailMissing =
+    mode === 'signup' && identifierKind === 'phone'
+    && authConfig.phoneRecoveryEmailRequired && recoveryEmail.trim().length === 0;
+  /** SMS 인증이 없는 동안 휴대폰 가입을 닫아 둘 수 있습니다(서버 스위치). */
+  const phoneSignupBlocked =
+    mode === 'signup' && identifierKind === 'phone' && !authConfig.phoneSignupEnabled;
 
   const passwordMismatch =
     mode === 'signup' && passwordConfirm.length > 0 && password !== passwordConfirm;
   /** 회원가입에서만 동의가 필요합니다. 로그인은 이미 동의한 계정입니다. */
   const consentPending = mode === 'signup' && !(agreeService && agreeLegal);
-  const submitBlocked = loading || passwordMismatch || consentPending;
+  const submitBlocked = loading || passwordMismatch || consentPending
+    || passwordTooShort || recoveryEmailMissing || phoneSignupBlocked;
 
   useEffect(() => {
     setMode(purpose === 'save-result' ? 'signup' : initialMode);
@@ -92,8 +117,22 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
       }
     }
 
-    // 가입 조건은 여기까지입니다. 값이 있으면 그대로 진행합니다.
-    // 길이 같은 제한은 서버 설정(mebody.auth.min-password-length)이 정하고, 지금은 1자입니다.
+    // 길이·복구 이메일은 서버가 최종 판정하지만, 여기서 먼저 같은 문장으로 막습니다.
+    // 서버까지 갔다가 거부당하면 사용자는 같은 값을 두 번 넣게 됩니다.
+    if (mode === 'signup') {
+      if (phoneSignupBlocked) {
+        setError('지금은 이메일로만 가입할 수 있습니다. 이메일 주소를 입력해주세요.');
+        return;
+      }
+      if (password.length < minPassword) {
+        setError(`비밀번호는 ${minPassword}자 이상이어야 합니다.`);
+        return;
+      }
+      if (recoveryEmailMissing) {
+        setError('휴대폰으로 가입하려면 복구용 이메일이 필요합니다. 비밀번호를 잊었을 때 재설정 메일을 받을 주소입니다.');
+        return;
+      }
+    }
 
     setLoading(true);
     setError(null);
@@ -324,11 +363,18 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
           <div style={{ margin: 'auto 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
+              {/*
+                  랜딩 상단의 로그인 버튼으로 들어온 사람에게는 저장할 결과가 없습니다.
+                  그런데도 "결과 저장을 위해" 라고 말하면 무엇을 저장하는지 알 수 없습니다(2026-09-22 감사 P1-3).
+                  결과 직후(save-result)에만 저장을 말합니다.
+              */}
               {user
                 ? '계정'
                 : purpose === 'save-result'
                   ? '휴대폰으로 결과 보관'
-                  : '결과 저장을 위해 가입하기'}
+                  : mode === 'signup'
+                    ? '회원가입'
+                    : '로그인'}
             </div>
             <h1 style={{ fontSize: '1.625rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--mebody-t-014725, #014725)' }}>
               {purpose === 'save-result' && !user ? '번호만으로 빠르게 저장' : '로그인 / 회원가입'}
@@ -592,7 +638,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                       onFocus={(e) => {
                         setTimeout(() => e.target.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'center' }), 300);
                       }}
-                      placeholder="원하는 비밀번호"
+                      placeholder={mode === 'signup' ? `${minPassword}자 이상 비밀번호` : '비밀번호 입력'}
                       autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                       required
                       style={{
@@ -605,6 +651,13 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                       }}
                     />
                   </div>
+                  {mode === 'signup' && (
+                    <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.5, color: passwordTooShort ? '#8E3A32' : '#6b7280', wordBreak: 'keep-all' }}>
+                      {passwordTooShort
+                        ? `${minPassword}자 이상 입력해주세요. 지금 ${password.length}자입니다.`
+                        : `${minPassword}자 이상으로 만들어주세요.`}
+                    </span>
+                  )}
                 </label>
 
                 {mode === 'signup' && (
@@ -660,7 +713,7 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                 {mode === 'signup' && identifierKind === 'phone' && (
                   <label style={{ display: 'block' }}>
                     <span style={{ display: 'block', marginBottom: '6px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--mebody-t-2c5544, #2C5544)' }}>
-                      복구용 이메일(선택)
+                      복구용 이메일{authConfig.phoneRecoveryEmailRequired ? '' : '(선택)'}
                     </span>
                     <div
                       style={{
@@ -683,7 +736,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                       />
                     </div>
                     <span style={{ display: 'block', marginTop: '6px', fontSize: '12px', lineHeight: 1.5, color: '#6b7280', wordBreak: 'keep-all' }}>
-                      비밀번호를 잊었을 때 여기로 재설정 메일을 보냅니다. 비워두면 번호로만 로그인할 수 있고 재설정은 안 됩니다.
+                      {authConfig.phoneRecoveryEmailRequired
+                        ? '비밀번호를 잊었을 때 여기로 재설정 메일을 보냅니다. 번호 주소로는 메일을 받을 수 없어서, 이게 없으면 계정을 되찾을 방법이 없습니다.'
+                        : '비밀번호를 잊었을 때 여기로 재설정 메일을 보냅니다. 비워두면 번호로만 로그인할 수 있고 재설정은 안 됩니다.'}
                     </span>
                   </label>
                 )}

@@ -66,8 +66,49 @@ if (!env.VITE_ADMOB_BANNER_RESULT && !env.VITE_ADMOB_REWARDED) {
   warnings.push('AdMob 광고 단위가 비어 있습니다 — 구글 테스트 광고가 나갑니다(수익 0). `npm run ads:check` 참고.')
 }
 
+/**
+ * 주소가 https 인 것만으로는 부족합니다.
+ *
+ * 2026-09-22 감사에서 배포 앱이 **존재하지만 API 가 없는 주소**(정적 홈페이지)를 가리켜
+ * 가입·로그인·탈퇴·결제가 전부 실패한 채로 떠 있었습니다. 그때 이 검사는 통과했습니다.
+ * https 였고 localhost 가 아니었으니까요. 404 는 앱에서 네트워크 장애가 아니라
+ * 즉시 오류로 처리되므로 Supabase 폴백도 타지 않습니다.
+ *
+ * 그래서 실제로 두드려 봅니다. 구분을 지킵니다.
+ *   응답이 왔고 200 이 아니다   → FAIL. 주소가 틀린 것이 확실합니다.
+ *   응답 자체가 없다(네트워크)  → 경고. 확인을 못 한 것이지 틀린 것이 아닙니다.
+ */
+async function probeApiBase(base) {
+  const url = `${base.replace(/\/+$/, '')}/api/public/auth/config`
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(12_000) })
+    if (r.status !== 200) {
+      return { fail: `API base 가 응답하지만 인증 설정이 없습니다: ${url} → ${r.status}\n`
+        + '      이 주소에는 서버 API 가 없습니다(정적 사이트이거나 다른 서비스입니다).\n'
+        + '      실제 서버 주소로 바꾸고 다시 빌드하세요.' }
+    }
+    const body = await r.json().catch(() => null)
+    if (!body || typeof body?.data?.minPasswordLength !== 'number') {
+      return { fail: `API base 의 응답이 예상과 다릅니다: ${url}\n`
+        + `      받은 것: ${JSON.stringify(body).slice(0, 160)}` }
+    }
+    return { info: `확인 — 이메일 확인 ${body.data.emailVerificationRequired ? 'ON' : 'OFF'}`
+      + ` · 비밀번호 최소 ${body.data.minPasswordLength}자` }
+  } catch (e) {
+    return { warn: `API base 를 확인하지 못했습니다(${e.name}). 주소가 틀렸을 수도, 네트워크가 없을 수도 있습니다: ${url}` }
+  }
+}
+
+let apiNote = ''
+if (apiBase && !LOCAL_HOST.test(apiBase) && /^https:\/\//i.test(apiBase)) {
+  const probe = await probeApiBase(apiBase)
+  if (probe.fail) failures.push(probe.fail)
+  if (probe.warn) warnings.push(probe.warn)
+  if (probe.info) apiNote = ` — ${probe.info}`
+}
+
 console.log('\n■ 앱 빌드 환경 점검')
-console.log(`  API base  : ${apiBase || '(비어 있음)'}`)
+console.log(`  API base  : ${apiBase || '(비어 있음)'}${apiNote}`)
 for (const w of warnings) console.log(`  대기  ${w}`)
 for (const f of failures) console.log(`  FAIL  ${f}`)
 

@@ -27,7 +27,11 @@
 - [ ] **AdMob 보상형 광고 단위 발급** → `.env.local` 의 `VITE_ADMOB_REWARDED`.
       배너는 `…/8555895404` 로 적용 완료. 보상형이 비어 있으면 그 자리에 구글 테스트 광고가 나간다.
       `npm run ads:check` 가 상태를 보여준다
-- [ ] **Railway 재배포** — 지금 `mebody-server-production.up.railway.app` 은 전 경로 404 다.
+- [x] ~~**Railway 재배포**~~ — 재배포가 필요한 게 아니었다. 서버는 살아 있고 호스트명이 다르다.
+      작동: `https://mebodyserver-production.up.railway.app` (하이픈 없음)
+      404:  `https://mebody-server-production.up.railway.app` (하이픈 있음 — 존재하지 않는 서비스)
+      2026-09-27 에 저장소 `.env.local`·`.env.example`·README 3곳을 작동 주소로 고쳤다.
+      **남은 것은 Vercel Production 환경변수 `VITE_API_BASE_URL` 뿐이다 (사장님 몫).**
       스프링이 아니라 Railway 엣지가 내는 `Application not found` — 그 주소에 배포본이 없다.
       앱의 `VITE_API_BASE_URL` 이 이 주소를 가리키므로, 배포 전까지 결제·주문·휴대폰 가입·탈퇴가 잠긴다
 - [ ] Kakao Developers 앱 생성 → JavaScript 키 → 플랫폼 Web 도메인 등록 → 카카오톡 공유 활성화

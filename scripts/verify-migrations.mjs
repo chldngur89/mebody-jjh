@@ -101,6 +101,12 @@ const CHECKS = [
      AND p.proname='grant_routine_bonus_admin' AND p.prosrc LIKE '%reward_payout_for%'`)],
   ['journey/068_invite_sent_event',       () => fn('create_client_invite')],
   ['journey/069_plan_draft_input',        () => fn('get_client_plan_input')],
+  ['journey/070_client_attention',        () => fn('get_client_attention_list')],
+  ['journey/070 · attention_viewed',      () => v(`SELECT pg_get_constraintdef(oid) LIKE '%attention_viewed%' AS v
+                                                    FROM pg_constraint
+                                                   WHERE conname='professional_activity_log_event_check'`)],
+  ['journey/071_consent_ledger',          () => table('user_consents')],
+  ['journey/071 · record_consent',        () => fn('record_consent')],
 ]
 
 console.log('\n■ 마이그레이션 적용 상태')

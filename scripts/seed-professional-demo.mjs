@@ -58,8 +58,13 @@ async function clean() {
   }
 }
 
+// 계정을 여러 개 잇달아 만들면 Date.now() 가 같은 밀리초에 걸려 이메일이 겹칩니다.
+// 순번을 붙여 막습니다.
+let seedSeq = 0
+
 async function makeUser(prefix, displayName) {
-  const email = `${prefix}${Date.now().toString(36)}@phone.mebody.net`
+  seedSeq += 1
+  const email = `${prefix}${Date.now().toString(36)}${seedSeq.toString(36)}@phone.mebody.net`
   const r = await fetch(`${SB}/auth/v1/admin/users`, { method: 'POST', headers: SH,
     body: JSON.stringify({ email, password: DEMO_PASSWORD, email_confirm: true }) })
   const user = await r.json()
@@ -73,7 +78,20 @@ async function makeUser(prefix, displayName) {
 }
 
 /** 14일 루틴을 "이만큼 했다" 는 모양으로 채웁니다. */
-async function seedJourney(client, { bodyCode, doneDays, skipDays, feedbacks }) {
+/**
+ * 데모 저니 하나.
+ *
+ * startedDaysAgo·inactiveDays·lastDay 의 기본값은 **원래 동작 그대로**입니다.
+ * 기존 두 고객(이수진·박준호)이 만들어내던 데이터가 달라지면 안 됩니다.
+ *
+ *   startedDaysAgo 며칠 전에 시작했나 → journey_current_day() 가 이걸로 오늘을 셉니다
+ *   inactiveDays   마지막으로 앱을 연 게 며칠 전인가 (주의 목록의 '연락 끊김' 신호)
+ *   lastDay        미션을 몇 일차까지 만들어 둘까
+ */
+async function seedJourney(client, {
+  bodyCode, doneDays, skipDays, feedbacks,
+  startedDaysAgo = 13, inactiveDays = 1, lastDay = 14,
+}) {
   const responseId = (await db.query(
     `INSERT INTO public.questionnaire_responses
        (id, user_id, answers, status, calculated_code, question_version, completed_at)
@@ -86,7 +104,8 @@ async function seedJourney(client, { bodyCode, doneDays, skipDays, feedbacks }) 
        (id, user_id, questionnaire_response_id, template_code, body_code, axis_priority,
         status, current_day, started_at, last_active_at)
      VALUES (gen_random_uuid(), $1, $2, 'starter_14d', $3, $4::jsonb,
-             'active', $5, now() - interval '13 days', now() - interval '1 day')
+             'active', $5,
+             now() - make_interval(days => $6::int), now() - make_interval(days => $7::int))
      RETURNING id`,
     [client.profileId, responseId, bodyCode,
      // 실제 저니와 같은 모양이어야 합니다. 문자열 배열을 넣으면 규칙 엔진이
@@ -96,18 +115,18 @@ async function seedJourney(client, { bodyCode, doneDays, skipDays, feedbacks }) 
        { axis: 'shoulder', rank: 2, direction: 'L', percent: 70, label: '왼쪽 높음' },
        { axis: 'pelvis', rank: 3, direction: 'R', percent: 60, label: '오른쪽 회전' },
        { axis: 'lower', rank: 4, direction: 'S', percent: 50, label: '뻣뻣' },
-     ]), Math.max(...doneDays, 1)])).rows[0].id
+     ]), Math.max(...doneDays, 1), startedDaysAgo, inactiveDays])).rows[0].id
 
   const CONTENT = ['axis_1F', 'axis_2L', 'axis_3L', 'axis_4S', 'waist_left']
   const missionIds = []
-  for (let day = 1; day <= 14; day += 1) {
+  for (let day = 1; day <= lastDay; day += 1) {
     const slots = day % 3 === 0 ? 3 : 2
     for (let slot = 1; slot <= slots; slot += 1) {
       const status = doneDays.includes(day) ? 'completed'
         : skipDays.includes(day) ? 'skipped'
         : 'scheduled'
       const completedAt = status === 'completed'
-        ? `now() - interval '${14 - day} days'` : 'NULL'
+        ? `now() - make_interval(days => ${Math.max(0, startedDaysAgo + 1 - day)})` : 'NULL'
       const id = (await db.query(
         `INSERT INTO public.user_missions
            (id, user_journey_id, user_id, day_no, slot_no, content_key, mission_type,
@@ -127,7 +146,8 @@ async function seedJourney(client, { bodyCode, doneDays, skipDays, feedbacks }) 
     await db.query(
       `INSERT INTO public.journey_mission_feedback
          (id, user_mission_id, user_id, feeling, difficulty, note, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, now() - interval '${14 - fb.day} days')`,
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5,
+               now() - make_interval(days => ${Math.max(0, startedDaysAgo + 1 - fb.day)}))`,
       [target.id, client.profileId, fb.feeling, fb.difficulty, fb.note])
   }
 
@@ -181,8 +201,39 @@ const b = await seedJourney(stalled, {
 console.log(`  ${steady.displayName} — 완료 ${a.done}개 (잘 따라오는 경우)`)
 console.log(`  ${stalled.displayName} — 완료 ${b.done}개 (3일째 멈춘 경우)`)
 
-console.log('\n■ 관계 — 둘 다 동의한 상태로 연결')
-for (const client of [steady, stalled]) {
+// ── 주의 목록(Phase 5)이 실제로 뭘 잡아내는지 보이려면 신호가 다 있어야 합니다.
+//    위 두 사람은 '수행 밀림' 과 '곧 끝남' 만 냅니다. 나머지 세 가지를 만듭니다.
+//    한 사람이 신호 하나씩만 내도록 일부러 떼어 놨습니다 — 섞이면 화면이 뭘 잡았는지 안 보입니다.
+console.log('\n■ 데모 고객 3명 더 — 주의 목록의 나머지 신호')
+
+// 연락 끊김: 5일째 앱을 안 열었다. 열었을 때는 잘 했으므로 수행률은 멀쩡하다.
+const ghosted = await makeUser(DEMO_PREFIX[1], '최유나')
+const c = await seedJourney(ghosted, {
+  bodyCode: 'FLRS', startedDaysAgo: 8, inactiveDays: 5, lastDay: 8,
+  doneDays: [1, 2, 3, 4, 5], skipDays: [],
+  feedbacks: [{ day: 4, feeling: 'BETTER', difficulty: 'GOOD', note: '어깨가 가벼워졌어요.' }],
+})
+
+// 어렵다 반복: 하루도 안 빠졌는데 최근에 "힘들었다" 가 두 번. 난이도를 낮춰 줘야 할 사람이다.
+const straining = await makeUser(DEMO_PREFIX[1], '한지호')
+const d = await seedJourney(straining, {
+  bodyCode: 'CRRF', startedDaysAgo: 8, inactiveDays: 0, lastDay: 8,
+  doneDays: [1, 2, 3, 4, 5, 6, 7, 8], skipDays: [],
+  feedbacks: [
+    { day: 7, feeling: 'SAME', difficulty: 'HARD', note: '허리 젖히는 동작이 버겁습니다.' },
+    { day: 8, feeling: 'UNCOMFORTABLE', difficulty: 'HARD', note: '어제보다 더 힘들었어요.' },
+  ],
+})
+
+// 아직 시작 안 함: 동의까지 해 놓고 루틴을 한 번도 시작하지 않았다. 저니를 만들지 않습니다.
+const idle = await makeUser(DEMO_PREFIX[1], '오세훈')
+
+console.log(`  ${ghosted.displayName} — 완료 ${c.done}개, 5일째 안 열었음 (연락 끊김)`)
+console.log(`  ${straining.displayName} — 완료 ${d.done}개, "힘들었다" 2회 (어렵다 반복)`)
+console.log(`  ${idle.displayName} — 저니 없음 (아직 시작 안 함)`)
+
+console.log('\n■ 관계 — 전부 동의한 상태로 연결')
+for (const client of [steady, stalled, ghosted, straining, idle]) {
   await db.query(
     `INSERT INTO public.professional_clients
        (professional_id, client_user_id, invite_token, status, consented_at)
@@ -192,8 +243,11 @@ for (const client of [steady, stalled]) {
 
 console.log('\n■ 로그인 정보')
 console.log(`  전문가  ${pro.email}`)
-console.log(`  고객A   ${steady.email}`)
-console.log(`  고객B   ${stalled.email}`)
+console.log(`  고객A   ${steady.email}   (잘 따라옴)`)
+console.log(`  고객B   ${stalled.email}   (수행 밀림)`)
+console.log(`  고객C   ${ghosted.email}   (연락 끊김)`)
+console.log(`  고객D   ${straining.email}   (어렵다 반복)`)
+console.log(`  고객E   ${idle.email}   (아직 시작 안 함)`)
 console.log(`  비밀번호 ${DEMO_PASSWORD}`)
 console.log('\n  지울 때:  npm run seed:professional -- --clean\n')
 

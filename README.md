@@ -30,7 +30,7 @@ MEBODY의 결과는 의료 진단, 통증 판독, 치료, 교정 또는 재활 �
 
 | 구성 | 저장소·배포 | 역할 |
 |---|---|---|
-| 홈페이지·서버 | [MebodyServer](https://github.com/MebodyCTO/MebodyServer) / [Railway 설정 주소](https://mebody-server-production.up.railway.app/) | 홈페이지, `/sample`, `/admin`, Spring API |
+| 홈페이지·서버 | [MebodyServer](https://github.com/MebodyCTO/MebodyServer) / [Railway 설정 주소](https://mebodyserver-production.up.railway.app/) | 홈페이지, `/sample`, `/admin`, Spring API |
 | 12문항 간이 설문 | [sample-questionnaire](https://github.com/MebodyCTO/MebodyServer/tree/main/sample-questionnaire) | 홈페이지에서 연결되는 간이 체크 React 앱 |
 | 32문항 모바일 앱 | [mebody-jjh](https://github.com/chldngur89/mebody-jjh) / [Vercel](https://mebody-jjh.vercel.app/) | 본 설문, 결과, 코드 플랜, 회원 기능 |
 | 인증·데이터 | Supabase | Auth, Postgres, Storage |
@@ -270,7 +270,7 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 # 선택값. 마이페이지의 관리자 콘솔, 결제(/api/billing/*), 보상형 광고 SSV 설정 조회에 씁니다.
 # 진단·문항·결과는 이 서버 없이도 동작해야 합니다.
-VITE_API_BASE_URL=https://mebody-server-production.up.railway.app
+VITE_API_BASE_URL=https://mebodyserver-production.up.railway.app
 
 # 선택값. 결과 공유용 카카오 JavaScript 키. 비어 있으면 카카오 버튼만 숨고
 # OS 공유·링크 복사는 그대로 동작합니다.

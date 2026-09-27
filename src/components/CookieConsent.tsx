@@ -1,11 +1,16 @@
 /**
- * 쿠키 동의 배너
+ * 쿠키·이용 통계 동의 배너
  *
  * AdSense 는 맞춤형 광고에 동의 관리를 요구합니다(특히 EEA).
  * 여기서는 **거부를 기본값**으로 둡니다 — 동의하기 전에는 광고 개인화를 켜지 않습니다.
  *
  * 저장은 localStorage 한 곳뿐입니다. 서버로 보내지 않습니다.
- * AdSlot 은 이 값을 읽어 광고 로드 여부와 개인화 여부를 정합니다.
+ * 이 값을 읽는 곳이 둘입니다.
+ *   · AdSlot        — 광고 로드 여부와 개인화 여부
+ *   · lib/analytics — 방문을 잇는 session_id 와 체형 코드를 보낼지 (2026-09-22 감사 P1-2)
+ *
+ * 그래서 문구를 바꿀 때는 **analytics.ts 가 실제로 무엇을 거르는지** 같이 확인해야 합니다.
+ * 둘이 어긋나면 배너가 거짓말을 합니다.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { AXIS_GREEN_THEME } from '../data/axisTheme';
@@ -94,9 +99,18 @@ export function CookieConsentBanner({
       }}
     >
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>쿠키 사용 안내</div>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>쿠키·이용 통계 안내</div>
+        {/*
+            예전에는 "광고 목적 쿠키" 만 적혀 있었습니다. 그런데 이용 통계도 함께 쌓고 있었고
+            배너는 그걸 말하지 않았습니다(2026-09-22 감사 P1-2). 실제 수집 범위를 그대로 적습니다.
+
+            「필수만」 = 화면·단계별 횟수만 남습니다. 방문을 잇는 값과 체형 코드는 보내지 않습니다.
+            「동의」  = 거기에 방문을 잇는 임시 값과 체형 코드가 더해집니다. 광고 개인화도 켜집니다.
+            둘 다 이름·이메일·전화번호·문항 답변 원문은 보내지 않습니다. 보관 180일.
+        */}
         <p style={{ fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all', margin: '3px 0 0' }}>
-          무료 이용 시 광고 목적 쿠키를 함께 씁니다. 거부해도 그대로 이용할 수 있어요.{' '}
+          서비스 개선을 위해 화면별 이용 통계를 남깁니다(180일 보관). 동의하면 광고 개인화와 방문 연결도 켜집니다.
+          「필수만」을 골라도 그대로 이용할 수 있고, 이름·연락처·문항 답변은 어느 쪽이든 보내지 않습니다.{' '}
           <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--mebody-t-014725, #014725)', fontWeight: 800 }}>
             자세히
           </a>
