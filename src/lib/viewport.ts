@@ -33,10 +33,26 @@ function readVisibleHeight(): number {
   return Math.round(Math.min(...candidates))
 }
 
+/**
+ * 네이티브 배너가 차지한 높이. src/lib/ads.ts 가 채웁니다(웹에서는 늘 0).
+ *
+ * 배너는 웹뷰 **위에 덮이는 네이티브 뷰**입니다. 그래서 앱 표면이 화면 전체 높이를 쓰면
+ * 스크롤 중에 내용이 배너 뒤·아래로 그대로 그려집니다. padding 으로는 못 막습니다 —
+ * padding 은 문서 **끝**에서만 보이기 때문입니다(실제로 그 상태였습니다).
+ * 앱이 쓸 수 있는 높이 자체를 그만큼 줄여야 합니다.
+ */
+function adInsetPx(): number {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--mebody-ad-inset')
+    .trim()
+  const n = Number.parseFloat(raw)
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
+
 function applyViewportCssVars() {
   const root = document.documentElement
   const vv = window.visualViewport
-  const height = readVisibleHeight()
+  const height = readVisibleHeight() - adInsetPx()
   if (height > 0) {
     root.style.setProperty('--mebody-app-height', `${height}px`)
   }
@@ -70,6 +86,8 @@ export function installAppViewportHeight(): () => void {
   vv?.addEventListener('scroll', schedule)
   window.addEventListener('resize', schedule)
   window.addEventListener('orientationchange', schedule)
+  // 배너가 뜨거나 크기가 바뀌면 앱 높이를 다시 잡아야 합니다(ads.ts 가 이 이벤트를 쏩니다).
+  window.addEventListener('mebody:ad-inset', schedule)
   // Kakao restores pages from bfcache with a stale viewport size.
   window.addEventListener('pageshow', schedule)
   document.addEventListener('visibilitychange', schedule)
@@ -80,6 +98,7 @@ export function installAppViewportHeight(): () => void {
     vv?.removeEventListener('scroll', schedule)
     window.removeEventListener('resize', schedule)
     window.removeEventListener('orientationchange', schedule)
+    window.removeEventListener('mebody:ad-inset', schedule)
     window.removeEventListener('pageshow', schedule)
     document.removeEventListener('visibilitychange', schedule)
   }

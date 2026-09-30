@@ -81,11 +81,40 @@ export function isNativeApp(): boolean {
  * 부족하고, 앱 전체 하단에 배너 높이만큼 여백을 줘야 콘텐츠가 안 가려집니다.
  * 실제 높이는 adaptive 라 기기마다 다르므로 bannerAdSizeChanged 로 받아서 씁니다.
  */
+/**
+ * env(safe-area-inset-bottom) 의 실제 픽셀값을 잽니다.
+ *
+ * CSS 의 env() 는 JS 에서 바로 읽을 수 없어 숨긴 요소의 높이로 대신 잽니다.
+ */
+function safeAreaBottomPx(): number {
+  if (typeof document === 'undefined' || !document.body) return 0
+  try {
+    const probe = document.createElement('div')
+    probe.style.cssText =
+      'position:fixed;left:-9999px;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;'
+    document.body.appendChild(probe)
+    const px = probe.getBoundingClientRect().height
+    probe.remove()
+    return Number.isFinite(px) ? px : 0
+  } catch {
+    return 0
+  }
+}
+
 function setAdInset(px: number) {
   if (typeof document === 'undefined') return
   // 배너가 맨 아래에 뜨므로 탭바와 본문을 그 높이만큼 위로 올려야 합니다.
   // TabBar 는 bottom 을, AppShell 은 paddingBottom 을 이 값으로 잡습니다.
-  document.documentElement.style.setProperty('--mebody-ad-inset', `${Math.max(0, px)}px`)
+  //
+  // **배너 높이만으로는 모자랍니다.** 배너는 화면 맨 아래가 아니라 시스템 제스처바
+  // **위**에 뜹니다. 그래서 배너 아래로 제스처바 높이만큼 웹 내용이 비쳐 보였습니다
+  // (에뮬레이터 실측: 배너 180px 아래에 60px 이 비쳤고, 그게 제스처바 높이였습니다).
+  // 배너가 있을 때만 그만큼을 더합니다. 배너가 없으면 0 이어야 합니다 —
+  // 광고가 없는데 아래가 비면 그냥 빈 띠가 생깁니다.
+  const inset = px > 0 ? px + safeAreaBottomPx() : 0
+  document.documentElement.style.setProperty('--mebody-ad-inset', `${Math.max(0, inset)}px`)
+  // 앱이 쓸 수 있는 높이를 다시 잡게 알립니다 — lib/viewport.ts 가 이 값을 빼고 계산합니다.
+  window.dispatchEvent(new CustomEvent('mebody:ad-inset', { detail: inset }))
 }
 
 let sizeListenerBound = false

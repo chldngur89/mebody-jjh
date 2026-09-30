@@ -84,21 +84,30 @@ export function QuestionMediaLayout({
     // 1) 앞 문항의 스크롤 위치를 지웁니다 — 질문은 늘 머리부터 보여야 합니다.
     el.scrollTop = 0
 
-    // 2) 사진을 한 박자 보여준 뒤, 잘린 선택지를 끝까지 내려 보여 줍니다.
-    //    **질문 글이 화면에 남을 때만** 내립니다. 끝까지 내려도 질문이 밀려나지 않는 경우가
-    //    거기에 해당합니다. 질문이 밀려날 만큼 길면 그냥 맨 위에 둡니다.
-    //    무엇을 고르는지 모른 채 선택지만 보이는 쪽이 잘린 선택지보다 나쁩니다.
+    // 2) 사진을 한 박자 보여준 뒤, **질문 글을 화면 맨 위로 올립니다.**
+    //
+    //    예전에는 맨 아래(scrollHeight - clientHeight)까지 내려 잘린 선택지를 보여 줬습니다.
+    //    그러면 질문 글이 위로 밀려나 **무엇을 묻는지 안 보인 채 선택지만** 남았습니다
+    //    (실제로 1번 문항에서 그랬습니다). 안전장치가 있었지만 offsetTop 을 썼고,
+    //    그 값은 스크롤 컨테이너가 아니라 제일 가까운 배치 부모 기준이라 막지 못했습니다.
+    //
+    //    지금은 질문 글의 위치를 **컨테이너 기준으로** 재서 딱 그만큼만 내립니다.
+    //    질문이 맨 위에 서고 선택지가 그 아래로 최대한 따라 올라옵니다.
+    //    질문 위에 있는 것(문항 번호 배지)만 가려지고, 질문 자체는 언제나 보입니다.
     const timer = window.setTimeout(() => {
       const node = contentRef.current
       if (!node) return
-      const hidden = node.scrollHeight - node.clientHeight
-      if (hidden <= MIN_NUDGE_PX) return
+      if (node.scrollHeight - node.clientHeight <= MIN_NUDGE_PX) return
 
-      const options = node.querySelector<HTMLElement>('[data-question-options]')
-      const questionStaysVisible = !options || hidden <= Math.max(0, options.offsetTop - 8)
-      if (!questionStaysVisible) return
+      const heading = node.querySelector<HTMLElement>('[data-question-heading]')
+      if (!heading) return
 
-      node.scrollTo({ top: hidden, behavior: preferredScrollBehavior() })
+      // getBoundingClientRect 로 잽니다. offsetTop 과 달리 배치 부모와 무관합니다.
+      const delta = heading.getBoundingClientRect().top - node.getBoundingClientRect().top
+      const target = Math.min(node.scrollTop + delta, node.scrollHeight - node.clientHeight)
+      if (target <= MIN_NUDGE_PX) return
+
+      node.scrollTo({ top: target, behavior: preferredScrollBehavior() })
     }, NUDGE_DELAY_MS)
 
     return () => window.clearTimeout(timer)

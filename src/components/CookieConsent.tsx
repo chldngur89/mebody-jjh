@@ -1,19 +1,18 @@
 /**
- * 쿠키·이용 통계 동의 배너
+ * IMMUTABLE — 쿠키·이용 통계 동의는 **화면 하단 배너만**.
  *
- * AdSense 는 맞춤형 광고에 동의 관리를 요구합니다(특히 EEA).
- * 여기서는 **거부를 기본값**으로 둡니다 — 동의하기 전에는 광고 개인화를 켜지 않습니다.
+ * 제품 결정(2026-09-30, 사용자 고정):
+ *   · 항상 앱 셸 하단에만 뜬다. 전체 화면을 가리지 않는다.
+ *   · 백드롭 / inset:0 / height:100% / 풀스크린 모달 금지.
+ *   · 홈·랜딩 본문은 배너 뒤에서도 보여야 한다.
+ *   · 이 동작을 "개선"한다며 바꾸지 말 것. Cursor 규칙:
+ *     .cursor/rules/cookie-consent-banner.mdc
+ *   · 회귀 방지: npm run verify:cookie-banner (build 에 포함)
  *
- * 저장은 localStorage 한 곳뿐입니다. 서버로 보내지 않습니다.
- * 이 값을 읽는 곳이 둘입니다.
- *   · AdSlot        — 광고 로드 여부와 개인화 여부
- *   · lib/analytics — 방문을 잇는 session_id 와 체형 코드를 보낼지 (2026-09-22 감사 P1-2)
- *
- * 그래서 문구를 바꿀 때는 **analytics.ts 가 실제로 무엇을 거르는지** 같이 확인해야 합니다.
- * 둘이 어긋나면 배너가 거짓말을 합니다.
+ * AdSense 맞춤형 광고 동의 관리용. 거부가 기본값입니다.
+ * 저장은 localStorage 한 곳. AdSlot · lib/analytics 가 읽습니다.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { AXIS_GREEN_THEME } from '../data/axisTheme';
 import { SHELL } from '../theme/brand';
 
 const STORAGE_KEY = 'mebody.cookieConsent.v1';
@@ -54,7 +53,7 @@ export function CookieConsentBanner({
   privacyUrl = '/privacy.html',
   /**
    * 하단 5탭 셸 위에 떠 있는가.
-   * true 면 탭바 높이(--mebody-tabbar-h, 안전영역 포함)만큼 더 올려서 탭을 가리지 않게 합니다.
+   * true 면 탭바 높이만큼 더 올려서 탭을 가리지 않게 합니다.
    */
   aboveTabBar = false,
 }: {
@@ -70,63 +69,77 @@ export function CookieConsentBanner({
 
   if (consent) return null;
 
-  // 네이티브 AdMob 배너(--mebody-ad-inset) → 그 위에 탭바 → 그 위에 이 안내문 순서로 쌓입니다.
-  const lift = aboveTabBar ? 'calc(var(--mebody-tabbar-h) + 10px)' : '12px';
+  // AdMob 배너 → 탭바 → 이 안내문. 본문 위에 얹히는 하단 바만입니다.
+  const lift = aboveTabBar ? 'calc(var(--mebody-tabbar-h, 72px) + 10px)' : '12px';
 
   return (
     <div
+      className="mebody-cookie-banner"
       role="dialog"
       aria-label="쿠키 사용 동의"
+      aria-modal="false"
       style={{
-        // absolute 로 두면 부모 높이가 콘텐츠를 따라 늘어날 때 화면 밖으로 밀리거나
-        // 탭바 위에 얹혀 메뉴를 덮습니다. 탭바와 같은 방식으로 뷰포트에 고정합니다.
-        position: 'fixed',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: `min(${SHELL.maxWidth - 24}px, calc(100% - 24px))`,
+        // 앱 셸(relative) 하단만. 백드롭·전체 덮개 없음.
+        // .mebody-frame > * { height:100% } 에 안 잡히도록 클래스 제외 + 높이 고정.
+        position: 'absolute',
+        left: '12px',
+        right: '12px',
         bottom: `calc(var(--mebody-ad-inset, 0px) + ${lift})`,
-        // 탭바(30)·스크롤 인디케이터(50)보다 위. 동의 전에는 이 안내문이 가장 위에 있어야 합니다.
+        top: 'auto',
+        height: 'auto',
+        maxHeight: 'none',
+        width: 'auto',
+        maxWidth: `${SHELL.maxWidth - 24}px`,
+        margin: '0 auto',
         zIndex: 60,
+        boxSizing: 'border-box',
+        background: '#FFFFF3',
+        color: '#014725',
         borderRadius: '16px',
-        border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-        background: 'var(--mebody-s-w97, rgba(255,255,255,0.97))',
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 12px 30px var(--mebody-d-k16, rgba(1, 71, 37, 0.16))',
+        border: '1px solid rgba(1, 71, 37, 0.18)',
+        boxShadow: '0 10px 28px rgba(0, 0, 0, 0.18)',
         padding: '12px 14px',
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         gap: '10px',
+        pointerEvents: 'auto',
       }}
     >
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)' }}>쿠키·이용 통계 안내</div>
-        {/*
-            예전에는 "광고 목적 쿠키" 만 적혀 있었습니다. 그런데 이용 통계도 함께 쌓고 있었고
-            배너는 그걸 말하지 않았습니다(2026-09-22 감사 P1-2). 실제 수집 범위를 그대로 적습니다.
-
-            「필수만」 = 화면·단계별 횟수만 남습니다. 방문을 잇는 값과 체형 코드는 보내지 않습니다.
-            「동의」  = 거기에 방문을 잇는 임시 값과 체형 코드가 더해집니다. 광고 개인화도 켜집니다.
-            둘 다 이름·이메일·전화번호·문항 답변 원문은 보내지 않습니다. 보관 180일.
-        */}
-        <p style={{ fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all', margin: '3px 0 0' }}>
-          서비스 개선을 위해 화면별 이용 통계를 남깁니다(180일 보관). 동의하면 광고 개인화와 방문 연결도 켜집니다.
-          「필수만」을 골라도 그대로 이용할 수 있고, 이름·연락처·문항 답변은 어느 쪽이든 보내지 않습니다.{' '}
-          <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--mebody-t-014725, #014725)', fontWeight: 800 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#014725' }}>쿠키·이용 통계 안내</div>
+        <p
+          style={{
+            fontSize: '0.75rem',
+            lineHeight: 1.5,
+            color: '#3D6B54',
+            wordBreak: 'keep-all',
+            margin: '4px 0 0',
+          }}
+        >
+          서비스 개선을 위해 화면별 이용 통계를 남깁니다(180일 보관). 동의하면 광고 개인화와 방문 연결도
+          켜집니다. 「필수만」을 골라도 그대로 이용할 수 있고, 이름·연락처·문항 답변은 어느 쪽이든 보내지
+          않습니다.{' '}
+          <a
+            href={privacyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#014725', fontWeight: 800 }}
+          >
             자세히
           </a>
         </p>
       </div>
-      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
         <button
           type="button"
           onClick={() => decide('rejected')}
           style={{
             minHeight: '44px',
-            padding: '0 11px',
-            borderRadius: '10px',
-            border: `1px solid ${AXIS_GREEN_THEME.border}`,
-            background: 'var(--mebody-s-ffffff, #ffffff)',
-            color: 'var(--mebody-t-3d6b54, #3D6B54)',
+            padding: '0 14px',
+            borderRadius: '12px',
+            border: '1px solid rgba(1, 71, 37, 0.22)',
+            background: '#ffffff',
+            color: '#3D6B54',
             fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',
@@ -141,11 +154,11 @@ export function CookieConsentBanner({
           onClick={() => decide('accepted')}
           style={{
             minHeight: '44px',
-            padding: '0 13px',
-            borderRadius: '10px',
+            padding: '0 16px',
+            borderRadius: '12px',
             border: 'none',
-            background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
-            color: 'var(--mebody-t-ffffff-2, #ffffff)',
+            background: 'linear-gradient(90deg, #016B38 0%, #014725 100%)',
+            color: '#ffffff',
             fontSize: '0.8125rem',
             fontWeight: 800,
             fontFamily: 'inherit',

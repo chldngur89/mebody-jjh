@@ -1,0 +1,45 @@
+---
+description: 쿠키 동의는 하단 배너만 — 전체화면/백드롭 절대 금지 (불변)
+alwaysApply: true
+---
+
+# IMMUTABLE — 쿠키·이용 통계 안내는 하단 배너만
+
+**이 규칙은 제품 결정이다. 에이전트·개발자 모두 바꾸지 않는다.**
+사용자가 2026-09-30에 “항상 이렇게 / 절대 불변 / 고칠 수 없게 남겨라”고 고정했다.
+
+## 불변 동작
+
+1. `CookieConsentBanner`는 **앱 셸 하단**에만 떠야 한다 (`position: absolute` + `bottom`).
+2. **전체 화면을 덮으면 안 된다.** 백드롭·`inset: 0`·`height: 100%`·풀스크린 모달·`aria-modal="true"` 금지.
+3. 홈/랜딩 **본문은 배너 뒤에서도 보여야** 한다.
+4. 다크모드 토큰으로 배경을 페이지와 같게 만들면 “전체화면처럼” 보이므로, 배너 표면은 **크림/흰 고정 hex**를 유지한다.
+5. `.mebody-frame > * { height: 100% }` 규칙에 배너가 포함되면 안 된다. 반드시  
+   `.mebody-frame > *:not(.mebody-cookie-banner)` + 배너에 `className="mebody-cookie-banner"`.
+
+## 건드리면 안 되는 파일 (변경 시 이 규칙 준수 + verify:cookie-banner 통과)
+
+- `src/components/CookieConsent.tsx`
+- `src/index.css` (`.mebody-frame` / `.mebody-cookie-banner` 관련)
+- `src/App.tsx` (배너 마운트 위치 — 셸 `relative` 자식)
+
+## 금지 예시
+
+```tsx
+// ❌ 전체 덮개
+<div style={{ position: 'fixed', inset: 0, background: '...' }}>...</div>
+
+// ❌ 프레임 직계에 height:100% 적용되게 두기
+.mebody-frame > * { height: 100% !important; }
+
+// ✅ 하단 바만
+<div className="mebody-cookie-banner" style={{ position: 'absolute', bottom: '12px', height: 'auto' }}>...</div>
+```
+
+## 검증
+
+```bash
+npm run verify:cookie-banner
+```
+
+빌드(`npm run build`)에 포함되어 있다. 실패하면 머지/배포하지 않는다.

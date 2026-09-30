@@ -2613,9 +2613,15 @@ body,
    화면 높이는 var(--mebody-app-height) 로 통일합니다.
    데스크톱에서 프레임이 콘텐츠 길이만큼 늘어나지 않도록
    여기서 무력화해야 각 화면의 내부 overflowY:auto 가 프레임 안에서 동작합니다.
-   모바일에는 적용되지 않습니다. */
+   모바일에는 적용되지 않습니다.
+
+   IMMUTABLE — 쿠키 하단 배너(.mebody-cookie-banner)는 반드시 제외.
+   height:100% 가 배너에 걸리면 프레임 전체를 덮고 내용이 위로 붙어
+   "전체 화면 안내"처럼 보입니다. 제품 결정(2026-09-30) — 바꾸지 말 것.
+   규칙: .cursor/rules/cookie-consent-banner.mdc
+   검증: npm run verify:cookie-banner */
 @media (min-width: 768px) {
-  .mebody-frame > * {
+  .mebody-frame > *:not(.mebody-cookie-banner) {
     height: 100% !important;
     min-height: 0 !important;
     max-height: 100% !important;
@@ -2879,8 +2885,25 @@ body, button, input, textarea, select {
 /* 다크. 뒤집는 것이 아니라 역할마다 값을 다시 정합니다 —
    글자는 밝아지고, 초록 채움은 밝은 강조초록 + 어두운 글씨로 뒤집히고,
    초록 그림자는 검정으로, 흰 유리판은 옅은 빛의 막으로 바뀝니다. */
+/* ---------------------------------------------------------------------------
+   다크모드를 **일단 꺼 둡니다** (2026-09-30).
+
+   왜: APK 와 브라우저가 서로 다른 색으로 보인다는 지적이 있었습니다. 버그가 아니라
+   양쪽 OS 의 다크모드 설정이 달라서였습니다(에뮬레이터 라이트 / 브라우저 다크).
+   어느 쪽이든 **하나를 골라야** 어디서나 같은 화면을 보게 됩니다.
+
+   왜 라이트인가: 지금까지 만들고 검토한 화면이 전부 라이트입니다. 다크는 전 화면에서
+   검증된 적이 없고, 컴포넌트에 고정색이 **89곳** 남아 있어(var() 폴백 제외) 그 자리는
+   다크에서 밝은 색 그대로 남습니다. 출시 전에 검증할 화면을 두 배로 늘리지 않습니다.
+
+   끄는 방법: index.html 의 <html> 에 data-theme="light" 를 달았습니다.
+   아래 규칙이 전부 :root:not([data-theme="light"]) 로 막혀 있어 적용되지 않습니다.
+
+   다시 켜기: index.html 에서 data-theme="light" 만 지우면 됩니다. CSS 는 그대로입니다.
+   켜기 전에 위 89곳을 토큰(var(--mebody-*))으로 바꾸고 화면마다 눈으로 확인하십시오.
+--------------------------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
-:root {
+:root:not([data-theme="light"]) {
   /* 페이지·표면 */
   --mebody-bg           : #0b1f15;
   --mebody-cream        : #0b1f15;
@@ -3199,59 +3222,59 @@ body, button, input, textarea, select {
    되도록 인라인 토큰(var(--mebody-*))을 쓰고, 유틸을 쓰면 이 목록에 추가하십시오.
 --------------------------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
-  .bg-emerald-100 { background-color: var(--mebody-mint); }
-  .bg-emerald-100\/80 { background-color: var(--mebody-mint); }
-  .bg-emerald-200\/30 { background-color: rgba(110,207,155,0.14); }
-  .bg-emerald-50 { background-color: var(--mebody-inset); }
-  .bg-emerald-50\/80 { background-color: var(--mebody-inset); }
-  .bg-gray-100 { background-color: var(--mebody-inset); }
-  .bg-gray-50\/80 { background-color: var(--mebody-inset); }
-  .bg-teal-200\/30 { background-color: rgba(110,207,155,0.14); }
-  .bg-white { background-color: var(--mebody-card); }
-  .bg-white\/50 { background-color: rgba(233,239,228,0.06); }
-  .border-emerald-100 { border-color: rgba(110,207,155,0.34); }
-  .border-emerald-100\/80 { border-color: rgba(110,207,155,0.34); }
-  .border-gray-100 { border-color: var(--mebody-line); }
-  .border-gray-200 { border-color: var(--mebody-line); }
-  .disabled\:border-gray-100:disabled { border-color: var(--mebody-line); }
-  .disabled\:hover\:border-gray-100:disabled:hover { border-color: var(--mebody-line); }
-  .disabled\:text-gray-300:disabled { color: #6c8a78; }
-  .from-emerald-300 { --tw-gradient-from: var(--mebody-green-mid); }
-  .from-emerald-50 { --tw-gradient-from: var(--mebody-inset); }
-  .from-emerald-500 { --tw-gradient-from: var(--mebody-green); }
-  .hover\:bg-gray-200:hover { background-color: rgba(233,239,228,0.10); }
-  .hover\:border-gray-400:hover { border-color: rgba(233,239,228,0.34); }
+  :root:not([data-theme="light"]) .bg-emerald-100 { background-color: var(--mebody-mint); }
+  :root:not([data-theme="light"]) .bg-emerald-100\/80 { background-color: var(--mebody-mint); }
+  :root:not([data-theme="light"]) .bg-emerald-200\/30 { background-color: rgba(110,207,155,0.14); }
+  :root:not([data-theme="light"]) .bg-emerald-50 { background-color: var(--mebody-inset); }
+  :root:not([data-theme="light"]) .bg-emerald-50\/80 { background-color: var(--mebody-inset); }
+  :root:not([data-theme="light"]) .bg-gray-100 { background-color: var(--mebody-inset); }
+  :root:not([data-theme="light"]) .bg-gray-50\/80 { background-color: var(--mebody-inset); }
+  :root:not([data-theme="light"]) .bg-teal-200\/30 { background-color: rgba(110,207,155,0.14); }
+  :root:not([data-theme="light"]) .bg-white { background-color: var(--mebody-card); }
+  :root:not([data-theme="light"]) .bg-white\/50 { background-color: rgba(233,239,228,0.06); }
+  :root:not([data-theme="light"]) .border-emerald-100 { border-color: rgba(110,207,155,0.34); }
+  :root:not([data-theme="light"]) .border-emerald-100\/80 { border-color: rgba(110,207,155,0.34); }
+  :root:not([data-theme="light"]) .border-gray-100 { border-color: var(--mebody-line); }
+  :root:not([data-theme="light"]) .border-gray-200 { border-color: var(--mebody-line); }
+  :root:not([data-theme="light"]) .disabled\:border-gray-100:disabled { border-color: var(--mebody-line); }
+  :root:not([data-theme="light"]) .disabled\:hover\:border-gray-100:disabled:hover { border-color: var(--mebody-line); }
+  :root:not([data-theme="light"]) .disabled\:text-gray-300:disabled { color: #6c8a78; }
+  :root:not([data-theme="light"]) .from-emerald-300 { --tw-gradient-from: var(--mebody-green-mid); }
+  :root:not([data-theme="light"]) .from-emerald-50 { --tw-gradient-from: var(--mebody-inset); }
+  :root:not([data-theme="light"]) .from-emerald-500 { --tw-gradient-from: var(--mebody-green); }
+  :root:not([data-theme="light"]) .hover\:bg-gray-200:hover { background-color: rgba(233,239,228,0.10); }
+  :root:not([data-theme="light"]) .hover\:border-gray-400:hover { border-color: rgba(233,239,228,0.34); }
 
   /* 문항 선택지에 마우스를 올렸을 때 (QuestionCard).
      hover:bg-emerald-50 이 이 목록에 없어서 원래의 밝은 민트(#ecfdf5)가 그대로 깔렸고,
      글씨는 밝은 잉크라 배경과 겹쳐 읽을 수 없었습니다.
      초록으로 채우고 글씨를 짙게 뒤집어, 지금 가리키는 항목이 분명히 보이게 합니다. */
-  .hover\:bg-emerald-50:hover {
+  :root:not([data-theme="light"]) .hover\:bg-emerald-50:hover {
     background-color: var(--mebody-green);
     color: var(--mebody-on-green);
   }
-  .hover\:border-emerald-500:hover { border-color: var(--mebody-green); }
+  :root:not([data-theme="light"]) .hover\:border-emerald-500:hover { border-color: var(--mebody-green); }
   /* 오른쪽 동그라미와 체크도 같이 뒤집습니다 — 밝은 채움 위에 밝은 동그라미면 안 보입니다 */
-  .group-hover\:bg-emerald-500:is(:where(.group):hover *) { background-color: var(--mebody-on-green); }
-  .group-hover\:border-emerald-500:is(:where(.group):hover *) { border-color: var(--mebody-on-green); }
-  .group-hover\:text-white:is(:where(.group):hover *) { color: var(--mebody-green); }
-  .shadow-emerald-500\/20 { --tw-shadow-color: rgba(0,0,0,0.34); }
-  .text-emerald-500 { color: var(--mebody-green); }
-  .text-emerald-600 { color: var(--mebody-green); }
-  .text-emerald-700 { color: var(--mebody-green); }
-  .text-emerald-950 { color: var(--mebody-ink); }
-  .text-gray-400 { color: var(--mebody-muted); }
-  .text-gray-500 { color: var(--mebody-muted); }
-  .text-gray-600 { color: #9bb0a2; }
-  .text-gray-700 { color: #b6c6b8; }
-  .text-gray-900 { color: var(--mebody-ink); }
-  .text-white { color: var(--mebody-on-green); }
-  .to-teal-300 { --tw-gradient-to: var(--mebody-green-mid); }
-  .to-teal-50 { --tw-gradient-to: var(--mebody-inset); }
-  .to-teal-500 { --tw-gradient-to: var(--mebody-green); }
-  .via-white { --tw-gradient-via: var(--mebody-card); }
+  :root:not([data-theme="light"]) .group-hover\:bg-emerald-500:is(:where(.group):hover *) { background-color: var(--mebody-on-green); }
+  :root:not([data-theme="light"]) .group-hover\:border-emerald-500:is(:where(.group):hover *) { border-color: var(--mebody-on-green); }
+  :root:not([data-theme="light"]) .group-hover\:text-white:is(:where(.group):hover *) { color: var(--mebody-green); }
+  :root:not([data-theme="light"]) .shadow-emerald-500\/20 { --tw-shadow-color: rgba(0,0,0,0.34); }
+  :root:not([data-theme="light"]) .text-emerald-500 { color: var(--mebody-green); }
+  :root:not([data-theme="light"]) .text-emerald-600 { color: var(--mebody-green); }
+  :root:not([data-theme="light"]) .text-emerald-700 { color: var(--mebody-green); }
+  :root:not([data-theme="light"]) .text-emerald-950 { color: var(--mebody-ink); }
+  :root:not([data-theme="light"]) .text-gray-400 { color: var(--mebody-muted); }
+  :root:not([data-theme="light"]) .text-gray-500 { color: var(--mebody-muted); }
+  :root:not([data-theme="light"]) .text-gray-600 { color: #9bb0a2; }
+  :root:not([data-theme="light"]) .text-gray-700 { color: #b6c6b8; }
+  :root:not([data-theme="light"]) .text-gray-900 { color: var(--mebody-ink); }
+  :root:not([data-theme="light"]) .text-white { color: var(--mebody-on-green); }
+  :root:not([data-theme="light"]) .to-teal-300 { --tw-gradient-to: var(--mebody-green-mid); }
+  :root:not([data-theme="light"]) .to-teal-50 { --tw-gradient-to: var(--mebody-inset); }
+  :root:not([data-theme="light"]) .to-teal-500 { --tw-gradient-to: var(--mebody-green); }
+  :root:not([data-theme="light"]) .via-white { --tw-gradient-via: var(--mebody-card); }
 
   /* 셸 표면 — 원래 규칙이 !important 라 같은 무기가 필요합니다. */
-  .mebody-desktop-backdrop { background-color: var(--mebody-outer-bg) !important; }
-  .mebody-app-surface { background-color: var(--mebody-card) !important; }
+  :root:not([data-theme="light"]) .mebody-desktop-backdrop { background-color: var(--mebody-outer-bg) !important; }
+  :root:not([data-theme="light"]) .mebody-app-surface { background-color: var(--mebody-card) !important; }
 }

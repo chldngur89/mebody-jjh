@@ -48,6 +48,9 @@ export function QuestionCard({
       </div>
 
       <h2
+        // QuestionMediaLayout 이 이 표시를 찾아 **질문 글을 화면 맨 위로** 올립니다.
+        // 지우면 질문이 사진과 선택지 사이에 묻혀 무엇을 묻는지 안 보입니다.
+        data-question-heading
         className={`font-bold leading-relaxed text-gray-900 ${
           isGuidePhase ? 'mb-5 text-lg' : 'mb-8 text-xl'
         }`}

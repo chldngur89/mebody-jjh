@@ -1288,7 +1288,7 @@ export default function App() {
           )}
 
         </Suspense>
-        {/* 광고 쿠키 동의 — 유료 회원에게는 광고가 없으므로 묻지 않습니다 */}
+        {/* IMMUTABLE — 쿠키는 하단 배너만 (.cursor/rules/cookie-consent-banner.mdc). 전체화면으로 바꾸지 말 것. */}
         {!entitlement.isPaid && <CookieConsentBanner aboveTabBar={currentScreen === 'result'} />}
       </div>
     </div>
