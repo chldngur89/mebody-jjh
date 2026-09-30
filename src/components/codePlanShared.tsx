@@ -1455,6 +1455,24 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
   const [bonusDice, setBonusDice] = useState<number | null>(null);
   const [bonusAmount, setBonusAmount] = useState<number | null>(null);
   const [bonusRolling, setBonusRolling] = useState(false);
+  /**
+   * 서버 검증(SSV)이 켜져 있는가.
+   *
+   * 꺼져 있으면 앱이 "광고 봤다" 고 스스로 주장하고 보너스를 청구합니다. 변조한 앱에서는
+   * 광고를 보지 않고도 받아갈 수 있습니다(2026-09-27 점검 P1-2).
+   *
+   * 그래서 **꺼져 있으면 보상 버튼 자체를 숨깁니다.** 기본 적립은 그대로 나가므로
+   * 사용자가 잃는 것은 "광고를 보면 더" 뿐이고, 켜는 순간 버튼이 다시 나타납니다.
+   * 서버 설정 하나로 켜고 끌 수 있으니 앱을 다시 내보낼 필요가 없습니다.
+   */
+  const [ssvReady, setSsvReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetchAdRewardConfig()
+      .then((c) => { if (alive) setSsvReady(Boolean(c?.ssvEnabled)); })
+      .catch(() => { /* 못 읽으면 꺼진 것으로 봅니다 — 보수적인 쪽 */ });
+    return () => { alive = false; };
+  }, []);
   const [bonusNotice, setBonusNotice] = useState<string | null>(null);
   /** setTimeout 안에서 최신 값을 봐야 해서 ref 로도 들고 있습니다. */
   const bonusEligibleRef = useRef(false);
@@ -2031,7 +2049,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           ? `보너스 ${bonusDice} · ${bonusAmount}원 추가 적립`
                           : `보너스 ${bonusDice} · 이번엔 아쉽네요`}
                       </div>
-                    ) : bonusEligible && isNativeApp() && isRealRewarded() ? (
+                    ) : bonusEligible && isNativeApp() && isRealRewarded() && ssvReady ? (
                       /*
                         실 보상형 단위가 없으면 **버튼 자체를 숨깁니다**(2026-09-27 Android 점검 P1-1).
                         숨기지 않으면 구글 demo 광고가 사용자에게 그대로 노출되고,
