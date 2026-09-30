@@ -8,26 +8,17 @@
  */
 import { track, type ShareChannel } from './analytics'
 import { PRODUCT } from '../theme/copy'
+import { publicOrigin } from './publicOrigin'
 
 export const SHARE_REF = 'share'
 export const BODY_CODE_PATTERN = /^[FC][RL][RL][SF]$/
 
-const FALLBACK_ORIGIN = 'https://mebody-jjh.vercel.app'
-
 /**
- * 링크의 기준 주소.
- *
- * 네이티브 앱(Capacitor)에서는 origin 이 localhost/capacitor 라서 그대로 쓰면
- * 받은 사람이 열 수 없는 링크가 됩니다. 그래서 http(s) 일 때만 현재 origin 을 씁니다.
+ * 링크의 기준 주소. 규칙은 lib/publicOrigin.ts 한 곳에 있습니다 —
+ * 재설정 메일도 같은 값을 써야 하는데 예전에는 따로 놀았습니다(점검 P0-4).
  */
 export function shareBaseUrl(): string {
-  const configured = String(import.meta.env.VITE_PUBLIC_SITE_URL ?? '').trim()
-  if (configured) return configured.replace(/\/+$/, '')
-
-  if (typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol)) {
-    return window.location.origin.replace(/\/+$/, '')
-  }
-  return FALLBACK_ORIGIN
+  return publicOrigin()
 }
 
 export function isShareableBodyCode(code: unknown): code is string {

@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js';
+import { publicOrigin } from '../lib/publicOrigin';
 import { supabase } from '../lib/supabase';
 import { isMissingRpc } from './rpcSupport';
 
@@ -100,7 +101,8 @@ export async function signOutAccount() {
 }
 
 export async function requestPasswordReset(email: string) {
-  const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+  // 네이티브에서 location.origin 은 https://localhost 라 메일 링크가 죽습니다(점검 P0-4).
+  const redirectTo = publicOrigin();
   const { error } = await supabase.auth.resetPasswordForEmail(
     email,
     redirectTo ? { redirectTo } : undefined,

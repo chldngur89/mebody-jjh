@@ -44,3 +44,8 @@ android/local.properties
 ios/App/Pods/
 ios/App/build/
 dist-docs/
+
+# 릴리스 서명 키 — 절대 올리지 않습니다 (android/keystore.properties.example 참고)
+android/keystore.properties
+*.jks
+*.keystore

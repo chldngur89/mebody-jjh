@@ -11,6 +11,7 @@
  * 확인 절차를 켜고 끄는 스위치는 서버 설정에 있습니다: `mebody.auth.*` (README 참고).
  */
 import { supabase } from '../lib/supabase'
+import { publicOrigin } from '../lib/publicOrigin'
 import { signInWithEmail } from './account'
 import { resolveLoginEmail, type IdentifierKind } from '../lib/identifier'
 
@@ -193,7 +194,8 @@ export async function signInByPhone(identifier: string, password: string) {
  */
 export async function requestPhonePasswordReset(identifier: string): Promise<void> {
   if (!API_BASE) throw new Error('지금은 재설정 요청을 보낼 수 없습니다. 잠시 후 다시 시도해주세요.')
-  const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined
+  // 네이티브에서 location.origin 은 https://localhost 라 메일 링크가 죽습니다(점검 P0-4).
+  const redirectTo = publicOrigin()
   try {
     await fetch(`${API_BASE}/api/public/auth/reset`, {
       method: 'POST',

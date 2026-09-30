@@ -3,6 +3,8 @@
 
     <application
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -20,6 +22,25 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              딥링크 (2026-09-27 점검 P0-4).
+
+              비밀번호 재설정·이메일 확인 링크가 앱으로 돌아올 수 있게 합니다.
+              지금은 **커스텀 스킴**입니다. https 앱 링크(App Links)는 서명 인증서의
+              SHA-256 지문을 도메인의 assetlinks.json 에 올려야 하는데, 릴리스 서명 키가
+              아직 없습니다. 키를 만들면 여기에 https 필터를 더하는 것이 다음 단계입니다.
+
+              **Supabase 의 Redirect URLs 허용 목록에 net.mebody.app://auth 를 넣어야
+              실제로 동작합니다.** 넣기 전에는 메일 링크가 웹으로만 갑니다(그래도 재설정은 됩니다 —
+              lib/publicOrigin.ts 가 배포 주소를 쓰므로 localhost 로 가지 않습니다).
+            -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="net.mebody.app" />
             </intent-filter>
 
         </activity>

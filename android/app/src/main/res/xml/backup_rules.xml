@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 이하의 자동 백업 범위 (2026-09-27 점검 P1-7).
+
+  기본값은 "앱 데이터 전부" 입니다. 이 앱의 로컬 저장소에는 설문 진행 상황·체형 결과 id·
+  임시 초안이 들어 있어 **건강과 관련된 값**입니다. 그게 구글 드라이브 백업으로 나가고
+  기기 이전으로 옮겨 다니는 것은 필요하지도, 알린 적도 없습니다.
+
+  그래서 **웹뷰 저장소를 통째로 뺍니다.** 로그인 세션도 여기 있어서, 백업을 지우면
+  기기를 옮겼을 때 다시 로그인해야 합니다 — 건강 기록이 조용히 따라다니는 것보다 낫습니다.
+  결과는 계정에 저장되므로 로그인하면 그대로 돌아옵니다.
+-->
+<full-backup-content>
+  <exclude domain="file" path="app_webview" />
+  <exclude domain="database" path="" />
+  <exclude domain="sharedpref" path="" />
+</full-backup-content>

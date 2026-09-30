@@ -1,5 +1,36 @@
 apply plugin: 'com.android.application'
 
+/*
+ * 버전은 package.json 하나에서 가져옵니다 (2026-09-27 점검 P2-1).
+ *
+ * 예전에는 versionName "1.0" / versionCode 1 이 여기 박혀 있었고 npm 은 0.2.0 이었습니다.
+ * 두 군데를 따로 올리면 반드시 어긋나고, Play 는 versionCode 가 올라가지 않으면
+ * 업로드를 거절합니다.
+ *
+ * versionCode 는 versionName 에서 계산합니다 — 1.2.3 → 10203.
+ * 각 자리 0~99 까지 쓸 수 있고 순서가 보장됩니다.
+ */
+def pkg = new groovy.json.JsonSlurper().parse(file('../../package.json'))
+def appVersionName = pkg.version as String
+def appVersionCode = appVersionName.tokenize('.').with { p ->
+    (p[0] as int) * 10000 + ((p.size() > 1 ? p[1] as int : 0) * 100) + (p.size() > 2 ? p[2] as int : 0)
+}
+
+/*
+ * 릴리스 서명 (2026-09-27 점검 P0-1).
+ *
+ * 키와 비밀번호는 **저장소에 넣지 않습니다.** android/keystore.properties 에 두고
+ * .gitignore 에 올려 두었습니다. 그 파일이 없으면 release 빌드는 서명 없이 나갑니다
+ * (디버그 빌드는 영향 없음). Play 에 올리려면 그 파일이 있어야 합니다.
+ *
+ * 만드는 법은 android/keystore.properties.example 에 적어 두었습니다.
+ */
+def keystorePropsFile = rootProject.file('keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
 android {
     namespace = "net.mebody.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +38,8 @@ android {
         applicationId "net.mebody.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +47,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystoreProps['storeFile']) {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // 키가 있을 때만 붙입니다. 없으면 서명 없이 나가고, Play 가 업로드를 거절합니다.
+            if (keystoreProps['storeFile']) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
