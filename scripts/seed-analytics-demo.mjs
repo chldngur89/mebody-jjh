@@ -33,14 +33,32 @@ const db = new pg.Client({ host: u.hostname, port: Number(u.port || 5432),
   user: srv.SUPABASE_DB_USERNAME, password: srv.SUPABASE_DB_PASSWORD, ssl: { rejectUnauthorized: false } })
 await db.connect()
 
-if (CLEAN) {
+/**
+ * 데모 흔적을 지웁니다. `props.demo = true` 와 `[데모]` 이름만 골라 지우므로 실제 자료는 남습니다.
+ *
+ * **심기 전에 항상 부릅니다.** 예전에는 `--clean` 을 줄 때만 지웠고, 그래서 시드를 돌릴 때마다
+ * 앞 회차 위에 쌓였습니다. 회차마다 날짜를 따로 뽑으니 퍼널이 뒤섞여
+ * 「초대 발송 45 → 링크 열림 50」 같은 역전이 났습니다. seed:professional 은 이미 이렇게 합니다.
+ */
+async function cleanDemo() {
   const a = await db.query(`DELETE FROM public.analytics_events WHERE props->>'demo' = 'true'`)
   const p = await db.query(`DELETE FROM public.professional_activity_log
     WHERE professional_id IN (SELECT id FROM public.professionals WHERE display_name LIKE '[데모]%')`)
   const pro = await db.query(`DELETE FROM public.professionals WHERE display_name LIKE '[데모]%'`)
-  console.log(`\n  앱 이벤트 ${a.rowCount}건 · 전문가 활동 ${p.rowCount}건 · 데모 전문가 ${pro.rowCount}명 삭제\n`)
+  return { events: a.rowCount, activity: p.rowCount, pros: pro.rowCount }
+}
+
+if (CLEAN) {
+  const n = await cleanDemo()
+  console.log(`\n  앱 이벤트 ${n.events}건 · 전문가 활동 ${n.activity}건 · 데모 전문가 ${n.pros}명 삭제\n`)
   await db.end()
   process.exit(0)
+}
+
+console.log('\n■ 기존 데모 데이터 정리 (중복 방지)')
+{
+  const n = await cleanDemo()
+  console.log(`  앱 이벤트 ${n.events}건 · 전문가 활동 ${n.activity}건 · 데모 전문가 ${n.pros}명 삭제`)
 }
 
 /** 각 칸이 앞 칸의 몇 %가 되는지. 그럴 법한 이탈을 넣습니다. */
@@ -77,6 +95,25 @@ const PRO_STEPS = [
   ['assignment_created', 0.38, 'pro'],
 ]
 
+/** 주어진 날짜들에 그대로 기록합니다. 부분집합을 넘기면 퍼널이 어떤 창에서도 단조입니다. */
+const logProOnDays = async (proId, event, days) => {
+  if (!days.length) return
+  await db.query(
+    `INSERT INTO public.professional_activity_log (professional_id, client_user_id, event, created_at)
+     SELECT $1, NULL, $2, now() - make_interval(days => d::int, hours => (random() * 23)::int)
+       FROM unnest($3::int[]) AS d`, [proId, event, days])
+}
+
+const logAppOnDays = async (event, days) => {
+  if (!days.length) return
+  await db.query(
+    `INSERT INTO public.analytics_events (event, props, session_id, path, created_at)
+     SELECT $1, jsonb_build_object('demo', true), 'demo-' || md5(random()::text), '/',
+            now() - make_interval(days => d::int, hours => (random() * 23)::int)
+       FROM unnest($2::int[]) AS d`, [event, days])
+  total += days.length
+}
+
 console.log('\n■ 가상 앱 이벤트')
 let total = 0
 /**
@@ -84,29 +121,30 @@ let total = 0
  * 앞 퍼널의 마지막 칸에서 이어 붙이면 뒤로 갈수록 0 이 되고, 화면이 텅 빕니다
  * (처음에 그렇게 만들어서 수익 퍼널이 1 → 0 → 0 이 됐습니다).
  */
-let resultViewed = 0
+/**
+ * 각 퍼널도 **부분집합 체인**으로 만듭니다.
+ *
+ * 30일에 흩뿌리는 것은 그대로입니다 — 하루에 몰아 넣으면 기간 필터가 맞는지 볼 수 없습니다.
+ * 다만 칸마다 **따로** 흩뿌리면 안 됩니다. 지표의 기간 창이 앞으로 밀릴 때 칸마다 서로 다른
+ * 비율로 빠져나가 뒤 칸이 앞 칸보다 커집니다(전문가 퍼널에서 실제로 났던 사고).
+ *
+ * 첫 칸에서 날짜를 정하고 뒤 칸은 그 앞쪽 n개를 물려받습니다.
+ */
+let visitorDays = []   // 저니·수익·공유가 갈라져 나올 「결과 확인」 자리의 날짜들
 for (const funnel of FUNNELS) {
   const line = []
-  let base = funnel.name === '진단' ? 0 : resultViewed
+  // 진단은 처음부터 만들고, 나머지는 결과 확인에서 갈라져 나옵니다.
+  let days = funnel.name === '진단' ? [] : visitorDays.slice()
   for (const [event, factor] of funnel.steps) {
-    // 첫 칸이 1 보다 크면 절대값, 아니면 앞 칸 대비 비율입니다.
-    const count = factor > 1 ? Math.round(factor) : Math.round(base * factor)
-    base = count
-    if (event === 'result_viewed') resultViewed = count
-    line.push(`${event.replace(/_/g, ' ')} ${count}`)
-
-    // 30일에 흩뿌립니다. 하루에 몰아 넣으면 기간 필터가 맞는지 볼 수 없습니다.
-    await db.query(
-      `INSERT INTO public.analytics_events (event, props, session_id, path, created_at)
-       SELECT $1,
-              jsonb_build_object('demo', true),
-              'demo-' || md5(random()::text),
-              '/',
-              now() - make_interval(days => (random() * 29)::int,
-                                    hours => (random() * 23)::int)
-         FROM generate_series(1, $2)`,
-      [event, count])
-    total += count
+    if (factor > 1) {
+      // 첫 칸이 1 보다 크면 절대값입니다. 이때만 새로 날짜를 뽑습니다.
+      days = Array.from({ length: Math.round(factor) }, () => Math.floor(Math.random() * 29))
+    } else {
+      days = days.slice(0, Math.round(days.length * factor))
+    }
+    if (event === 'result_viewed') visitorDays = days.slice()
+    line.push(`${event.replace(/_/g, ' ')} ${days.length}`)
+    await logAppOnDays(event, days)
   }
   console.log(`  ${funnel.name.padEnd(8)} ${line.join(' → ')}`)
 }
@@ -125,56 +163,48 @@ for (let i = 0; i < Math.min(5, profiles.length); i += 1) {
 }
 
 /**
- * 전문가 활동 기록.
+ * 초대 한 건마다 **어느 전문가의 것이고 며칠 전인지**를 미리 정합니다.
  *
- * `fromDays`~`toDays` 사이에 흩뿌립니다. **범위의 시작이 중요합니다** — 처음에는
- * "비활성 전문가는 20일 안" 이라고만 했는데, 0~20일은 7일 안도 포함해서
- * 결국 5명 전부 주간 활성으로 잡혔습니다(화면에 100%). 비활성으로 두려면
- * 7일보다 **뒤에서 시작**해야 합니다.
+ * 예전에는 칸마다 따로 흩뿌렸습니다(`random() * 29`). 그러면 단조 감소가
+ * **시드한 순간에만** 맞습니다. 지표의 기간 창이 앞으로 밀리면 칸마다 서로 다른 비율로
+ * 창 밖으로 빠져나가 역전됩니다. 실제로 9일 뒤에 「초대 발송 35 → 링크 열림 36」 이
+ * 나와서 verify:metrics 가 잡았습니다.
+ *
+ * 이제 뒤 칸은 앞 칸의 **부분집합**이고 날짜를 그대로 물려받습니다.
+ * 그러면 어떤 기간으로 잘라도 뒤 칸이 앞 칸보다 많을 수 없습니다.
+ *
+ * 전문가별 구간도 여기서 정합니다. 앞 3명은 최근 7일(0~6), 뒤 2명은 그 이전(8~25)에서
+ * 뽑습니다. 그래야 「주간 활성 전문가 3 / 5」 가 화면에서 60% 로 나옵니다.
+ * 두 조건(단조성·주간 활성)을 같이 만족시키려면 **초대 자체를 그 구간에서 뽑아야** 합니다.
  */
-const logPro = async (proId, event, n, fromDays, toDays) => {
-  if (n <= 0) return
-  await db.query(
-    `INSERT INTO public.professional_activity_log (professional_id, client_user_id, event, created_at)
-     SELECT $1, NULL, $2,
-            -- $3·$4 를 정수로 못 박습니다. 캐스팅이 없으면 Postgres 가 "unknown - unknown"
-            -- 으로 보고 어떤 뺄셈인지 고르지 못합니다.
-            now() - make_interval(days => $3::int + (random() * ($4::int - $3::int))::int,
-                                  hours => (random() * 23)::int)
-       FROM generate_series(1, $5)`, [proId, event, fromDays, toDays, n])
-}
-const logApp = async (event, n) => {
-  if (n <= 0) return
-  await db.query(
-    `INSERT INTO public.analytics_events (event, props, session_id, path, created_at)
-     SELECT $1, jsonb_build_object('demo', true), 'demo-' || md5(random()::text), '/',
-            now() - make_interval(days => (random() * 29)::int)
-       FROM generate_series(1, $2)`, [event, n])
-  total += n
-}
-
-// 초대 발송은 전문가별로 나눠 담습니다(주간 활성을 세려면 전문가가 구분돼야 합니다).
-const perPro = Math.floor(INVITES_SENT / Math.max(proIds.length, 1))
+const ACTIVE_PROS = 3
+const invites = []
 for (let i = 0; i < proIds.length; i += 1) {
-  const n = i === proIds.length - 1 ? INVITES_SENT - perPro * (proIds.length - 1) : perPro
-  await logPro(proIds[i], 'invite_sent', n, 0, 29)
+  const n = i === proIds.length - 1
+    ? INVITES_SENT - Math.floor(INVITES_SENT / proIds.length) * (proIds.length - 1)
+    : Math.floor(INVITES_SENT / proIds.length)
+  const [from, to] = i < ACTIVE_PROS ? [0, 6] : [8, 25]
+  for (let k = 0; k < n; k += 1) {
+    invites.push({ proId: proIds[i], day: from + Math.floor(Math.random() * (to - from + 1)) })
+  }
 }
 
-const proLine = [`초대 발송 ${INVITES_SENT}`]
-let proBase = INVITES_SENT
+// 1칸: 초대 발송 — 전체
+for (const id of proIds) {
+  await logProOnDays(id, 'invite_sent', invites.filter((x) => x.proId === id).map((x) => x.day))
+}
+
+const proLine = [`초대 발송 ${invites.length}`]
+// 뒤 칸은 앞 칸의 **앞쪽 n개**를 그대로 물려받습니다. 부분집합이므로 어떤 창에서도 단조입니다.
+let surviving = invites
 for (const [event, rate, where] of PRO_STEPS) {
-  const n = Math.round(proBase * rate)
-  proBase = n
-  proLine.push(`${event.replace(/_/g, ' ')} ${n}`)
+  surviving = surviving.slice(0, Math.round(surviving.length * rate))
+  proLine.push(`${event.replace(/_/g, ' ')} ${surviving.length}`)
   if (where === 'app') {
-    await logApp(event, n)
+    await logAppOnDays(event, surviving.map((x) => x.day))
   } else {
-    // 앞 3명은 최근 7일 안(0~6일), 뒤 2명은 그보다 전(8~25일)에만 활동합니다.
-    // 그래야 "주간 활성 전문가 3 / 5" 가 화면에서 60% 로 나옵니다.
-    for (let i = 0; i < proIds.length; i += 1) {
-      const share = Math.round(n / proIds.length) + (i === 0 ? n % proIds.length : 0)
-      if (i < 3) await logPro(proIds[i], event, share, 0, 6)
-      else await logPro(proIds[i], event, share, 8, 25)
+    for (const id of proIds) {
+      await logProOnDays(id, event, surviving.filter((x) => x.proId === id).map((x) => x.day))
     }
   }
 }

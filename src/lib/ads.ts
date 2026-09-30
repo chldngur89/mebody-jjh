@@ -23,18 +23,48 @@ function envUnit(key: string): string | undefined {
   return value && value.trim() ? value.trim() : undefined
 }
 
+function bannerEnvKey(placement: BannerPlacement): string {
+  return placement === 'result_bottom' ? 'VITE_ADMOB_BANNER_RESULT' : 'VITE_ADMOB_BANNER_ROUTINE'
+}
+
 export function bannerUnitId(placement: BannerPlacement): string {
-  const key = placement === 'result_bottom' ? 'VITE_ADMOB_BANNER_RESULT' : 'VITE_ADMOB_BANNER_ROUTINE'
-  return envUnit(key) ?? TEST_UNITS.banner
+  return envUnit(bannerEnvKey(placement)) ?? TEST_UNITS.banner
 }
 
 export function rewardedUnitId(): string {
   return envUnit('VITE_ADMOB_REWARDED') ?? TEST_UNITS.rewarded
 }
 
-/** 실 광고 단위가 설정돼 있는지. false 면 테스트 광고가 나갑니다. */
+/**
+ * **형식별로** 실 단위가 있는지 봅니다.
+ *
+ * 예전에는 `hasRealAdUnits()` 하나가 "배너 또는 보상형 중 아무거나 있으면 true" 였습니다.
+ * 배너만 넣고 보상형을 비워 두면 이런 일이 났습니다(2026-09-27 Android 점검 P1-1).
+ *
+ *   보상형 단위 → 구글 demo 단위로 떨어짐
+ *   isTesting   → hasRealAdUnits() 가 true 라 false
+ *   결과        → **구글 demo 단위를 운영 모드로 요청**
+ *
+ * demo 단위를 운영 모드로 부르는 것은 AdMob 정책 위반 소지가 있고 계정 정지까지 갑니다.
+ * 그래서 광고 형식마다 따로 판단합니다. 한쪽이 비어도 다른 쪽을 끌고 들어가지 않습니다.
+ */
+export function isRealBanner(placement: BannerPlacement): boolean {
+  return Boolean(envUnit(bannerEnvKey(placement)))
+}
+
+export function isRealRewarded(): boolean {
+  return Boolean(envUnit('VITE_ADMOB_REWARDED'))
+}
+
+/**
+ * 광고 형식 중 하나라도 실 단위가 있는지. **SDK 초기화에만** 씁니다.
+ *
+ * `AdMob.initialize({ initializeForTesting })` 는 SDK 전체에 한 번 거는 값이라
+ * 형식별로 나눌 수 없습니다. 실제 요청의 테스트 여부는 각 호출의 `isTesting` 이 정하므로
+ * 여기서는 "실 단위가 하나라도 있으면 운영 초기화" 로 둡니다.
+ */
 export function hasRealAdUnits(): boolean {
-  return Boolean(envUnit('VITE_ADMOB_BANNER_RESULT') || envUnit('VITE_ADMOB_REWARDED'))
+  return isRealBanner('result_bottom') || isRealBanner('routine') || isRealRewarded()
 }
 
 /** 네이티브 앱에서 실행 중인가. 웹이면 광고를 아예 시도하지 않습니다. */
@@ -101,7 +131,8 @@ export async function showBanner(placement: BannerPlacement): Promise<boolean> {
       // 배너는 화면 맨 아래에 붙입니다. 탭바가 배너 위로 올라옵니다
       // (TabBar 의 bottom 이 --mebody-ad-inset 만큼 밀려 올라갑니다).
       margin: 0,
-      isTesting: !hasRealAdUnits(),
+      // 이 자리의 단위가 실 단위인지로 판정합니다. 다른 형식이 있는지는 상관없습니다.
+      isTesting: !isRealBanner(placement),
     })
     return true
   } catch (error) {
@@ -143,7 +174,7 @@ export async function showRewarded(options?: SsvOptions): Promise<RewardedOutcom
     const { AdMob } = await import('@capacitor-community/admob')
     await AdMob.prepareRewardVideoAd({
       adId: rewardedUnitId(),
-      isTesting: !hasRealAdUnits(),
+      isTesting: !isRealRewarded(),
       // 서버 검증(SSV)에 실어 보낼 값. AdMob 이 우리 서버로 콜백할 때 그대로 돌려줍니다.
       // userId 로 누구에게 줄 보너스인지 알 수 있어야 서버가 지급할 수 있습니다.
       ...(options?.userId ? { ssv: { userId: options.userId, customData: options.customData } } : {}),

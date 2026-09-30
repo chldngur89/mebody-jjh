@@ -74,6 +74,7 @@
     "verify:rules-bundle": "node scripts/verify-rules-bundle.mjs",
     "verify:attention": "node scripts/verify-attention.mjs",
     "build:axis-icons": "node scripts/build-axis-icons.mjs",
-    "check:bundle": "node scripts/check-bundle-secrets.mjs"
+    "check:bundle": "node scripts/check-bundle-secrets.mjs",
+    "verify:ad-units": "node scripts/verify-ad-units.mjs"
   }
 }

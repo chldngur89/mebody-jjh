@@ -11,7 +11,7 @@ import { fetchRewardRules,
 } from '../api/routineReward';
 import { fetchAdRewardConfig } from '../api/billing';
 import { supabase } from '../lib/supabase';
-import { isNativeApp, showRewarded } from '../lib/ads';
+import { isNativeApp, isRealRewarded, showRewarded } from '../lib/ads';
 import { AdSlot } from './AdSlot';
 import { RewardDice } from './RewardDice';
 import {
@@ -2031,7 +2031,13 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           ? `보너스 ${bonusDice} · ${bonusAmount}원 추가 적립`
                           : `보너스 ${bonusDice} · 이번엔 아쉽네요`}
                       </div>
-                    ) : bonusEligible && isNativeApp() ? (
+                    ) : bonusEligible && isNativeApp() && isRealRewarded() ? (
+                      /*
+                        실 보상형 단위가 없으면 **버튼 자체를 숨깁니다**(2026-09-27 Android 점검 P1-1).
+                        숨기지 않으면 구글 demo 광고가 사용자에게 그대로 노출되고,
+                        보이지도 않는 보상을 약속하는 화면이 됩니다.
+                        VITE_ADMOB_REWARDED 를 채우면 다시 나타납니다.
+                      */
                       <div style={{ marginTop: '14px', borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, paddingTop: '12px' }}>
                         <button
                           type="button"
