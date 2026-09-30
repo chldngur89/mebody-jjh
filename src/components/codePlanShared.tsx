@@ -1326,24 +1326,11 @@ function RoutineStepTimer({
           }}
         />
       </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        style={{
-          marginTop: '8px',
-          width: '100%',
-          border: 'none',
-          background: 'transparent',
-          padding: '4px',
-          fontSize: '0.8125rem',
-          fontWeight: 800,
-          color: 'var(--mebody-t-6f8c7b, #6F8C7B)',
-          fontFamily: 'inherit',
-          cursor: 'pointer',
-        }}
-      >
-        타이머 없이 완료 처리
-      </button>
+      {/*
+          「타이머 없이 완료 처리」 를 없앴습니다.
+          타이머를 건너뛰고 완료로 만들 수 있으면 동작을 하지 않고도 적립이 됩니다.
+          접기/펼치기는 위의 제목 줄로 합니다.
+      */}
     </div>
   );
 }
@@ -1718,10 +1705,26 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                   >
                     누구나 4축(목 → 어깨 → 골반 → 하체)을 같은 순서로 전부 합니다. 코드에 따라 달라지는 건 순서가 아니라 세트 수예요. 내 코드에 맞는 개별 미션은 14일 루틴에서 하루 한 가지씩 따로 나갑니다.
                   </div>
-                  {data.careRoutine.steps.map((step) => {
+                  {/*
+                      무엇을 보여줄지 세 가지로 갈립니다.
+
+                      ② 한 단계를 시작하면 **그 단계만** 둡니다.
+                         5단계가 다 펼쳐져 있으면 지금 뭘 해야 하는지 묻혀서, 화면을 보며
+                         따라 하기 어렵습니다. 진행 중인 것 하나만 남깁니다.
+
+                      ③ 5단계를 다 끝내면 목록을 **아예 감춥니다.**
+                         예전에는 끝난 단계를 다시 펼칠 수 있었는데, 그러면 다 해 놓고도
+                         "아직 뭐가 남았나" 하고 다시 들어가게 됩니다. 끝났으면 주사위만 남깁니다.
+
+                      그 밖에는 지금까지처럼 전부 보여 줍니다.
+                  */}
+                  {routineAllDone ? null : data.careRoutine.steps.map((step) => {
                     const stepKey = `${step.kind}-${step.order}`;
                     const stepDone = routineRecord.done.includes(stepKey);
                     const stepExpanded = expandedDoneKeys.includes(stepKey);
+                    const stepTimerKey = `${routineStorageKey}:timer:${step.kind}-${step.order}:${step.durationSec}`;
+                    // 진행 중인 단계가 있으면 그 단계만 남깁니다.
+                    if (activeRunningKey && activeRunningKey !== stepTimerKey) return null;
                     if (stepDone && !stepExpanded) {
                       return (
                         <button
@@ -2005,21 +2008,21 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       {rewardRolling
                         ? '주사위를 굴리는 중...'
                         : rewardAmount != null
-                          // 0원은 정상입니다. 5눈부터 적립이라 대부분의 눈은 꽝입니다.
-                          // "0원 적립!" 이라고 쓰면 고장난 것처럼 보이므로 다르게 말합니다.
+                          // 072 부터 **눈이 곧 금액**이라 0원이 나오지 않습니다.
+                          // 그래도 0 이면 월 예산 트리거가 깎은 경우이므로 금액을 말하지 않습니다.
                           ? rewardAmount > 0
                             ? `주사위 ${rewardDice} · ${rewardAmount}원 적립!`
-                            : `주사위 ${rewardDice} · 오늘은 아쉽네요`
+                            : `주사위 ${rewardDice} · 오늘도 잘 하셨어요`
                           : '오늘의 공통 스트레칭 성공!'}
                     </div>
                     <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, fontWeight: 700, color: 'var(--mebody-t-3f6553, #3f6553)', wordBreak: 'keep-all' }}>
+                      {/*
+                          확률을 적지 않습니다. 눈이 나올 가능성은 서버가 정하고 바뀔 수 있어서,
+                          화면에 숫자를 적으면 바꾸는 순간 거짓이 됩니다(057 에서 실제로 그랬습니다).
+                          안내가 필요하면 규칙의 고지 문구(rewardDisclosure)를 그대로 씁니다.
+                      */}
                       {rewardAmount != null && !rewardRolling
-                        ? rewardAmount > 0
-                          ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
-                          // 왜 꽝인지 규칙을 같이 말합니다. 규칙을 숨기면 운이 아니라 속임수로 보입니다.
-                          // 눈별 금액은 규칙의 고지 문구를 그대로 씁니다. 여기에 숫자를 적으면
-                          // 규칙을 바꿀 때 화면만 남아 거짓말이 됩니다(057 에서 실제로 그랬습니다).
-                          : (rewardDisclosure ?? '내일 오전 5시에 다시 굴릴 수 있습니다.')
+                        ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
                         : `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
                     </div>
                     {rewardNotice && (
@@ -2080,9 +2083,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           }}
                         >
                           <Gift size={15} />
-                          {bonusRolling ? '광고 보는 중...' : '광고 보고 한 번 더 굴리기'}
+                          {bonusRolling ? '광고 보는 중...' : '주사위 다시 돌리기'}
                         </button>
                         <div style={{ marginTop: '6px', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--mebody-t-6f8c7b, #6F8C7B)', wordBreak: 'keep-all' }}>
+                          {/*
+                              AdMob 인센티브 광고 정책이 요구하는 고지입니다. 광고를 봐야만
+                              얻을 수 있는 것처럼 보이면 안 되고, 안 봐도 기본 보상은 그대로라는
+                              사실을 알려야 합니다. 빼면 계정이 위험합니다.
+                          */}
                           선택입니다. 보지 않으셔도 위의 적립은 그대로예요.
                         </div>
                       </div>
@@ -2111,8 +2119,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         cursor: 'pointer',
                       }}
                     >
+                      {/* 「주사위 다시 돌리기」 와 헷갈리지 않게 무엇을 다시 하는지 밝힙니다. */}
                       <RotateCcw size={13} />
-                      다시 하기 (적립은 하루 1회)
+                      스트레칭 다시 하기
                     </button>
                   </div>
                 ) : (

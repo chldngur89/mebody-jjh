@@ -37,7 +37,9 @@ try {
   ok('payout 표 컬럼 존재', payoutCol === 1)
 
   console.log('\n■ 눈 → 금액 표')
-  for (const [code, expect] of [['daily_routine_dice', {1:0,2:0,3:0,4:0,5:1,6:2}], ['routine_bonus_dice', {1:0,2:0,3:0,4:0,5:0,6:1}]]) {
+  // 072 부터 **눈이 곧 금액**입니다. 예전에는 5눈부터만 적립이었습니다.
+  const faceIsAmount = {1:1,2:2,3:3,4:4,5:5,6:6}
+  for (const [code, expect] of [['daily_routine_dice', faceIsAmount], ['routine_bonus_dice', faceIsAmount]]) {
     const got = {}
     for (let d = 1; d <= 6; d += 1) {
       got[d] = (await db.query('SELECT public.reward_payout_for($1,$2) v',[code,d])).rows[0].v
@@ -45,20 +47,34 @@ try {
     ok(`${code}`, JSON.stringify(got) === JSON.stringify(expect), Object.entries(got).map(([k,v])=>`${k}눈→${v}원`).join(' '))
   }
 
-  console.log('\n■ 주사위 눈은 여전히 1~6 이 고르게 나온다')
+  // 072 부터 눈은 **고르게 나오지 않습니다.** 낮은 눈이 훨씬 자주 나오게 가중치를 둡니다.
+  // 예전 검사는 "한쪽으로 치우치지 않는다" 였는데, 이제는 치우치는 것이 정상입니다.
+  // 대신 **의도한 만큼만** 치우치는지 봅니다 — 표를 잘못 건드리면 여기서 걸립니다.
+  console.log('\n■ 주사위 눈의 확률 (의도한 가중치인가)')
+  const want = { 1: 27.3, 2: 27.3, 3: 27.3, 4: 9, 5: 6, 6: 3 }
+  const N = 20000
+  const rows = (await db.query(
+    `SELECT public.draw_weighted_dice(0::numeric) v FROM generate_series(1, ${N})`)).rows
   const faces = {}
-  for (let i = 0; i < 600; i += 1) {
-    const f = (await db.query(`SELECT public.draw_reward_amount('daily_routine_dice') v`)).rows[0].v
-    faces[f] = (faces[f] ?? 0) + 1
+  for (const r of rows) faces[r.v] = (faces[r.v] ?? 0) + 1
+  ok('1~6 이 모두 나온다', Object.keys(faces).length === 6,
+    Object.entries(faces).sort().map(([k,v])=>`${k}:${v}`).join(' '))
+  for (const [face, pct] of Object.entries(want)) {
+    const got = ((faces[face] ?? 0) / N) * 100
+    // ±1.5%p 면 2만 번 표본에서 충분히 좁습니다.
+    ok(`${face}눈 ${pct}%`, Math.abs(got - pct) <= 1.5, `${got.toFixed(1)}%`)
   }
-  const counts = Object.entries(faces).sort()
-  const min = Math.min(...Object.values(faces)), max = Math.max(...Object.values(faces))
-  ok('1~6 이 모두 나온다', Object.keys(faces).length === 6, counts.map(([k,v])=>`${k}:${v}`).join(' '))
-  ok('한쪽으로 치우치지 않는다 (600회, 각 100±40)', min > 60 && max < 140, `최소 ${min} 최대 ${max}`)
+
+  // 예산이 줄면 낮은 눈으로 몰려야 합니다. 이게 안 되면 한 달 예산을 넘깁니다.
+  const tight = (await db.query(
+    `SELECT public.draw_weighted_dice(1::numeric) v FROM generate_series(1, ${N})`)).rows
+  const onePct = (tight.filter((r) => r.v === 1).length / N) * 100
+  ok('조였을 때 1눈이 85% 이상', onePct >= 85, `${onePct.toFixed(1)}%`)
 
   console.log('\n■ 월 상한')
   const cap = (await db.query('SELECT public.reward_monthly_cap() v')).rows[0].v
-  ok('상한 49원', cap === 49, `${cap}원`)
+  // 072 에서 49 → 150 으로 올렸습니다(하루 2번 × 평균 2.48원 × 30일 = 149원).
+  ok('상한 150원', cap === 150, `${cap}원`)
 
   // 검증용 사용자 하나를 만들어 상한을 실제로 때려 봅니다.
   // user_profiles.id 는 auth.users 를 참조합니다. 새로 만들 수 없으니 기존 프로필 하나를 빌립니다.
@@ -71,15 +87,16 @@ try {
      VALUES ($1,'earn_routine','daily_routine_dice',$2,'free','routine',gen_random_uuid()) RETURNING amount`,
     [uid, amt])).rows[0].amount
 
-  ok('30원 적립', await earn(30) === 30)
-  ok('이번 달 누적 30원', (await db.query('SELECT public.reward_earned_this_month($1) v',[uid])).rows[0].v === 30)
-  ok('남은 한도 19원', (await db.query('SELECT public.reward_remaining_this_month($1) v',[uid])).rows[0].v === 19)
-  const clamped = await earn(25)
-  ok('25원을 넣어도 19원만 들어간다 (트리거)', clamped === 19, `${clamped}원`)
-  ok('누적이 정확히 49원', (await db.query('SELECT public.reward_earned_this_month($1) v',[uid])).rows[0].v === 49)
+  // 숫자는 상한(150원)에 맞춰 둡니다. 상한을 바꾸면 여기도 같이 바꿔야 합니다.
+  ok('120원 적립', await earn(120) === 120)
+  ok('이번 달 누적 120원', (await db.query('SELECT public.reward_earned_this_month($1) v',[uid])).rows[0].v === 120)
+  ok('남은 한도 30원', (await db.query('SELECT public.reward_remaining_this_month($1) v',[uid])).rows[0].v === 30)
+  const clamped = await earn(50)
+  ok('50원을 넣어도 30원만 들어간다 (트리거)', clamped === 30, `${clamped}원`)
+  ok('누적이 정확히 150원', (await db.query('SELECT public.reward_earned_this_month($1) v',[uid])).rows[0].v === 150)
   const after = await earn(5)
   ok('상한 뒤에는 0원 (행은 남는다)', after === 0, `${after}원`)
-  ok('그래도 49원을 넘지 않는다', (await db.query('SELECT public.reward_earned_this_month($1) v',[uid])).rows[0].v === 49)
+  ok('그래도 150원을 넘지 않는다', (await db.query('SELECT public.reward_earned_this_month($1) v',[uid])).rows[0].v === 150)
 
   console.log('\n■ 남의 적립액은 못 본다')
   const gr = (await db.query(`SELECT
@@ -94,7 +111,9 @@ try {
   await db.query(`INSERT INTO public.user_rewards (user_id, entry_type, rule_code, amount, issue_type, source_type, source_id)
      VALUES ($1,'earn_purchase','purchase_cashback',5,'free','order',gen_random_uuid())`, [uid])
   const bal = (await db.query('SELECT public.reward_balance($1) v',[uid])).rows[0].v
-  ok('구매 5원은 그대로 들어간다', bal === 54, `잔액 ${bal}원`)
+  // 상한(150) 을 이미 채운 뒤라 무료 적립은 더 안 들어갑니다. 구매 적립은 상한 밖이라
+  // 그대로 얹혀야 합니다 — 150 + 5 = 155. 상한을 바꾸면 이 숫자도 같이 바꿉니다.
+  ok('구매 5원은 그대로 들어간다', bal === 155, `잔액 ${bal}원`)
 
   console.log('\n■ 모든 적립 경로가 눈→금액 표를 거치는가')
   // 057 이 청구 함수 세 개를 고쳤는데 AdMob SSV 경로(grant_routine_bonus_admin)를 빠뜨려서,

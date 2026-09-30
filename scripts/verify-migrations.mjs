@@ -75,8 +75,12 @@ const CHECKS = [
   ['journey/056 · 활동 로그',             () => table('professional_activity_log')],
   ['journey/057_reward_monthly_cap',      () => fn('reward_monthly_cap')],
   ['journey/057 · 눈→원 표',              () => col('reward_rules', 'payout')],
+  // 058 은 고지 문구를 처음 넣은 마이그레이션입니다. 예전에는 '1/6' 이 들어갔는지로 봤는데
+  // 072 가 그 문구를 지웠습니다(가중치를 두면서 사실이 아니게 됐습니다).
+  // 그래서 "문구가 채워져 있는가" 로 바꿉니다 — 072 는 058 이 만든 행을 UPDATE 하므로
+  // 058 이 돌지 않았다면 여기도 비어 있습니다.
   ['journey/058_reward_disclosure',       () => v(`SELECT count(*)>0 AS v FROM public.reward_rules
-     WHERE code='daily_routine_dice' AND disclosure LIKE '%1/6%'`)],
+     WHERE code='daily_routine_dice' AND coalesce(disclosure,'') <> ''`)],
   ['journey/059_professional_assignment', () => fn('assign_client_mission')],
   ['journey/059 · 배정 출처',              () => col('user_missions', 'assigned_by')],
   ['journey/060_assignment_day_fix',      () => fn('journey_current_day')],
@@ -93,9 +97,10 @@ const CHECKS = [
   ['journey/065_cap_memo_fix',            () => v(`SELECT count(*)>0 AS v FROM pg_proc p
      JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public'
      AND p.proname='enforce_reward_monthly_cap' AND p.prosrc LIKE '%capped_from%'`)],
+  // 066 도 같은 이유로 문구 대조에서 존재 확인으로 바꿉니다('오전 5시' 는 072 가 지웠습니다).
   ['journey/066_challenge_disclosure',    () => v(`SELECT count(*)=3 AS v FROM public.reward_rules
      WHERE code IN ('weekly_challenge','monthly_challenge','journey_complete')
-     AND disclosure LIKE '%오전 5시%'`)],
+     AND coalesce(disclosure,'') <> ''`)],
   ['journey/067_ssv_bonus_payout',        () => v(`SELECT count(*)>0 AS v FROM pg_proc p
      JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public'
      AND p.proname='grant_routine_bonus_admin' AND p.prosrc LIKE '%reward_payout_for%'`)],
@@ -107,6 +112,10 @@ const CHECKS = [
                                                    WHERE conname='professional_activity_log_event_check'`)],
   ['journey/071_consent_ledger',          () => table('user_consents')],
   ['journey/071 · record_consent',        () => fn('record_consent')],
+  ['journey/072_dice_reward_redesign',    () => fn('draw_weighted_dice')],
+  ['journey/072 · 눈=금액',                () => v(`SELECT payout = '{"1":1,"2":2,"3":3,"4":4,"5":5,"6":6}'::jsonb AS v
+                                                     FROM public.reward_rules WHERE code='daily_routine_dice'`)],
+  ['journey/072 · 예산 150원',             () => v(`SELECT public.reward_monthly_cap() = 150 AS v`)],
 ]
 
 console.log('\n■ 마이그레이션 적용 상태')

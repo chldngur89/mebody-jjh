@@ -67,9 +67,23 @@ for (const r of rows) {
   ok(`${r.code} 표시 최대치가 실제와 같다`, r.max_amount === r.real_max,
     `표시 ${r.max_amount}원 · 실제 ${r.real_max}원`)
 }
-const capped = (await db.query(`SELECT count(*)::int n FROM public.reward_rules
-  WHERE is_active AND disclosure IS NOT NULL AND disclosure LIKE '%한 달%'`)).rows[0].n
-ok('월 상한이 고지에 적혀 있다', capped >= 3, `${capped}개 규칙`)
+// 예전에는 "월 상한이 고지에 적혀 있다" 를 요구했습니다. 072 에서 상한을 내부 값으로
+// 바꾸면서 그 전제가 사라졌습니다(사업 판단). 대신 **거짓이 되기 쉬운 문구**를 막습니다.
+//
+// 고지에 확률이나 금액을 적어 두면, 표를 손보는 순간 화면만 옛말이 남아 거짓이 됩니다.
+// 057 에서 실제로 그런 일이 있었습니다 — 규칙을 낮췄는데 "최대 50원" 문구가 남아 있었습니다.
+const lying = (await db.query(`SELECT code, disclosure FROM public.reward_rules
+  WHERE is_active AND disclosure IS NOT NULL
+    AND (disclosure ~ '[0-9]+/[0-9]+' OR disclosure ~ '[0-9]+\\s*원')
+    AND code <> 'purchase_cashback'`)).rows
+ok('고지에 확률·금액을 적어 두지 않았다', lying.length === 0,
+  lying.map((r) => `${r.code}: ${r.disclosure.slice(0, 40)}`).join(' | ') || '없음')
+
+// AdMob 인센티브 광고 정책. 빼면 계정이 위험합니다.
+const optional = (await db.query(`SELECT disclosure FROM public.reward_rules
+  WHERE code = 'routine_bonus_dice'`)).rows[0]?.disclosure ?? ''
+ok('보상형에 "보지 않아도 기본 적립은 그대로" 가 있다', optional.includes('보지 않아도'),
+  optional.slice(0, 50))
 await db.end()
 
 const failed = res.filter((x) => !x).length
