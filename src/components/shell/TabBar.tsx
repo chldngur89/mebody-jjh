@@ -38,10 +38,15 @@ export function TabBar({ active, onChange }: { active: AppTab; onChange: (tab: A
         // 홈 인디케이터에 탭이 깔리지 않도록 아래쪽 안전영역만큼 키우고 그만큼 패딩을 준다.
         // (box-sizing: border-box 이므로 버튼이 놓이는 안쪽 높이는 tabBarHeight 그대로)
         height: 'var(--mebody-tabbar-h)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        // 배너가 떠 있으면 0 입니다(배너가 이미 제스처바 위에 앉습니다) — index.css 참고.
+        paddingBottom: 'var(--mebody-tabbar-safe)',
         background: SHELL.tabBarBg,
         backdropFilter: 'blur(8px)',
         borderTop: SHELL.tabBarBorder,
+        // 아래에 광고가 붙으면 탭바 밑에도 선을 그어 **앱과 광고를 가릅니다.**
+        // 구분이 없으면 배너가 앱의 일부처럼 보이고, 표시광고법상으로도 광고임이
+        // 드러나야 합니다. 광고가 없을 때는 선을 그리지 않습니다.
+        borderBottom: 'var(--mebody-ad-divider, none)',
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
         zIndex: 30,
@@ -69,7 +74,14 @@ export function TabBar({ active, onChange }: { active: AppTab; onChange: (tab: A
               cursor: 'pointer',
             }}
           >
-            <Icon size={20} strokeWidth={on ? 2.2 : 2} fill={on ? BRAND.green : 'none'} />
+            {/* 선택된 탭도 **선 색 그대로 채우지 않습니다.** 선과 같은 초록으로 안을 채우면
+                아이콘이 초록 덩어리가 되어 집인지 가방인지 구분이 안 됐습니다.
+                옅게만 채워 모양은 남기고 선택된 느낌만 더합니다. */}
+            <Icon
+              size={20}
+              strokeWidth={on ? 2.4 : 2}
+              fill={on ? 'rgba(1,71,37,0.14)' : 'none'}
+            />
             <span>{label}</span>
           </button>
         );

@@ -1041,6 +1041,8 @@ export default function App() {
               scrollKey={`${currentScreen}:${activeTab}:${questionnaireId ?? "none"}`}
               activeTab={activeTab}
               scrollTopSignal={homeScrollTopSignal}
+              // 배너는 셸이 모든 탭에서 한 번만 띄웁니다. 유료 회원에게는 뜨지 않습니다.
+              isPaid={entitlement.isPaid}
               onTabChange={(tab) => {
                 setActiveTab(tab);
                 // 홈은 들어올 때마다 맨 위(오늘의 미션·루틴)에서 시작합니다.

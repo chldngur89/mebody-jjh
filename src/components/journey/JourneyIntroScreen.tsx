@@ -223,7 +223,7 @@ export function JourneyIntroScreen({
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 24px 24px', display: 'grid', gap: '16px' }}>
         <section
           style={{
-            borderRadius: '30px',
+            borderRadius: '24px',
             background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
             boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
             backdropFilter: 'blur(20px)',

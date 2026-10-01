@@ -185,7 +185,7 @@ export function LandingScreen({
             display: 'flex',
             flexDirection: 'column',
             overflow: isShortViewport ? 'visible' : 'hidden',
-            borderRadius: '28px',
+            borderRadius: '24px',
             background: 'var(--mebody-s-w78, rgba(255,255,255,0.78))',
             boxShadow: '0 24px 48px var(--mebody-d-k12, rgba(1, 71, 37, 0.12))',
             backdropFilter: 'blur(20px)',

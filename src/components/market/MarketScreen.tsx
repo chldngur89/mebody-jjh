@@ -12,19 +12,25 @@
  * **값이 있는 것만** 노출합니다. 없는 걸 있는 척하지 않습니다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronRight, Plus, Search, ShoppingCart } from 'lucide-react';
+import { Check, ChevronRight, Dumbbell, LayoutGrid, Package, PersonStanding, Pill, Plus, Search, ShoppingCart, Waves } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { fetchStoreProducts, type StoreProduct } from '../../api/content';
 import { addToCart, cartCount, onCartChange } from '../../lib/cart';
 import { BRAND, BRAND_CARD_BORDER, BRAND_RADIUS, SURFACE } from '../../theme/brand';
 import { Card, Chip, PageTitle } from '../ui';
 
-/** 시안의 카테고리. label 은 시안 문구 그대로. */
-const CATEGORIES: Array<{ key: string; label: string; icon: string }> = [
-  { key: 'release', label: '셀프 이완', icon: '◍' },
-  { key: 'strength', label: '근력 운동', icon: '⌾' },
-  { key: 'stretch', label: '스트레칭', icon: '⟋' },
-  { key: 'support', label: '보조 용품', icon: '◎' },
-  { key: 'food', label: '보조 식품', icon: '◇' },
+/**
+ * 시안의 카테고리. label 은 시안 문구 그대로.
+ *
+ * 아이콘은 **그림으로 구분되는 것**을 씁니다. 예전에는 유니코드 도형(◍ ⌾ ⟋ ◎ ◇)이라
+ * 「셀프 이완」인지 「근력 운동」인지 그림만 봐서는 알 수 없었습니다.
+ */
+const CATEGORIES: Array<{ key: string; label: string; Icon: LucideIcon }> = [
+  { key: 'release', label: '셀프 이완', Icon: Waves },
+  { key: 'strength', label: '근력 운동', Icon: Dumbbell },
+  { key: 'stretch', label: '스트레칭', Icon: PersonStanding },
+  { key: 'support', label: '보조 용품', Icon: Package },
+  { key: 'food', label: '보조 식품', Icon: Pill },
 ];
 
 function formatPrice(price: number | null): string {
@@ -195,10 +201,12 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
         )}
       </div>
 
-      {/* 카테고리 아이콘 그리드 */}
+      {/* 카테고리 아이콘 그리드 — 3열입니다.
+          「전체」 포함 6개라 4열이면 4+2 로 떨어져 마지막 줄이 비어 보였습니다.
+          3열이면 3+3 으로 딱 맞습니다. */}
       {availableCategories.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-          {[{ key: '', label: '전체', icon: '⋯' }, ...availableCategories].map((c) => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          {[{ key: '', label: '전체', Icon: LayoutGrid }, ...availableCategories].map((c) => {
             const on = (c.key || null) === active;
             return (
               <button
@@ -225,11 +233,10 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                     background: on ? 'var(--mebody-s-w18, rgba(255,255,255,0.18))' : SURFACE.subtle,
                     display: 'grid',
                     placeItems: 'center',
-                    fontSize: '0.9375rem',
                     color: on ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.green,
                   }}
                 >
-                  {c.icon}
+                  <c.Icon size={18} strokeWidth={2.2} />
                 </span>
                 <small style={{ fontSize: '0.75rem', fontWeight: 800, color: on ? 'var(--mebody-t-ffffff-2, #ffffff)' : BRAND.text }}>
                   {c.label}

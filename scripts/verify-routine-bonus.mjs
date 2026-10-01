@@ -4,6 +4,7 @@
  */
 import { readFileSync } from 'node:fs'
 import pg from 'pg'
+import { readReplayable } from './lib/replay-migration.mjs'
 
 const EMAIL = process.env.MEBODY_E2E_EMAIL ?? 'wh.choi@mebody.net'
 const env = {}
@@ -29,7 +30,7 @@ const T = async (fn) => { try { await c.query('SAVEPOINT s'); const r = await fn
 await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
-  await c.query(readFileSync(new URL('../db/journey/036_routine_bonus_reward.sql', import.meta.url).pathname, 'utf8'))
+  await c.query(readReplayable('036_routine_bonus_reward'))
   // 이 스위트는 옛 마이그레이션을 트랜잭션 안에서 재적용해 검증합니다. 그런데 그 파일은
   // user_rewards_sign_check 를 "적립은 amount > 0" 으로 되돌리고 적립 규칙·고지도 옛 값으로
   // 덮습니다. 우리가 보려는 것은 **지금 운영 상태**이므로 그 뒤 파일까지 이어 붙입니다.
@@ -37,7 +38,8 @@ try {
   // ★ 순서가 중요합니다. 번호순으로 붙여야 나중 것이 이깁니다.
   //   057 이 고지를 새로 쓰고, 063 이 거기 빠진 "선택 · 보지 않아도" 를 되살립니다.
   //   거꾸로 붙이면 057 이 063 을 덮어 고지 검사가 실패합니다(실제로 그랬습니다).
-  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure', '067_ssv_bonus_payout']) {
+  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure',
+                       '067_ssv_bonus_payout', '072_dice_reward_redesign']) {
     await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
   }
   ok('036 적용', true)
@@ -117,7 +119,14 @@ try {
   const realMax = (await c.query(`SELECT max((value)::int) v FROM jsonb_each_text(
     (SELECT payout FROM public.reward_rules WHERE code='routine_bonus_dice'))`)).rows[0].v
   ok('표시 최대치가 실제 도달 가능', rule.max_amount === realMax, `표시 ${rule.max_amount}원 · 실제 ${realMax}원`)
-  ok('선택이라는 점이 고지에 있음', /선택/.test(rule.disclosure))
+  // AdMob 인센티브 광고 정책이 요구하는 고지입니다. **빼면 계정이 위험합니다.**
+  // 예전에는 '선택' 이라는 낱말 하나만 찾았습니다. 문구를 더 자연스럽게 고치면서
+  // 뜻은 그대로인데 낱말만 사라져도 빨개졌습니다. 그래서 낱말이 아니라 두 가지 보장을 봅니다.
+  //   ① 볼지 말지는 사용자가 정한다   ② 안 봐도 기본 적립은 그대로다
+  ok('광고 시청이 자율이라는 점이 고지에 있음',
+     /선택|보고 싶을 때만|원하실 때만/.test(rule.disclosure), rule.disclosure)
+  ok('안 봐도 기본 적립은 그대로라는 점이 고지에 있음',
+     /보지 않아도[\s\S]*그대로|안 보셔도[\s\S]*그대로/.test(rule.disclosure), rule.disclosure)
   ok('안 봐도 기본 적립은 받는다는 점이 고지에 있음', /보지 않아도/.test(rule.disclosure))
 } finally {
   await c.query('ROLLBACK')

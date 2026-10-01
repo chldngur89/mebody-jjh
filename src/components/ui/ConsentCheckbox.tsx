@@ -53,7 +53,7 @@ export function ConsentCheckbox({
           width: '22px',
           height: '22px',
           marginTop: '1px',
-          borderRadius: '6px',
+          borderRadius: '12px',
           border: checked ? '2px solid var(--mebody-b-016b38, #016B38)' : '2px solid var(--mebody-b-6f8c7b, #6F8C7B)',
           background: checked ? 'var(--mebody-s-016b38, #016B38)' : 'var(--mebody-s-ffffff, #ffffff)',
           display: 'inline-flex',

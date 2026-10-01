@@ -947,7 +947,7 @@ function ActionDetailOverlay({
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
-          borderRadius: '30px',
+          borderRadius: '24px',
           background: 'linear-gradient(180deg, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 0%, var(--mebody-s-w98-3, rgba(236,253,245,0.98)) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
           boxShadow: '0 28px 80px var(--mebody-d-k24, rgba(1, 31, 17, 0.24))',
@@ -997,7 +997,7 @@ function ActionDetailOverlay({
             <section
               key={item.id}
               style={{
-                borderRadius: '26px',
+                borderRadius: '24px',
                 background: 'var(--mebody-s-ffffff, #ffffff)',
                 border: `1px solid ${itemIndex === 0 ? AXIS_GREEN_THEME.borderStrong : AXIS_GREEN_THEME.border}`,
                 padding: '17px',
@@ -1010,7 +1010,7 @@ function ActionDetailOverlay({
                   style={{
                     width: '26px',
                     height: '26px',
-                    borderRadius: '9px',
+                    borderRadius: '12px',
                     border: `2px solid ${AXIS_GREEN_THEME.borderStrong}`,
                     background: itemIndex === 0 ? AXIS_GREEN_THEME.surface : 'var(--mebody-s-ffffff, #ffffff)',
                     flexShrink: 0,
@@ -1990,32 +1990,71 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                 (routineCompleted ? (
                   <div
                     style={{
-                      borderRadius: '22px',
-                      border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-                      background: 'linear-gradient(135deg, var(--mebody-s-k10, rgba(1,71,37,0.10)) 0%, var(--mebody-s-w86-3, rgba(232,245,238,0.86)) 100%)',
-                      padding: '20px 18px',
+                      borderRadius: '20px',
+                      // 적립이 일어나는 **유일한 순간**입니다. 연한 회색 상자면 성공이 아니라
+                      // 비활성처럼 보입니다. 결과가 나온 뒤에는 브랜드 초록으로 채웁니다.
+                      border: rewardAmount != null && !rewardRolling
+                        ? '1px solid transparent'
+                        : `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                      background: rewardAmount != null && !rewardRolling
+                        ? 'linear-gradient(145deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)'
+                        : 'linear-gradient(135deg, var(--mebody-s-k10, rgba(1,71,37,0.10)) 0%, var(--mebody-s-w86-3, rgba(232,245,238,0.86)) 100%)',
+                      boxShadow: rewardAmount != null && !rewardRolling
+                        ? '0 10px 24px -12px rgba(1,71,37,0.55)'
+                        : 'none',
+                      padding: '22px 18px',
                       textAlign: 'center',
+                      transition: 'background 420ms ease, box-shadow 420ms ease',
                     }}
                   >
                     {rewardRolling || rewardDice != null ? (
-                      <div style={{ marginBottom: '10px' }}>
+                      <div style={{ marginBottom: '12px' }}>
                         <RewardDice value={rewardDice} rolling={rewardRolling} size={72} />
                       </div>
                     ) : (
                       <CheckCircle2 size={30} color="#014725" style={{ margin: '0 auto 8px' }} />
                     )}
-                    <div style={{ fontSize: '1.0625rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '5px' }}>
+
+                    {/*
+                        받은 금액을 **가장 크게** 보여줍니다. 눈이 곧 금액으로 바뀌었는데
+                        예전 문구는 "주사위 1 · 오늘도 잘 하셨어요" 처럼 숫자를 말하지 않아,
+                        얼마를 받았는지 알 수 없었습니다.
+                    */}
+                    {rewardAmount != null && !rewardRolling && rewardAmount > 0 && (
+                      <div style={{ marginBottom: '6px', lineHeight: 1 }}>
+                        <span style={{ fontSize: '2.25rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                          +{rewardAmount}
+                        </span>
+                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'rgba(255,255,255,0.86)', marginLeft: '3px' }}>원</span>
+                      </div>
+                    )}
+
+                    <div style={{
+                      fontSize: '1.0625rem',
+                      fontWeight: 900,
+                      color: rewardAmount != null && !rewardRolling ? 'rgba(255,255,255,0.92)' : 'var(--mebody-t-014725, #014725)',
+                      marginBottom: '5px',
+                    }}>
                       {rewardRolling
                         ? '주사위를 굴리는 중...'
                         : rewardAmount != null
-                          // 072 부터 **눈이 곧 금액**이라 0원이 나오지 않습니다.
-                          // 그래도 0 이면 월 예산 트리거가 깎은 경우이므로 금액을 말하지 않습니다.
+                          // 금액은 위에서 크게 보여주므로 여기서는 반복하지 않습니다.
+                          // 072 부터 눈이 곧 금액이라 0원은 월 예산 트리거가 깎은 경우뿐입니다.
                           ? rewardAmount > 0
-                            ? `주사위 ${rewardDice} · ${rewardAmount}원 적립!`
-                            : `주사위 ${rewardDice} · 오늘도 잘 하셨어요`
+                            ? '적립되었습니다!'
+                            : '오늘도 잘 하셨어요'
                           : '오늘의 공통 스트레칭 성공!'}
                     </div>
-                    <div style={{ fontSize: '0.8125rem', lineHeight: 1.65, fontWeight: 700, color: 'var(--mebody-t-3f6553, #3f6553)', wordBreak: 'keep-all' }}>
+                    <div style={{
+                      fontSize: '0.8125rem',
+                      lineHeight: 1.65,
+                      fontWeight: 700,
+                      // 초록으로 채워졌을 때는 글자도 밝게 뒤집어야 읽힙니다.
+                      color: rewardAmount != null && !rewardRolling
+                        ? 'rgba(255,255,255,0.78)'
+                        : 'var(--mebody-t-3f6553, #3f6553)',
+                      wordBreak: 'keep-all',
+                    }}>
                       {/*
                           확률을 적지 않습니다. 눈이 나올 가능성은 서버가 정하고 바뀔 수 있어서,
                           화면에 숫자를 적으면 바꾸는 순간 거짓이 됩니다(057 에서 실제로 그랬습니다).
@@ -2036,7 +2075,9 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       <div
                         style={{
                           marginTop: '14px',
-                          borderTop: `1px solid ${AXIS_GREEN_THEME.border}`,
+                          borderTop: rewardAmount != null
+                            ? '1px solid rgba(255,255,255,0.22)'
+                            : `1px solid ${AXIS_GREEN_THEME.border}`,
                           paddingTop: '12px',
                           display: 'flex',
                           alignItems: 'center',
@@ -2044,13 +2085,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           gap: '8px',
                           fontSize: '0.8125rem',
                           fontWeight: 900,
-                          color: 'var(--mebody-t-014725, #014725)',
+                          // 카드가 초록으로 채워졌을 때 글자를 밝게 뒤집습니다.
+                          color: rewardAmount != null ? 'rgba(255,255,255,0.92)' : 'var(--mebody-t-014725, #014725)',
                         }}
                       >
                         <RewardDice value={bonusDice} rolling={false} size={34} />
                         {bonusAmount != null && bonusAmount > 0
-                          ? `보너스 ${bonusDice} · ${bonusAmount}원 추가 적립`
-                          : `보너스 ${bonusDice} · 이번엔 아쉽네요`}
+                          ? `+${bonusAmount}원 추가 적립`
+                          : '오늘도 잘 하셨어요'}
                       </div>
                     ) : bonusEligible && isNativeApp() && isRealRewarded() && ssvReady ? (
                       /*
@@ -2059,7 +2101,14 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         보이지도 않는 보상을 약속하는 화면이 됩니다.
                         VITE_ADMOB_REWARDED 를 채우면 다시 나타납니다.
                       */
-                      <div style={{ marginTop: '14px', borderTop: `1px solid ${AXIS_GREEN_THEME.border}`, paddingTop: '12px' }}>
+                      <div style={{
+                        marginTop: '14px',
+                        // 카드가 초록이면 구분선도 밝은 쪽으로 — 초록 위의 연초록 선은 안 보입니다.
+                        borderTop: rewardAmount != null
+                          ? '1px solid rgba(255,255,255,0.22)'
+                          : `1px solid ${AXIS_GREEN_THEME.border}`,
+                        paddingTop: '12px',
+                      }}>
                         <button
                           type="button"
                           onClick={watchAdForBonus}
@@ -2072,7 +2121,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                             justifyContent: 'center',
                             gap: '7px',
                             borderRadius: '14px',
-                            border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
+                            border: 'none',
                             background: 'var(--mebody-s-ffffff, #ffffff)',
                             color: 'var(--mebody-t-014725, #014725)',
                             fontSize: '0.8125rem',
@@ -2085,7 +2134,10 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           <Gift size={15} />
                           {bonusRolling ? '광고 보는 중...' : '주사위 다시 돌리기'}
                         </button>
-                        <div style={{ marginTop: '6px', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--mebody-t-6f8c7b, #6F8C7B)', wordBreak: 'keep-all' }}>
+                        <div style={{
+                          marginTop: '6px', fontSize: '0.75rem', lineHeight: 1.5, wordBreak: 'keep-all',
+                          color: rewardAmount != null ? 'rgba(255,255,255,0.68)' : 'var(--mebody-t-6f8c7b, #6F8C7B)',
+                        }}>
                           {/*
                               AdMob 인센티브 광고 정책이 요구하는 고지입니다. 광고를 봐야만
                               얻을 수 있는 것처럼 보이면 안 되고, 안 봐도 기본 보상은 그대로라는
@@ -2109,12 +2161,15 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                         alignItems: 'center',
                         gap: '6px',
                         borderRadius: '999px',
-                        border: `1px solid ${AXIS_GREEN_THEME.border}`,
-                        background: 'var(--mebody-s-ffffff, #ffffff)',
+                        // 초록 카드 위에서는 흰 테두리만 남겨 '보조 동작' 으로 보이게 합니다.
+                        border: rewardAmount != null
+                          ? '1px solid rgba(255,255,255,0.32)'
+                          : `1px solid ${AXIS_GREEN_THEME.border}`,
+                        background: rewardAmount != null ? 'transparent' : 'var(--mebody-s-ffffff, #ffffff)',
                         padding: '8px 14px',
                         fontSize: '0.8125rem',
                         fontWeight: 800,
-                        color: 'var(--mebody-t-4a6b58, #4A6B58)',
+                        color: rewardAmount != null ? 'rgba(255,255,255,0.78)' : 'var(--mebody-t-4a6b58, #4A6B58)',
                         fontFamily: 'inherit',
                         cursor: 'pointer',
                       }}
@@ -2164,7 +2219,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
     <div style={{ display: 'grid', gap: '16px' }}>
       <section
         style={{
-          borderRadius: '30px',
+          borderRadius: '24px',
           background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
           boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
           backdropFilter: 'blur(20px)',
@@ -2344,7 +2399,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : 'var(--mebody-b-6f8c7b, #6F8C7B)'}`,
                         background: isCompleted ? 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
                         boxShadow: 'inset 0 0 0 3px var(--mebody-d-w85, rgba(255,255,255,0.85))',
@@ -2467,6 +2522,8 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
       <AdSlot
         isPaid={isPaid}
         placement="routine"
+        // 네이티브 배너는 셸이 한 번만 띄웁니다. 여기는 웹용 프로모션 카드만 맡습니다.
+        nativeBanner={false}
         house={{
           title: '관리에 쓰는 도구, 결과에 맞춰 골라드려요',
           body: '위 루틴에 필요한 폼롤러·마사지볼을 결과 페이지에서 확인할 수 있습니다.',

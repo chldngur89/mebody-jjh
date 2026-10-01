@@ -5,7 +5,7 @@
  * **실제 차단은 RLS(can_start_journey)가 합니다.** 이 화면은 안내만 합니다 —
  * 화면에서만 막으면 API 로 우회되므로, 서버 판정과 화면 안내를 분리해 둡니다.
  */
-import { ChevronRight, Lock } from 'lucide-react';
+import { Check, ChevronRight, Lock } from 'lucide-react';
 import type { Entitlement } from '../../api/entitlement';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { CTA as COPY_CTA } from '../../theme/copy';
@@ -107,43 +107,68 @@ export function RoutineTab({
     <div style={{ display: 'grid', gap: '14px' }}>
       <PageTitle eyebrow="MY ROUTINE" title="14일 루틴" lead="멤버십 회원이 이용할 수 있는 개인화 루틴입니다." />
 
+      {/*
+          잠금 안내와 혜택을 **한 카드로 합쳤습니다.**
+          예전에는 잠금 카드가 화면을 거의 다 먹고 「무엇이 열리나요」 가 아래로 밀려
+          잘렸습니다. 결제를 권하는 화면인데 정작 혜택이 안 보였습니다.
+
+          자물쇠도 키우고 색을 넣었습니다 — 연한 회색 원은 잠금이라기보다
+          그냥 꺼진 것처럼 보였습니다.
+      */}
       <Card>
-        <div style={{ display: 'grid', placeItems: 'center', gap: '10px', padding: '16px 0 6px' }}>
+        <div style={{ display: 'grid', placeItems: 'center', gap: '8px', padding: '6px 0 2px' }}>
           <div
             style={{
-              width: '52px',
-              height: '52px',
+              width: '46px',
+              height: '46px',
               borderRadius: '999px',
-              background: SURFACE.subtle,
+              background: BRAND.green,
               display: 'grid',
               placeItems: 'center',
             }}
           >
-            <Lock size={22} color={BRAND.green} />
+            <Lock size={20} color="#ffffff" />
           </div>
-          <h2 style={{ fontSize: '1.1875rem', fontWeight: 800, margin: 0, textAlign: 'center', wordBreak: 'keep-all' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, margin: 0, textAlign: 'center', wordBreak: 'keep-all' }}>
             무료 체험을 모두 사용했습니다
           </h2>
-          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.7, color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
-            멤버십에 가입하면 14일 루틴을 계속 이어갈 수 있습니다.
-            <br />
-            공통 스트레칭과 적립은 지금처럼 무료로 계속 이용하실 수 있어요.
+          <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6, color: BRAND.muted, textAlign: 'center', wordBreak: 'keep-all' }}>
+            공통 스트레칭과 적립은 지금처럼 계속 무료예요.
           </p>
         </div>
-        <CTA onClick={onOpenMembership}>
-          멤버십 보기 <ChevronRight size={18} />
-        </CTA>
-      </Card>
 
-      <Card>
-        <SectionHeading kicker="멤버십" title="무엇이 열리나요" />
-        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.8125rem', lineHeight: 1.9, color: BRAND.muted }}>
-          <li>14일 루틴 무제한</li>
-          <li>광고 없이 이용</li>
-          <li>미션 · 공통 스트레칭 적립 2배</li>
-          <li>mebody 상품 구매 시 결제액의 5% 적립</li>
-          <li>주간 리포트와 2주 재측정 비교</li>
+        <ul style={{
+          margin: '14px 0 0',
+          padding: '12px 14px',
+          listStyle: 'none',
+          borderRadius: '14px',
+          background: SURFACE.subtle,
+          display: 'grid',
+          gap: '7px',
+          fontSize: '0.8125rem',
+          lineHeight: 1.45,
+          color: BRAND.text,
+          fontWeight: 700,
+        }}>
+          {[
+            '14일 루틴 무제한',
+            '광고 없이 이용',
+            '미션 · 공통 스트레칭 적립 2배',
+            'mebody 상품 구매 시 결제액의 5% 적립',
+            '주간 리포트와 2주 재측정 비교',
+          ].map((benefit) => (
+            <li key={benefit} style={{ display: 'flex', alignItems: 'flex-start', gap: '7px' }}>
+              <Check size={15} color={BRAND.green} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span style={{ wordBreak: 'keep-all' }}>{benefit}</span>
+            </li>
+          ))}
         </ul>
+
+        <div style={{ marginTop: '14px' }}>
+          <CTA onClick={onOpenMembership}>
+            멤버십 보기 <ChevronRight size={18} />
+          </CTA>
+        </div>
       </Card>
     </div>
   );

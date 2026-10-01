@@ -86,7 +86,7 @@ function MissionCard({
           style={{
             width: '28px',
             height: '28px',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: `2px solid ${isCompleted ? AXIS_GREEN_THEME.primary : 'var(--mebody-b-6f8c7b, #6F8C7B)'}`,
             background: isCompleted ? 'linear-gradient(135deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)' : 'var(--mebody-s-ffffff, #ffffff)',
             boxShadow: 'inset 0 0 0 3px var(--mebody-d-w85, rgba(255,255,255,0.85))',
@@ -357,7 +357,7 @@ export function JourneyTodayScreen({
           <>
             <section
               style={{
-                borderRadius: '28px',
+                borderRadius: '24px',
                 background: 'var(--mebody-s-w84, rgba(255,255,255,0.84))',
                 boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(20px)',

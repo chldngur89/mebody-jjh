@@ -147,16 +147,40 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
         <SectionHeading
           kicker={`${monthStart.getMonth() + 1}월 기록`}
           title={`${status?.monthDone ?? 0} / ${status?.monthRequired ?? 20}일 완료`}
-          hint={`${earned.toLocaleString()}원 적립`}
+          // 0원이면 "0원 적립" 이라고 쓰지 않습니다 — 처음 쓰는 사람은 늘 0 이라
+          // 첫인상이 "아무것도 못 받는 곳" 이 됩니다. 쌓인 뒤에만 보여줍니다.
+          hint={earned > 0 ? `${earned.toLocaleString()}원 적립` : undefined}
         />
-        <ProgressTrack
-          percent={((status?.monthDone ?? 0) / Math.max(1, status?.monthRequired ?? 20)) * 100}
-          label="월간 완주"
-          // **앞으로 받을 금액을 미리 말하지 않습니다.**
-          // 액수가 적어 오히려 하기 싫어지는 쪽으로 작용합니다. 목표 일수만 보여 줍니다.
-          // 실제로 받은 금액은 받은 뒤에 알려 줍니다(아래 notice).
-          value={status?.monthClaimed ? '보너스 받음' : `${status?.monthRequired ?? 20}일 달성`}
-        />
+        {/*
+            아직 하루도 안 한 달에는 진행바 대신 **무엇을 하면 되는지**를 보여줍니다.
+            0/20·0원·빈 막대 셋이 나란히 있으면 카드 전체가 비어 보입니다.
+        */}
+        {(status?.monthDone ?? 0) === 0 ? (
+          <div style={{
+            marginTop: '12px',
+            borderRadius: '14px',
+            background: SURFACE.subtle,
+            padding: '14px 16px',
+            fontSize: '0.8125rem',
+            lineHeight: 1.6,
+            fontWeight: 700,
+            color: BRAND.muted,
+            wordBreak: 'keep-all',
+          }}>
+            아래 공통 스트레칭을 마치면 오늘 기록이 쌓이기 시작해요.
+            <br />
+            한 달에 {status?.monthRequired ?? 20}일을 채우면 보너스를 드립니다.
+          </div>
+        ) : (
+          <ProgressTrack
+            percent={((status?.monthDone ?? 0) / Math.max(1, status?.monthRequired ?? 20)) * 100}
+            label="월간 완주"
+            // **앞으로 받을 금액을 미리 말하지 않습니다.**
+            // 액수가 적어 오히려 하기 싫어지는 쪽으로 작용합니다. 목표 일수만 보여 줍니다.
+            // 실제로 받은 금액은 받은 뒤에 알려 줍니다(아래 notice).
+            value={status?.monthClaimed ? '보너스 받음' : `${status?.monthRequired ?? 20}일 달성`}
+          />
+        )}
         {status && !status.monthClaimed && status.monthDone >= status.monthRequired && (
           <CTA onClick={() => void claim('monthly')} disabled={working}>
             <Gift size={16} /> 월간 보너스 받기
@@ -257,7 +281,7 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
                       aspectRatio: '1',
                       display: 'grid',
                       placeItems: 'center',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       fontSize: '0.75rem',
                       fontWeight: done ? 900 : 600,
                       background: done ? BRAND.green : inMonth ? SURFACE.subtle : 'transparent',

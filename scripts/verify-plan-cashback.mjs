@@ -6,6 +6,7 @@
  */
 import { readFileSync } from 'node:fs'
 import pg from 'pg'
+import { readReplayable } from './lib/replay-migration.mjs'
 
 const EMAIL = process.env.MEBODY_E2E_EMAIL ?? 'wh.choi@mebody.net'
 const env = {}
@@ -36,7 +37,7 @@ const makeOrder = async (uid, subtotal, rewardUsed = 0) =>
 await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
-  await c.query(readFileSync(new URL('../db/journey/035_single_plan_and_purchase_reward.sql', import.meta.url).pathname, 'utf8'))
+  await c.query(readReplayable('035_single_plan_and_purchase_reward'))
   ok('035 적용', true)
 
   const uid = (await c.query('SELECT id FROM auth.users WHERE email=$1', [EMAIL])).rows[0].id

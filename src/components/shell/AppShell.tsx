@@ -9,6 +9,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { BRAND } from '../../theme/brand';
+import { AdSlot } from '../AdSlot';
 import { ScrollIndicator } from '../ScrollIndicator';
 import { TabBar, type AppTab } from './TabBar';
 import { TopBar } from './TopBar';
@@ -28,6 +29,14 @@ export function AppShell({
    * 기본 동작은 탭별로 마지막 스크롤 위치를 복원하는 것이어서 중간부터 열립니다.
    */
   scrollTopSignal = 0,
+  /**
+   * 활성 구독이면 광고를 띄우지 않습니다.
+   *
+   * 배너를 **셸에 한 번만** 답니다. 예전에는 화면마다 AdSlot 을 달아서 탭을 옮길 때마다
+   * 배너가 사라졌다 다시 떴습니다(AdSlot 이 언마운트되며 hideBanner 를 부릅니다).
+   * 그때마다 하단 여백도 같이 출렁였습니다. 여기 한 곳에 두면 탭을 옮겨도 그대로 있습니다.
+   */
+  isPaid = false,
 }: {
   activeTab: AppTab;
   scrollKey?: string;
@@ -36,6 +45,7 @@ export function AppShell({
   topBarRight?: ReactNode;
   children: ReactNode;
   scrollTopSignal?: number;
+  isPaid?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -115,6 +125,12 @@ export function AppShell({
 
       <ScrollIndicator containerRef={scrollRef} bottomOffset="calc(var(--mebody-tabbar-h) + 12px)" />
       <TabBar active={activeTab} onChange={onTabChange} />
+      {/*
+          모든 탭에서 같은 배너가 같은 자리에 뜹니다.
+          네이티브에서는 AdMob 이 웹뷰 위에 겹쳐 그리므로 여기서는 아무것도 그리지 않고
+          띄우기/내리기만 맡습니다. 가려짐은 --mebody-ad-inset 여백이 처리합니다.
+      */}
+      <AdSlot isPaid={isPaid} placement="result_bottom" />
     </div>
   );
 }

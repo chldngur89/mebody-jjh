@@ -61,7 +61,7 @@ export function SharePreviewCard({
         textAlign: 'center',
         background: BRAND.card,
         border: `1px solid ${SURFACE.hairline}`,
-        borderRadius: '22px',
+        borderRadius: '20px',
         boxShadow: '0 10px 28px var(--mebody-d-k06, rgba(0,70,40,0.06))',
         padding: '22px 18px 20px',
       }}

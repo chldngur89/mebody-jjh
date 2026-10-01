@@ -431,7 +431,7 @@ function QtyButton({ children, onClick, label }: { children: React.ReactNode; on
       style={{
         width: '32px',
         height: '32px',
-        borderRadius: '8px',
+        borderRadius: '12px',
         border: `1px solid ${SURFACE.hairline}`,
         background: 'var(--mebody-s-ffffff, #ffffff)',
         color: BRAND.muted,

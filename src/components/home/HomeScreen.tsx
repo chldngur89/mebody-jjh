@@ -154,6 +154,12 @@ export function HomeScreen({
 
   return (
     <div style={{ display: 'grid', gap: '14px' }}>
+      {/*
+          다른 탭(미션·루틴·마켓·내 상태)은 전부 꼬리표+제목으로 시작하는데
+          홈만 바로 카드로 들어가서 혼자 다른 화면처럼 보였습니다.
+      */}
+      <PageTitle eyebrow="HOME" title="오늘" lead="오늘 할 것과 내 결과를 한눈에 봅니다." />
+
       {/* 어제 미완료 리마인더 */}
       {journeyProgress?.yesterdayIncomplete && (
         <button
@@ -477,6 +483,8 @@ export function HomeScreen({
           <AdSlot
             isPaid={isPaid}
             placement="result_bottom"
+            // 네이티브 배너는 셸이 한 번만 띄웁니다. 여기는 웹용 프로모션 카드만 맡습니다.
+            nativeBanner={false}
             house={{
               title: '14일 루틴으로 이어서 해보세요',
               body: '내 코드에 맞는 미션이 하루 한 가지씩 배정됩니다. 첫 14일은 무료입니다.',

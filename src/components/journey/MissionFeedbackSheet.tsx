@@ -136,7 +136,7 @@ export function MissionFeedbackSheet({ missionTitle, isSaving = false, errorMess
           maxWidth: '430px',
           maxHeight: '88vh',
           overflowY: 'auto',
-          borderRadius: '30px',
+          borderRadius: '24px',
           background: 'linear-gradient(180deg, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 0%, var(--mebody-s-w98-3, rgba(236,253,245,0.98)) 100%)',
           border: `1px solid ${AXIS_GREEN_THEME.border}`,
           boxShadow: '0 28px 80px var(--mebody-d-k24, rgba(1, 31, 17, 0.24))',

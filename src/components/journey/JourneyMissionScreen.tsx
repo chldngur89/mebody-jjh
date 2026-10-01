@@ -260,7 +260,7 @@ export function JourneyMissionScreen({ user, mission, onBack, onDone }: JourneyM
           <>
             <section
               style={{
-                borderRadius: '28px',
+                borderRadius: '24px',
                 background: 'var(--mebody-s-w86, rgba(255,255,255,0.86))',
                 boxShadow: '0 22px 46px var(--mebody-d-k10, rgba(1, 71, 37, 0.10))',
                 backdropFilter: 'blur(20px)',

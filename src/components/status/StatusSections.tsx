@@ -279,8 +279,9 @@ export function ProfileSection({ user }: { user: User }) {
 
   return (
     <Collapsible
-      title={incomplete ? '내 정보를 입력해주세요' : '내 정보 수정 및 비밀 번호 변경'}
-      hint={incomplete ? '입력 필요' : '완료'}
+      title={incomplete ? '내 정보를 입력해주세요' : '내 정보 · 비밀번호'}
+      // 「완료」 는 무엇이 완료됐다는 건지 모호했습니다. 상태가 아니라 할 일을 말합니다.
+      hint={incomplete ? '입력 필요' : '수정'}
       tone={incomplete ? 'danger' : 'default'}
       open={open}
       onOpenChange={setOpen}
@@ -520,7 +521,7 @@ export function OrdersSection({
                       border: `1px solid ${SURFACE.hairline}`,
                       background: 'var(--mebody-s-ffffff, #ffffff)',
                       color: BRAND.muted,
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       padding: '7px 12px',
                       fontSize: '0.8125rem',
                       fontWeight: 800,
@@ -909,7 +910,7 @@ export function ProfessionalSection({ user }: { user: User }) {
             onClick={load}
             style={{
               marginTop: '10px', border: `1px solid ${BRAND.line}`, background: BRAND.card,
-              color: BRAND.text, borderRadius: '10px', padding: '8px 14px',
+              color: BRAND.text, borderRadius: '12px', padding: '8px 14px',
               fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
             }}
           >
@@ -950,7 +951,7 @@ export function ProfessionalSection({ user }: { user: User }) {
                     disabled={busyId === row.relationId}
                     style={{
                       flexShrink: 0, border: `1px solid ${BRAND.line}`, background: BRAND.card,
-                      color: '#B3261E', borderRadius: '10px', padding: '8px 12px',
+                      color: '#B3261E', borderRadius: '12px', padding: '8px 12px',
                       fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
                     }}
                   >

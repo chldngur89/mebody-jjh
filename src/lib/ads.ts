@@ -111,8 +111,21 @@ function setAdInset(px: number) {
   // (에뮬레이터 실측: 배너 180px 아래에 60px 이 비쳤고, 그게 제스처바 높이였습니다).
   // 배너가 있을 때만 그만큼을 더합니다. 배너가 없으면 0 이어야 합니다 —
   // 광고가 없는데 아래가 비면 그냥 빈 띠가 생깁니다.
-  const inset = px > 0 ? px + safeAreaBottomPx() : 0
+  const safe = safeAreaBottomPx()
+  const inset = px > 0 ? px + safe : 0
   document.documentElement.style.setProperty('--mebody-ad-inset', `${Math.max(0, inset)}px`)
+
+  // 배너가 떠 있으면 **탭바는 안전영역을 또 비우지 않습니다.**
+  //
+  // 탭바는 높이(72px + 안전영역)와 아래 패딩으로 제스처바를 피합니다. 그런데 배너가
+  // 이미 제스처바 위에 앉으므로, 그 상태에서 탭바까지 안전영역을 잡으면 두 번 잡힙니다.
+  // 실측으로 탭바와 배너 사이에 110px 짜리 빈 띠가 생겼습니다.
+  document.documentElement.style.setProperty(
+    '--mebody-tabbar-safe', px > 0 ? '0px' : `${safe}px`)
+
+  // 배너가 있을 때만 탭바 아래에 선을 그어 앱과 광고를 가릅니다(TabBar 참고).
+  document.documentElement.style.setProperty(
+    '--mebody-ad-divider', px > 0 ? '1px solid rgba(1,71,37,0.12)' : 'none')
   // 앱이 쓸 수 있는 높이를 다시 잡게 알립니다 — lib/viewport.ts 가 이 값을 빼고 계산합니다.
   window.dispatchEvent(new CustomEvent('mebody:ad-inset', { detail: inset }))
 }

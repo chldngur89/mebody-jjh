@@ -21,9 +21,17 @@ interface AdSlotProps {
   placement: BannerPlacement;
   /** 승인 전 자리를 채울 자사 프로모션 */
   house?: { title: string; body: string; onClick?: () => void };
+  /**
+   * 네이티브 AdMob 배너를 이 슬롯이 띄울지.
+   *
+   * 배너는 **셸(AppShell)이 한 번만** 띄웁니다. 화면마다 띄우면 탭을 옮길 때마다
+   * 사라졌다 다시 뜨고 하단 여백도 같이 출렁입니다.
+   * 화면 안의 슬롯은 웹용 자사 프로모션 카드만 맡으므로 false 로 둡니다.
+   */
+  nativeBanner?: boolean;
 }
 
-export function AdSlot({ isPaid, placement, house }: AdSlotProps) {
+export function AdSlot({ isPaid, placement, house, nativeBanner = true }: AdSlotProps) {
   // 동의 전/거부 상태에서는 비개인화 광고만 씁니다(AdSense 의 npa=1 에 해당).
   // 실제 광고 태그를 붙일 때 이 값을 data-npa 로 전달합니다.
   const consent = useCookieConsent();
@@ -33,12 +41,12 @@ export function AdSlot({ isPaid, placement, house }: AdSlotProps) {
   // 네이티브 앱에서는 AdMob 배너를 화면 하단에 띄웁니다.
   // 이 배너는 웹뷰 위에 겹쳐 그려지므로 여기서는 자리만 비워둡니다.
   useEffect(() => {
-    if (isPaid || !native) return undefined;
+    if (isPaid || !native || !nativeBanner) return undefined;
     void showBanner(placement);
     return () => {
       void hideBanner();
     };
-  }, [isPaid, native, placement]);
+  }, [isPaid, native, placement, nativeBanner]);
 
   if (isPaid) return null;
 

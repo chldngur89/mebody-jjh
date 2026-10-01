@@ -4,6 +4,7 @@
  */
 import { readFileSync } from 'node:fs'
 import pg from 'pg'
+import { readReplayable } from './lib/replay-migration.mjs'
 
 const EMAIL = process.env.MEBODY_E2E_EMAIL ?? 'wh.choi@mebody.net'
 const env = {}
@@ -29,9 +30,10 @@ const T = async (fn) => { try { await c.query('SAVEPOINT s'); const r = await fn
 await c.connect(); await c.query('BEGIN')
 try {
   console.log('\n■ 마이그레이션 적용')
-  await c.query(readFileSync(new URL('../db/journey/033_daily_routine_reward.sql', import.meta.url).pathname, 'utf8'))
+  await c.query(readReplayable('033_daily_routine_reward'))
   // 번호순으로 이어 붙입니다 — 나중 파일이 앞 파일의 값을 덮어야 운영과 같아집니다.
-  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure', '067_ssv_bonus_payout']) {
+  for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure',
+                       '067_ssv_bonus_payout', '072_dice_reward_redesign']) {
     await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
   }
   // 이 스위트는 옛 마이그레이션을 트랜잭션 안에서 재적용해 검증합니다. 그런데 그 파일들은
@@ -82,6 +84,13 @@ try {
   const t0 = await c.query('SELECT * FROM public.today_routine_reward()')
   ok('적립 전 claimed=false', t0.rows[0].claimed === false, `claimed=${t0.rows[0].claimed}`)
 
+  // 원장 행 수는 **증가분**으로 봅니다.
+  // 예전에는 이 계정의 earn_routine 행을 전부 세어 1 이길 기대했습니다. 그 계정이 한 번이라도
+  // 실제로 스트레칭을 하고 나면(어제 적립이 남아 있으면) 영영 2행이 되어 빨개집니다.
+  // 확인하려는 건 "같은 날 두 번 굴려도 원장은 한 줄" 이지 "평생 한 줄" 이 아닙니다.
+  const rowsBefore = (await c.query(`SELECT count(*)::int n FROM public.user_rewards
+    WHERE user_id=$1 AND entry_type='earn_routine'`, [uid])).rows[0].n
+
   const r1 = (await c.query('SELECT * FROM public.claim_daily_routine_reward()')).rows[0]
   ok('1회차 적립됨', r1.already_claimed === false, `주사위 ${r1.dice} → ${r1.amount}원`)
   ok('주사위 1~6', r1.dice >= 1 && r1.dice <= 6, String(r1.dice))
@@ -106,16 +115,34 @@ try {
 
   const n = (await c.query(`SELECT count(*)::int n FROM public.user_rewards
     WHERE user_id=$1 AND entry_type='earn_routine'`, [uid])).rows[0].n
-  ok('원장에 1행만', n === 1, `${n}행`)
+  ok('두 번 굴려도 원장은 한 줄만 늘어남', n - rowsBefore === 1, `${rowsBefore}행 → ${n}행`)
 
   const t1 = (await c.query('SELECT * FROM public.today_routine_reward()')).rows[0]
   ok('적립 후 claimed=true', t1.claimed === true && t1.dice === r1.dice, `dice=${t1.dice}`)
 
   console.log('\n■ 다음 날은 다시 받을 수 있어야 한다')
   await svc()
-  await c.query(`UPDATE public.user_rewards
-    SET source_id = md5($1::text || ':routine:' || (public.mebody_service_day() - 1)::text)::uuid
-    WHERE user_id=$1 AND entry_type='earn_routine'`, [uid])
+  // 방금 만든 **오늘 행만** 다른 날짜로 옮깁니다.
+  //
+  // 예전에는 이 계정의 earn_routine 을 전부 어제로 옮겼습니다. 계정에 어제 적립이 실제로
+  // 남아 있으면 두 행이 같은 source_id 가 되어 user_rewards_once_per_event 에 걸립니다
+  // (23505). 검증용 계정이 한 번도 안 쓰였다는 가정에만 기대던 자리입니다.
+  //
+  // 옮길 날짜도 고정하지 않습니다. 비어 있는 가장 가까운 과거 날짜를 찾아 씁니다.
+  // 확인하려는 건 "오늘이 아닌 날의 적립은 오늘로 안 잡힌다" 이므로 어제일 필요는 없습니다.
+  const slot = (await c.query(`
+    WITH taken AS (
+      SELECT source_id FROM public.user_rewards WHERE user_id = $1 AND entry_type = 'earn_routine'
+    ), cand AS (
+      SELECT d, md5($1::text || ':routine:' || (public.mebody_service_day() - d)::text)::uuid AS sid
+      FROM generate_series(1, 400) AS d
+    )
+    SELECT d, sid FROM cand WHERE sid NOT IN (SELECT source_id FROM taken) ORDER BY d LIMIT 1`, [uid])).rows[0]
+  ok('옮겨 둘 빈 날짜를 찾음', Boolean(slot), slot ? `${slot.d}일 전` : '400일 안에 빈 날이 없음')
+  await c.query(`UPDATE public.user_rewards SET source_id = $2::uuid
+    WHERE user_id = $1 AND entry_type = 'earn_routine'
+      AND source_id = md5($1::text || ':routine:' || public.mebody_service_day()::text)::uuid`,
+    [uid, slot.sid])
   await auth(uid)
   const t2 = (await c.query('SELECT * FROM public.today_routine_reward()')).rows[0]
   ok('어제 것은 오늘로 안 잡힘', t2.claimed === false, `claimed=${t2.claimed}`)
@@ -143,9 +170,15 @@ try {
     (SELECT payout FROM public.reward_rules WHERE code='daily_routine_dice'))`)).rows[0].v
   ok('최대치가 실제 도달 가능', disc.max_amount === reachable,
      `표시 ${disc.max_amount}원 · 실제 최대 ${reachable}원`)
-  ok('확률 고지 포함', /1\/6|확률/.test(disc.disclosure), disc.disclosure.slice(0, 40) + '...')
-  ok('하루 기준 고지 포함', /오전 5시/.test(disc.disclosure))
-  ok('월 상한 고지 포함', /한 달|월 상한|49원/.test(disc.disclosure))
+  // 아래 둘은 **포함이 아니라 부재**를 봅니다. 뒤집은 이유가 있습니다.
+  //
+  // 072 부터 주사위 눈은 고르게 나오지 않습니다(draw_weighted_dice). 그 상태에서
+  // "각 눈이 1/6 확률" 같은 문구를 두면 **화면이 거짓말을 합니다.** 월 상한도 내부 수치라
+  // 화면에 적어 두면 규칙이 바뀔 때마다 어긋납니다. 그래서 아예 말하지 않는 쪽을 지킵니다.
+  ok('확률을 말하지 않음', !/1\/6|확률|고르게/.test(disc.disclosure), disc.disclosure)
+  ok('월 상한을 말하지 않음', !/한 달|월 상한|\d+원/.test(disc.disclosure), disc.disclosure)
+  // 하루 1회라는 사실은 문구가 아니라 **규칙이** 지킵니다(위의 '2회차는 already_claimed').
+  ok('적립금 쓰는 곳을 알려줌', /마켓/.test(disc.disclosure), disc.disclosure)
 } finally {
   await c.query('ROLLBACK')
   await c.end()

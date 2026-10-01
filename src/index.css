@@ -3106,9 +3106,27 @@ body, button, input, textarea, select {
 :root {
   --mebody-focus-ring: #016b38; /* 크림 위 6.59:1 · 흰 배경 6.64:1 */
   --mebody-focus-halo: #fffff3;
-  /* 탭바 실제 높이 = 디자인 높이(theme/brand.ts SHELL.tabBarHeight) + 홈 인디케이터.
+  /* 탭바가 아래로 비워야 할 공간(홈 인디케이터).
+     평소에는 안전영역 그대로이고, **네이티브 배너가 떠 있으면 0** 입니다 —
+     배너가 이미 제스처바 위에 앉으므로 탭바까지 비우면 두 번 비웁니다.
+     값은 src/lib/ads.ts 의 setAdInset 이 바꿉니다. */
+  /* 모서리 둥글기 척도.
+     예전에는 6·8·9·10·14·16·18·20·22·24·28·30px 이 섞여 있어 화면마다 제각각이었습니다.
+     새로 쓸 때는 아래 다섯 중에서 고릅니다. 중간값을 새로 만들지 않습니다.
+       sm 12  — 칩·작은 입력칸
+       md 16  — 버튼·타일
+       lg 20  — 카드 안쪽 블록
+       xl 24  — 큰 카드·시트
+       pill 999 — 알약 버튼 */
+  --mebody-r-sm: 12px;
+  --mebody-r-md: 16px;
+  --mebody-r-lg: 20px;
+  --mebody-r-xl: 24px;
+  --mebody-r-pill: 999px;
+  --mebody-tabbar-safe: env(safe-area-inset-bottom, 0px);
+  /* 탭바 실제 높이 = 디자인 높이(theme/brand.ts SHELL.tabBarHeight) + 아래 여백.
      탭바 본체와 그 위에 쌓이는 것들이 전부 이 값 하나를 본다. */
-  --mebody-tabbar-h: calc(72px + env(safe-area-inset-bottom, 0px));
+  --mebody-tabbar-h: calc(72px + var(--mebody-tabbar-safe));
 }
 
 /* 링을 요소 **안쪽**에 그린다.

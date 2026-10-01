@@ -111,7 +111,12 @@ try {
       ok('거절 사실이 원장에 남는다', logged?.status === 'REJECTED', logged?.status)
     }
   } else {
-    ok('SSV 가 꺼져 있으면 콜백은 503 (AdMob 이 재전송하도록)', ssv.status === 503, `${ssv.status} ${ssv.text}`)
+    // **200 이 맞습니다.** 예전에는 503 을 기대했습니다(AdMob 이 재전송하도록).
+    // 그런데 AdMob 콘솔은 콜백 URL 을 등록하기 전에 그 주소를 직접 호출해 보고 2xx 가
+    // 아니면 등록을 거부합니다. 503 이면 URL 자체를 못 넣어서 SSV 를 영영 켤 수 없었습니다.
+    // 꺼진 상태의 200 은 "아무것도 지급하지 않았다" 는 뜻이고, 바로 아래에서 그걸 확인합니다.
+    ok('SSV 가 꺼져 있어도 콜백은 200 (AdMob 이 URL 등록을 거부하지 않도록)',
+       ssv.status === 200 && ssv.text === 'ssv disabled', `${ssv.status} ${ssv.text}`)
     const granted = (await db.query(
       `SELECT count(*)::int n FROM public.user_rewards WHERE user_id=$1 AND entry_type='earn_routine_bonus'
         AND created_at > now() - interval '1 minute'`, [me.id])).rows[0].n

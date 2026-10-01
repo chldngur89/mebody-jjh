@@ -88,6 +88,13 @@ try {
 
   if (!devMode) {
     console.log('\n■ 개발 어댑터가 꺼진 기본 상태 — 결제가 열려 있으면 안 된다')
+    // 결제 원장은 **증가분**으로 봅니다. 아래에서 501 두 번을 받고 나서 다시 셉니다.
+    // 예전에는 public.payments 의 전체 행이 0 이길 기대했습니다. 그 표는 order-api 검증이
+    // 주문을 만들며 쓰는 곳이라, 한 번이라도 돌고 나면 영영 빨개집니다. 확인하려는 건
+    // "501 로 막힌 요청이 원장에 아무것도 남기지 않는다" 이지 "원장이 비어 있다" 가 아닙니다.
+    const paymentsBefore = migrated
+      ? (await db.query('SELECT count(*)::int n FROM public.payments')).rows[0].n
+      : 0
     ok('config 의 구독 provider 가 없음', subProvider === null, String(subProvider))
     ok('config 의 주문 provider 가 없음', ordProvider === null, String(ordProvider))
 
@@ -104,7 +111,7 @@ try {
 
     if (migrated) {
       const n = (await db.query(`SELECT count(*)::int n FROM public.payments`)).rows[0].n
-      ok('결제 원장에 아무것도 남지 않았다', n === 0, `${n}건`)
+      ok('막힌 결제는 원장에 아무것도 남기지 않는다', n === paymentsBefore, `${paymentsBefore}건 → ${n}건`)
     }
     console.log('\n  → 기본값이 안전합니다. 전체 플로우를 보려면 서버를 dev-mode=true 로 다시 띄우세요.')
   } else {

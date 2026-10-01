@@ -195,7 +195,7 @@ export function StatusScreen({
               type="button"
               onClick={() => setReloadKey((n) => n + 1)}
               style={{
-                border: `1px solid ${SURFACE.hairline}`, background: '#ffffff', borderRadius: '10px',
+                border: `1px solid ${SURFACE.hairline}`, background: '#ffffff', borderRadius: '12px',
                 padding: '8px 12px', fontSize: '0.8125rem', fontWeight: 800, color: BRAND.green,
                 fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
               }}
@@ -233,24 +233,72 @@ export function StatusScreen({
               {isPaid && <Chip tone="solid">VIP</Chip>}
             </div>
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <small style={{ fontSize: '0.6875rem', color: BRAND.muted, letterSpacing: '0.08em' }}>적립금</small>
-            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: BRAND.green }}>{balance.toLocaleString()}원</div>
-            {monthStatus && (
-              <small style={{ fontSize: '0.625rem', color: BRAND.muted, display: 'block', marginTop: '2px' }}>
-                이번 달 {monthStatus.earned} / {monthStatus.cap}원
-              </small>
-            )}
-          </div>
         </div>
 
-        {/* .status-exp-track 을 "14일 관리 진행률" 로 씁니다 */}
-        <ProgressTrack
-          percent={journeyPercent}
-          label="14일 루틴"
-          value={journeyProgress ? `DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}` : '진행 중 아님'}
-          foot={journeyProgress ? `오늘 ${journeyProgress.completed} / ${journeyProgress.total} 완료` : undefined}
-        />
+        {/*
+            적립금을 **카드의 주인공**으로 올립니다.
+            예전에는 이 화면에서 가장 큰 숫자인데도 오른쪽 구석에 작게 붙어 있었고,
+            캐릭터와 비중이 뒤바뀐 느낌이었습니다.
+
+            월 상한(cap)은 내부 값이라 적지 않습니다 — "50 / 150원" 처럼 분모를 보여주면
+            사용자가 "150원이 끝" 을 바로 알게 됩니다. 이번 달 모은 금액만 말합니다.
+        */}
+        <div style={{
+          marginTop: '16px',
+          borderRadius: '16px',
+          background: SURFACE.subtle,
+          padding: '14px 16px',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: '10px',
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <small style={{ fontSize: '0.6875rem', color: BRAND.muted, letterSpacing: '0.08em', fontWeight: 800 }}>적립금</small>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: BRAND.green, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+              {balance.toLocaleString()}
+              <span style={{ fontSize: '1rem', fontWeight: 800, marginLeft: '2px' }}>원</span>
+            </div>
+          </div>
+          {monthStatus && monthStatus.earned > 0 && (
+            <small style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 800, paddingBottom: '4px' }}>
+              이번 달 {monthStatus.earned}원
+            </small>
+          )}
+        </div>
+
+        {/*
+            진행 중일 때만 진행바를 그립니다.
+            예전에는 "진행 중 아님" 인데도 **빈 회색 막대**가 남아 카드가 허전해 보였습니다.
+            시작하지 않았으면 막대 대신 시작할 자리를 보여주는 편이 낫습니다.
+        */}
+        {journeyProgress ? (
+          <ProgressTrack
+            percent={journeyPercent}
+            label="14일 루틴"
+            value={`DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}`}
+            foot={`오늘 ${journeyProgress.completed} / ${journeyProgress.total} 완료`}
+          />
+        ) : (
+          <div style={{
+            marginTop: '14px',
+            borderRadius: '14px',
+            background: SURFACE.subtle,
+            padding: '12px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: BRAND.text }}>14일 루틴</div>
+              <small style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 700 }}>
+                아직 시작하지 않았어요
+              </small>
+            </div>
+            <ChevronRight size={18} color={BRAND.muted} />
+          </div>
+        )}
       </Card>
 
       {/* 내 정보 — 미등록이면 빨간 경고 + 펼침 */}
@@ -337,7 +385,8 @@ export function StatusScreen({
         <ProgressTrack
           percent={((challenge?.monthDone ?? 0) / Math.max(1, challenge?.monthRequired ?? 20)) * 100}
           label="월간 완주"
-          value={challenge?.monthClaimed ? '보너스 받음' : `${challenge?.monthRequired ?? 20}일 달성${monthlyBonus == null ? '' : ` · ${monthlyBonus}원`}`}
+          // 앞으로 받을 금액을 미리 말하지 않습니다(MissionScreen 과 같은 이유).
+          value={challenge?.monthClaimed ? '보너스 받음' : `${challenge?.monthRequired ?? 20}일 달성`}
         />
       </Card>
 
