@@ -18,6 +18,7 @@ import {
   type RoutineDay,
 } from '../../api/routineHistory';
 import { BRAND, SURFACE } from '../../theme/brand';
+import { CARE_ROUTINE_TOTAL_SEC, formatRoutineDuration } from '../../utils/careRoutine';
 import { CodePlanDetailContent, useCodePlanData } from '../codePlanShared';
 import { Card, CTA, PageTitle, ProgressTrack, SectionHeading } from '../ui';
 
@@ -111,10 +112,65 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
   };
 
   if (!isLoggedIn) {
+    // 로그인 전에도 **무엇을 하는 곳인지 먼저 보여줍니다.**
+    //
+    // 예전에는 제목과 「로그인 / 회원가입」 버튼 하나뿐이었습니다. 홈에서 「오늘의 미션 1개 ·
+    // 시작하기」로 불러 놓고 들어오면 빈 화면에 버튼만 있어서, 결과를 막 받은 사람이
+    // 여기서 돌아섰습니다. 할 일이 무엇인지 보고 나서 로그인을 권하는 순서로 바꿉니다.
+    //
+    // 금액과 확률은 적지 않습니다(적립 규칙은 서버가 정하고, 화면이 앞질러 말하면
+    // 규칙이 바뀔 때마다 거짓이 됩니다 — db/journey/072 참고).
+    const totalLabel = formatRoutineDuration(CARE_ROUTINE_TOTAL_SEC);
     return (
       <div style={{ display: 'grid', gap: '14px' }}>
-        <PageTitle eyebrow="TODAY · CARE" title="오늘의 미션" lead="로그인하면 매일의 기록과 보너스 적립이 쌓입니다." />
+        <PageTitle eyebrow="TODAY · CARE" title="오늘의 미션" />
+
         <Card>
+          <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: BRAND.green, marginBottom: '7px' }}>
+            COMMON
+          </div>
+          <div style={{ fontSize: '1.125rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
+            매일 하는 공통 스트레칭
+          </div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: BRAND.muted, marginBottom: '12px' }}>
+            총 {totalLabel} · 목 → 어깨 → 골반 → 하체 순서
+          </div>
+          <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.text, wordBreak: 'keep-all' }}>
+            하루 한 번 끝까지 마치면 그날의 기록이 쌓이고, 주사위를 굴려 적립금을 받습니다.
+            모은 적립금은 마켓에서 쓰실 수 있어요.
+          </p>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: BRAND.green, marginBottom: '10px' }}>
+            로그인하면 이어집니다
+          </div>
+          {/* 표시는 루틴 탭의 혜택 목록과 같은 체크로 맞춥니다.
+              전역 CSS 가 list-style 을 지워서 기본 점이 보이지 않습니다. */}
+          <ul style={{ margin: '0 0 16px', padding: 0, listStyle: 'none', display: 'grid', gap: '8px' }}>
+            {[
+              '매일 마친 날이 달력에 남습니다',
+              '한 주를 다 채우면 보너스가 있습니다',
+              '적립금이 쌓여 마켓에서 쓰실 수 있습니다',
+            ].map((line) => (
+              <li
+                key={line}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr',
+                  gap: '8px',
+                  alignItems: 'start',
+                  fontSize: '0.875rem',
+                  lineHeight: 1.55,
+                  color: BRAND.text,
+                  wordBreak: 'keep-all',
+                }}
+              >
+                <span aria-hidden="true" style={{ color: BRAND.green, fontWeight: 900 }}>✓</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
           <CTA onClick={onRequireAuth}>로그인 / 회원가입</CTA>
         </Card>
       </div>

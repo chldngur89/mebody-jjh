@@ -35,7 +35,10 @@ export const CTA = {
   diagnosisStart: 'mebody Code 분석하기',
   diagnosisStartShort: '분석하기',
   viewResult: '내 mebody Code 결과 보기',
-  consentLocked: '아래로 내려 동의하기',
+  /* 동의 화면의 조건은 **스크롤이 아니라 체크 두 개**입니다.
+     예전 문구('아래로 내려 동의하기')는 내릴 것이 없는데도 내리라고 해서,
+     사용자가 무엇을 해야 하는지 알 수 없었습니다. 버튼을 누르면 체크 칸으로 데려갑니다. */
+  consentLocked: '두 가지에 동의해 주세요',
   consentAgree: '동의하기',
   introLocked: '아래로 내려 분석하기',
   next: '다음',
