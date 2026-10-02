@@ -120,6 +120,10 @@ const CHECKS = [
                                                      AND public.mebody_service_day('2026-09-02 06:00:00+09'::timestamptz) = '2026-09-02'::date AS v`)],
   ['journey/073 · 고지에 오전 6시',         () => v(`SELECT disclosure LIKE '%오전 6시%' AS v
                                                      FROM public.reward_rules WHERE code='daily_routine_dice'`)],
+  ['journey/074_body_notes',             () => table('body_notes')],
+  ['journey/074 · 전문가 안내 표',          () => table('professional_body_note_guidance')],
+  ['journey/074 · current_profile_id',    () => fn('current_profile_id')],
+  ['journey/074 · 고객 기록 조회 함수',       () => fn('get_client_body_notes')],
 ]
 
 console.log('\n■ 마이그레이션 적용 상태')
