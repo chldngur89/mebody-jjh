@@ -12,7 +12,7 @@
  * **값이 있는 것만** 노출합니다. 없는 걸 있는 척하지 않습니다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronRight, Dumbbell, LayoutGrid, Package, PersonStanding, Pill, Plus, Search, ShoppingCart, Waves } from 'lucide-react';
+import { ChevronRight, Dumbbell, LayoutGrid, Package, PersonStanding, Pill, Search, ShoppingCart, Waves } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { fetchStoreProducts, type StoreProduct } from '../../api/content';
 import { addToCart, cartCount, onCartChange } from '../../lib/cart';
@@ -372,7 +372,22 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
                       cursor: product.price === null ? 'default' : 'pointer',
                     }}
                   >
-                    {justAdded === product.id ? <Check size={15} /> : <Plus size={15} />}
+                    {/* 여기만 **글자**입니다. lucide 아이콘(SVG)을 쓰면 안 됩니다.
+                        상품 카드 안에 인라인 SVG 가 있으면 안드로이드 WebView 에서
+                        스크롤을 위아래로 흔들 때 **타일 무효화가 유실돼 화면이 찢어집니다** —
+                        위쪽 내용이 아래 카드 자리에 남아 있고, 열 단위로 멈춥니다.
+
+                        실측으로 좁혔습니다. 스크롤 영역 안 SVG 23개 중
+                          · 카드 밖 8개(카테고리·검색·화살표)만 두면  → 멀쩡
+                          · 카드 안 15개(이 버튼)를 되살리면           → 다시 찢어짐
+                        사진을 지워도 멀쩡해지는데, 사진은 마켓의 본문이라 지울 수 없습니다.
+                        스태킹 컨텍스트(position+z-index)로는 해결되지 않았습니다.
+
+                        글자는 SVG 가 아니라 같은 문제를 일으키지 않습니다.
+                        모양은 동일하고 접근성은 버튼의 aria-label 이 책임집니다. */}
+                    <span aria-hidden="true" style={{ fontSize: '1.0625rem', fontWeight: 800, lineHeight: 1 }}>
+                      {justAdded === product.id ? '✓' : '+'}
+                    </span>
                   </button>
                 </article>
               );
