@@ -49,23 +49,44 @@ export function AppShell({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  /**
+   * 복원 상태를 **ref 로** 들고 있습니다. 두 효과가 같은 값을 봐야 하기 때문입니다.
+   *
+   * 예전에는 복원 로직 안의 지역 변수였습니다. 그래서 홈 탭을 눌러도 맨 위로 가지 않았습니다.
+   *   ① 탭 변경 → scrollKey 바뀜 → 복원 효과가 저장된 위치를 목표로 잡음
+   *   ② 신호 효과가 scrollTop = 0 으로 되돌림
+   *   ③ **그런데 ResizeObserver 가 내용이 그려질 때마다 restore() 를 다시 부릅니다.**
+   *      restore() 는 지역 변수에 남아 있는 옛 목표를 그대로 밀어 넣어 ②를 무효로 만듭니다.
+   * 신호가 오면 "복원 중" 을 끄고 목표를 0 으로 바꿔야 그 되돌림이 멈춥니다.
+   */
+  const restoringRef = useRef(true);
+  const targetTopRef = useRef(0);
   useLayoutEffect(() => {
     const element = scrollRef.current;
     if (!element) return;
     const key = `mebody:scroll:${scrollKey}`;
     let top = 0;
     try { top = Number(sessionStorage.getItem(key)) || 0; } catch { /* memory only */ }
-    let restoring = true;
+    targetTopRef.current = top;
+    restoringRef.current = true;
     const restore = () => {
-      if (!restoring) return;
-      element.scrollTop = top;
-      if (element.scrollHeight - element.clientHeight >= top) restoring = false;
+      if (!restoringRef.current) return;
+      element.scrollTop = targetTopRef.current;
+      if (element.scrollHeight - element.clientHeight >= targetTopRef.current) restoringRef.current = false;
     };
+    // 스크롤 위치 저장은 **스크롤이 멎은 뒤에** 합니다.
+    // 예전에는 scroll 이벤트마다 sessionStorage 에 썼습니다. sessionStorage 쓰기는
+    // 동기라 주 스레드를 잡고, 스크롤 한 번에 수십 번 불립니다. 복원에 필요한 건
+    // 마지막 위치 하나뿐이라 매 프레임 쓸 이유가 없습니다.
+    let saveTimer = 0;
     const save = () => {
-      if (restoring) return;
-      try { sessionStorage.setItem(key, String(element.scrollTop)); } catch { /* memory only */ }
+      if (restoringRef.current) return;
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(() => {
+        try { sessionStorage.setItem(key, String(element.scrollTop)); } catch { /* memory only */ }
+      }, 150);
     };
-    const userScroll = () => { restoring = false; };
+    const userScroll = () => { restoringRef.current = false; };
     restore();
     const observer = new ResizeObserver(restore);
     if (contentRef.current) observer.observe(contentRef.current);
@@ -74,6 +95,7 @@ export function AppShell({
     element.addEventListener('touchstart', userScroll, { passive: true });
     return () => {
       observer.disconnect();
+      window.clearTimeout(saveTimer);
       element.removeEventListener('scroll', save);
       element.removeEventListener('wheel', userScroll);
       element.removeEventListener('touchstart', userScroll);
@@ -88,6 +110,9 @@ export function AppShell({
         if (key.startsWith(`mebody:scroll:`) && key.endsWith(scrollKey)) sessionStorage.removeItem(key);
       }
     } catch { /* memory only */ }
+    // 복원을 **멈춰야** 합니다. 끄지 않으면 ResizeObserver 가 바로 되돌려 놓습니다.
+    restoringRef.current = false;
+    targetTopRef.current = 0;
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [scrollTopSignal, scrollKey]);
 

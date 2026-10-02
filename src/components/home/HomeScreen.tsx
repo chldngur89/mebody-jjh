@@ -158,7 +158,8 @@ export function HomeScreen({
           다른 탭(미션·루틴·마켓·내 상태)은 전부 꼬리표+제목으로 시작하는데
           홈만 바로 카드로 들어가서 혼자 다른 화면처럼 보였습니다.
       */}
-      <PageTitle eyebrow="HOME" title="오늘" lead="오늘 할 것과 내 결과를 한눈에 봅니다." />
+      {/* 홈 상단 제목(HOME · 오늘)과 안내 문구는 뺐습니다.
+          들어오자마자 오늘 할 것이 바로 보이는 쪽이 낫다는 판단입니다. */}
 
       {/* 어제 미완료 리마인더 */}
       {journeyProgress?.yesterdayIncomplete && (

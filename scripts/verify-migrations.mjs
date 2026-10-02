@@ -116,6 +116,10 @@ const CHECKS = [
   ['journey/072 · 눈=금액',                () => v(`SELECT payout = '{"1":1,"2":2,"3":3,"4":4,"5":5,"6":6}'::jsonb AS v
                                                      FROM public.reward_rules WHERE code='daily_routine_dice'`)],
   ['journey/072 · 예산 150원',             () => v(`SELECT public.reward_monthly_cap() = 150 AS v`)],
+  ['journey/073 · 하루 경계 오전 6시',      () => v(`SELECT public.mebody_service_day('2026-09-02 05:59:59+09'::timestamptz) = '2026-09-01'::date
+                                                     AND public.mebody_service_day('2026-09-02 06:00:00+09'::timestamptz) = '2026-09-02'::date AS v`)],
+  ['journey/073 · 고지에 오전 6시',         () => v(`SELECT disclosure LIKE '%오전 6시%' AS v
+                                                     FROM public.reward_rules WHERE code='daily_routine_dice'`)],
 ]
 
 console.log('\n■ 마이그레이션 적용 상태')

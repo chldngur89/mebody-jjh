@@ -39,7 +39,8 @@ try {
   //   057 이 고지를 새로 쓰고, 063 이 거기 빠진 "선택 · 보지 않아도" 를 되살립니다.
   //   거꾸로 붙이면 057 이 063 을 덮어 고지 검사가 실패합니다(실제로 그랬습니다).
   for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure',
-                       '067_ssv_bonus_payout', '072_dice_reward_redesign']) {
+                       '067_ssv_bonus_payout', '072_dice_reward_redesign',
+                       '073_service_day_six_am']) {
     await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
   }
   ok('036 적용', true)

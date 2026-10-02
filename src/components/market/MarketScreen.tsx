@@ -16,6 +16,7 @@ import { Check, ChevronRight, Dumbbell, LayoutGrid, Package, PersonStanding, Pil
 import type { LucideIcon } from 'lucide-react';
 import { fetchStoreProducts, type StoreProduct } from '../../api/content';
 import { addToCart, cartCount, onCartChange } from '../../lib/cart';
+import { thumbnail } from '../../lib/thumbnail';
 import { BRAND, BRAND_CARD_BORDER, BRAND_RADIUS, SURFACE } from '../../theme/brand';
 import { Card, Chip, PageTitle } from '../ui';
 
@@ -38,7 +39,21 @@ function formatPrice(price: number | null): string {
 }
 
 /** 제품 이미지 자리. 실제 사진이 없으면 시안처럼 회색 판을 둡니다. */
+/** 카드 사진 상자가 156x110 이라 그 2.5배쯤으로 줄여 씁니다. 비율은 원본(766x540)과 같게. */
+const THUMB_W = 400
+const THUMB_H = 282
+
 function ProductImage({ url, height = 110 }: { url?: string; height?: number }) {
+  // 줄인 사진이 준비되면 그걸로 바꿔 답니다. 준비 전에는 아무것도 띄우지 않습니다 —
+  // 원본을 먼저 띄우면 줄이는 의미가 없어집니다(원본이 이미 디코딩되기 때문입니다).
+  const [src, setSrc] = useState<string | null>(null)
+  useEffect(() => {
+    if (!url) { setSrc(null); return }
+    let alive = true
+    void thumbnail(url, THUMB_W, THUMB_H).then((next) => { if (alive) setSrc(next) })
+    return () => { alive = false }
+  }, [url])
+
   return (
     <div
       style={{
@@ -51,9 +66,22 @@ function ProductImage({ url, height = 110 }: { url?: string; height?: number }) 
         overflow: 'hidden',
       }}
     >
-      {url ? (
-        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
+      {src ? (
+        // loading/decoding 은 **장식이 아닙니다.**
+        // · lazy  — 화면에 들어오기 전에는 디코딩하지 않습니다.
+        // · async — 디코딩을 주 스레드에서 떼어 스크롤이 끊기지 않게 합니다.
+        // · width/height — 비율을 미리 알려 줘 로드 전후로 상자가 흔들리지 않게 합니다.
+        // 크기 자체는 lib/thumbnail.ts 가 줄입니다(왜 줄이는지는 그 파일에 적어 뒀습니다).
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={THUMB_W}
+          height={THUMB_H}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : url ? null : (
         <span style={{ fontSize: '0.75rem', color: 'var(--mebody-t-b4c0b6, #B4C0B6)' }}>제품 이미지</span>
       )}
     </div>

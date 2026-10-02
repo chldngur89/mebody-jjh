@@ -55,7 +55,8 @@ try {
   // 042 이후 적립금 구조가 바뀌었습니다. 057 의 상한 트리거가 memo 를 건드리고
   // 065 가 그 방식을 고쳤으므로, 번호순으로 이어 붙여 운영과 같은 상태로 맞춥니다.
   for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure',
-                       '067_ssv_bonus_payout', '072_dice_reward_redesign']) {
+                       '067_ssv_bonus_payout', '072_dice_reward_redesign',
+                       '073_service_day_six_am']) {
     await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
   }
   ok('042 적용', true)

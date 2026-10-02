@@ -23,11 +23,11 @@ import { Card, CTA, PageTitle, ProgressTrack, SectionHeading } from '../ui';
 
 const DOW = ['월', '화', '수', '목', '금', '토', '일'];
 
-/** KST 기준 오늘의 서비스 날짜(오전 5시 경계) */
+/** KST 기준 오늘의 서비스 날짜(오전 6시 경계 — db/journey/073) */
 function serviceToday(): Date {
   const now = new Date();
   const kst = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60_000);
-  kst.setHours(kst.getHours() - 5);
+  kst.setHours(kst.getHours() - 6);
   kst.setHours(0, 0, 0, 0);
   return kst;
 }

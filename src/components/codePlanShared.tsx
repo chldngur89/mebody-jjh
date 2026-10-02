@@ -1420,7 +1420,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
     persistRoutineRecord({ done: [], completedAt: null });
   }, [persistRoutineRecord]);
 
-  // 주사위 적립 — 눈과 금액은 전부 서버가 정합니다. 하루 1회, 한국시간 오전 5시 기준.
+  // 주사위 적립 — 눈과 금액은 전부 서버가 정합니다. 하루 1회, 한국시간 오전 6시 기준(073).
   const [rewardDice, setRewardDice] = useState<number | null>(null);
   const [rewardAmount, setRewardAmount] = useState<number | null>(null);
   /** 주사위 규칙 고지. 화면에 눈별 금액을 적지 않고 규칙에서 읽어옵니다. */
@@ -1532,7 +1532,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
           setRoutineOpen((open) => (bonusEligibleRef.current ? open : false));
         }, 2200);
         if (result.alreadyClaimed) {
-          setRewardNotice('오늘 적립은 이미 받으셨습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.');
+          setRewardNotice('오늘 적립은 이미 받으셨습니다. 내일 오전 6시에 다시 굴릴 수 있습니다.');
         }
       }, wait);
     })();
@@ -2061,7 +2061,7 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                           안내가 필요하면 규칙의 고지 문구(rewardDisclosure)를 그대로 씁니다.
                       */}
                       {rewardAmount != null && !rewardRolling
-                        ? '오늘 적립이 완료되었습니다. 내일 오전 5시에 다시 굴릴 수 있습니다.'
+                        ? '오늘 적립이 완료되었습니다. 내일 오전 6시에 다시 굴릴 수 있습니다.'
                         : `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
                     </div>
                     {rewardNotice && (

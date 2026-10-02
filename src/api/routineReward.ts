@@ -3,7 +3,7 @@
  *
  * 주사위 눈과 적립액은 전부 서버(claim_daily_routine_reward)가 정합니다.
  * 화면은 서버가 돌려준 눈으로 애니메이션을 멈출 뿐, 값을 만들지 않습니다.
- * 하루의 경계는 한국시간 오전 5시이며 서버의 mebody_service_day() 가 판정합니다.
+ * 하루의 경계는 한국시간 오전 6시이며 서버의 mebody_service_day() 가 판정합니다(073).
  *
  * 033_daily_routine_reward.sql 미적용 환경에서도 화면이 죽지 않도록,
  * 함수가 없으면(42883/PGRST202) unavailable 로 조용히 떨어집니다.

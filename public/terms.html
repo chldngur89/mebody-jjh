@@ -26,10 +26,18 @@
     </style>
   </head>
   <body>
-    <header>
+    <!-- 앱 안(iframe)에서 열렸을 때는 이 줄을 감춥니다.
+         누르면 iframe 안에서 앱이 통째로 다시 떠서, 약관을 보던 사람이
+         가입 폼을 잃어버립니다. 웹에서 직접 열었을 때는 그대로 보입니다. -->
+    <header id="site-nav">
       <a href="/">mebody · mebody Code</a>
       <a href="/">홈으로</a>
     </header>
+    <script>
+      if (window.top !== window.self) {
+        document.getElementById('site-nav').style.display = 'none';
+      }
+    </script>
     <main>
       <p class="kicker">LEGAL</p>
       <h1>이용약관</h1>

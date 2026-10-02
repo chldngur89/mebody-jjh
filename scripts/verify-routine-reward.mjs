@@ -33,7 +33,8 @@ try {
   await c.query(readReplayable('033_daily_routine_reward'))
   // 번호순으로 이어 붙입니다 — 나중 파일이 앞 파일의 값을 덮어야 운영과 같아집니다.
   for (const file of ['057_reward_monthly_cap', '063_bonus_disclosure', '065_cap_memo_fix', '066_challenge_disclosure',
-                       '067_ssv_bonus_payout', '072_dice_reward_redesign']) {
+                       '067_ssv_bonus_payout', '072_dice_reward_redesign',
+                       '073_service_day_six_am']) {
     await c.query(readFileSync(new URL(`../db/journey/${file}.sql`, import.meta.url).pathname, 'utf8'))
   }
   // 이 스위트는 옛 마이그레이션을 트랜잭션 안에서 재적용해 검증합니다. 그런데 그 파일들은
@@ -48,13 +49,13 @@ try {
 
   console.log('\n■ 하루 경계 — 한국시간 05시')
   const bd = (await c.query(`SELECT
-    public.mebody_service_day('2026-09-02 04:59:59+09'::timestamptz)::text a,
-    public.mebody_service_day('2026-09-02 05:00:00+09'::timestamptz)::text b,
+    public.mebody_service_day('2026-09-02 05:59:59+09'::timestamptz)::text a,
+    public.mebody_service_day('2026-09-02 06:00:00+09'::timestamptz)::text b,
     public.mebody_service_day('2026-09-02 23:59:00+09'::timestamptz)::text cday,
     public.mebody_service_day('2026-09-03 04:00:00+09'::timestamptz)::text d`)).rows[0]
   const iso = (v) => v
-  ok('04:59 KST → 전날', iso(bd.a) === '2026-09-01', iso(bd.a))
-  ok('05:00 KST → 당일', iso(bd.b) === '2026-09-02', iso(bd.b))
+  ok('05:59 KST → 전날', iso(bd.a) === '2026-09-01', iso(bd.a))
+  ok('06:00 KST → 당일', iso(bd.b) === '2026-09-02', iso(bd.b))
   ok('23:59 KST → 당일', iso(bd.cday) === '2026-09-02', iso(bd.cday))
   ok('다음날 04:00 KST → 여전히 전날', iso(bd.d) === '2026-09-02', iso(bd.d))
 
