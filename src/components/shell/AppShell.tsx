@@ -69,10 +69,20 @@ export function AppShell({
     try { top = Number(sessionStorage.getItem(key)) || 0; } catch { /* memory only */ }
     targetTopRef.current = top;
     restoringRef.current = true;
+    // 복원은 **딱 한 번만** 씁니다.
+    //
+    // 예전에는 내용이 자랄 때마다(ResizeObserver 가 부를 때마다) scrollTop 을 밀어 넣고,
+    // 내용이 충분히 길어졌을 때 비로소 멈췄습니다. 한 번 복원하는 데 수십 번을 썼습니다.
+    // 그 반복이 안드로이드 WebView 합성기와 싸워서, 마켓 탭으로 **돌아올 때** 화면이
+    // 깨졌습니다(실측: 첫 진입은 멀쩡, 스크롤 후 다른 탭 갔다 복귀하면 깨짐).
+    //
+    // 그래서 내용이 그 위치까지 자란 뒤에 한 번 쓰고 끝냅니다. 끝내 안 자라면
+    // (상품이 줄었다거나) 맨 위에 있는 게 맞습니다 — 억지로 밀어 넣지 않습니다.
     const restore = () => {
       if (!restoringRef.current) return;
+      if (element.scrollHeight - element.clientHeight < targetTopRef.current) return;
       element.scrollTop = targetTopRef.current;
-      if (element.scrollHeight - element.clientHeight >= targetTopRef.current) restoringRef.current = false;
+      restoringRef.current = false;
     };
     // 스크롤 위치 저장은 **스크롤이 멎은 뒤에** 합니다.
     // 예전에는 scroll 이벤트마다 sessionStorage 에 썼습니다. sessionStorage 쓰기는
@@ -88,6 +98,8 @@ export function AppShell({
     };
     const userScroll = () => { restoringRef.current = false; };
     restore();
+    // 끝내 그 길이가 안 되면 복원을 포기합니다. 그래야 그 뒤의 저장이 다시 동작합니다.
+    const giveUp = window.setTimeout(() => { restoringRef.current = false; }, 2500);
     const observer = new ResizeObserver(restore);
     if (contentRef.current) observer.observe(contentRef.current);
     element.addEventListener('scroll', save);
@@ -95,6 +107,7 @@ export function AppShell({
     element.addEventListener('touchstart', userScroll, { passive: true });
     return () => {
       observer.disconnect();
+      window.clearTimeout(giveUp);
       window.clearTimeout(saveTimer);
       element.removeEventListener('scroll', save);
       element.removeEventListener('wheel', userScroll);
@@ -103,7 +116,15 @@ export function AppShell({
   }, [scrollKey]);
 
   // 신호가 올라오면 저장된 위치를 지우고 맨 위로. 같은 탭을 다시 눌렀을 때도 동작합니다.
+  //
+  // **신호가 실제로 올라갔을 때만** 합니다. 예전에는 값이 0 이 아니기만 하면 동작했는데,
+  // 이 효과는 scrollKey 가 바뀔 때도 다시 돕니다. 그래서 홈 탭을 한 번이라도 누른 뒤에는
+  // **탭을 옮길 때마다** 그 탭의 저장된 위치가 지워지고 맨 위로 튕겼습니다.
+  // (실측: 마켓에서 827px 까지 내리고 홈 갔다 오면 저장값이 통째로 사라져 있었습니다.)
+  const lastSignalRef = useRef(scrollTopSignal);
   useEffect(() => {
+    if (scrollTopSignal === lastSignalRef.current) return;
+    lastSignalRef.current = scrollTopSignal;
     if (!scrollTopSignal) return;
     try {
       for (const key of Object.keys(sessionStorage)) {
