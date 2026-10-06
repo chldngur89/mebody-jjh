@@ -48,6 +48,9 @@ async function makeMember(tag) {
     VALUES ($1,'earn_mission',6,'mission',gen_random_uuid())`, [id])
   await c.query(`INSERT INTO public.user_addresses (user_id, recipient, phone, postcode, address1)
     VALUES ($1,'받는이','01000000000','06000','서울')`, [id])
+  // 074 의 몸 기록. 탈퇴 때 같이 지워져야 합니다.
+  await c.query(`INSERT INTO public.body_notes (user_id, record_date, discomfort_parts, condition)
+    VALUES ($1, (now() AT TIME ZONE 'Asia/Seoul')::date, ARRAY['neck']::text[], 'usual')`, [id])
   const orderId = randomUUID()
   await c.query(`INSERT INTO public.orders (id,user_id,status,subtotal_krw,reward_used,total_krw,shipping_snapshot)
     VALUES ($1,$2,'PAID',12000,0,12000,'{"recipient":"받는이"}'::jsonb)`, [orderId, id])
@@ -114,6 +117,10 @@ try {
   ok('진단 응답 0건', (await n('SELECT count(*)::int n FROM public.questionnaire_responses WHERE user_id=$1', [me.id])) === 0)
   ok('적립금 원장 0건', (await n('SELECT count(*)::int n FROM public.user_rewards WHERE user_id=$1', [me.id])) === 0)
   ok('배송지 0건', (await n('SELECT count(*)::int n FROM public.user_addresses WHERE user_id=$1', [me.id])) === 0)
+  // 074 가 더한 개인기록입니다. 몸 상태를 적어 둔 것이라 거래 기록처럼 남겨 둘 이유가 없습니다.
+  // 여기서 안 보면, 나중에 외래키를 손대도 아무도 모른 채 기록만 남습니다.
+  ok('몸 기록 0건', (await n('SELECT count(*)::int n FROM public.body_notes WHERE user_id=$1', [me.id])) === 0)
+  ok('전문가 안내 0건', (await n('SELECT count(*)::int n FROM public.professional_body_note_guidance WHERE client_user_id=$1', [me.id])) === 0)
   ok('프로필 0건', (await n('SELECT count(*)::int n FROM public.user_profiles WHERE id=$1', [me.id])) === 0)
   ok('인증 계정 0건', (await n('SELECT count(*)::int n FROM auth.users WHERE id=$1', [me.id])) === 0)
 

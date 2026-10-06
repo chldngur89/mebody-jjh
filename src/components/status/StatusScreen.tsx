@@ -19,6 +19,8 @@ import { BRAND, SURFACE } from '../../theme/brand';
 import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl } from '../../utils/characterImages';
 import { Card, CTA, Chip, PageTitle, ProgressTrack, SectionHeading, TextLink } from '../ui';
+import { fetchBodyNoteHistory, type BodyNote } from '../../api/bodyNote';
+import { BodyNoteHistorySheet, BodyNoteRow, BodyNoteStrip } from './BodyNoteHistory';
 import { MeasurementSection, MembershipSection, OrdersSection, ProfessionalSection, ProfileSection } from './StatusSections';
 import { confirmDialog } from '../../lib/confirmDialog';
 import { AccountDeletionError, deleteMyAccount } from '../../api/accountDeletion';
@@ -171,6 +173,19 @@ export function StatusScreen({
       setDeleting(false);
     }
   };
+
+  /**
+   * 몸 기록 — 쌓이는 것이 보여야 매일 적을 이유가 생깁니다.
+   * 오늘 것만 보이면 "왜 적지" 가 되고, 그러면 둘째 날부터 안 적습니다.
+   */
+  const [bodyNotes, setBodyNotes] = useState<BodyNote[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  useEffect(() => {
+    if (!user) { setBodyNotes([]); return; }
+    let alive = true;
+    void fetchBodyNoteHistory(30).then((rows) => { if (alive) setBodyNotes(rows); }).catch(() => { /* 없으면 없는 대로 */ });
+    return () => { alive = false; };
+  }, [user]);
 
   if (!user) {
     return (
@@ -381,6 +396,30 @@ export function StatusScreen({
             : canStartJourney ? COPY_CTA.missionStart : '멤버십 보기'} <ChevronRight size={18} />
         </CTA>
       </Card>
+
+      {/* 몸 기록 */}
+      <Card>
+        <SectionHeading kicker="MY BODY" title="몸 기록" />
+        {bodyNotes.length === 0 ? (
+          <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+            아직 기록이 없어요. 미션 탭에서 오늘 몸이 어땠는지 30초면 남길 수 있습니다.
+          </p>
+        ) : (
+          <div style={{ display: 'grid', gap: '14px' }}>
+            <BodyNoteStrip notes={bodyNotes} />
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {bodyNotes.slice(0, 3).map((n) => <BodyNoteRow key={n.id} note={n} />)}
+            </div>
+            {bodyNotes.length > 3 && (
+              <CTA variant="outline" onClick={() => setHistoryOpen(true)}>
+                전체 기록 보기 <ChevronRight size={18} />
+              </CTA>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {historyOpen && <BodyNoteHistorySheet onClose={() => setHistoryOpen(false)} />}
 
       {/* 멤버십 — 갱신일과 해지까지 (해지도 서버가 처리합니다) */}
       <MembershipSection

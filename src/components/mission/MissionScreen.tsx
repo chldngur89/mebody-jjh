@@ -21,6 +21,7 @@ import { BRAND, SURFACE } from '../../theme/brand';
 import { CARE_ROUTINE_TOTAL_SEC, formatRoutineDuration } from '../../utils/careRoutine';
 import { fetchTodayBodyNote, summarize, type BodyNote } from '../../api/bodyNote';
 import { BodyNoteSheet } from '../status/BodyNoteSheet';
+import { listMyProfessionals, type MyProfessional } from '../../api/professionalInvite';
 import { CodePlanDetailContent, useCodePlanData } from '../codePlanShared';
 import { Card, CTA, PageTitle, ProgressTrack, SectionHeading } from '../ui';
 
@@ -68,6 +69,23 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
    */
   const [bodyNote, setBodyNote] = useState<BodyNote | null>(null);
   const [bodyNoteOpen, setBodyNoteOpen] = useState(false);
+
+  /**
+   * VIP CARE — 전문가가 붙어 있는가.
+   *
+   * 멤버십(결제)과 **전문가 연결은 다른 것**입니다. 돈을 냈다고 전문가가 생기지 않고,
+   * 전문가가 붙었다고 멤버십인 것도 아닙니다. 그래서 자격이 아니라 관계를 봅니다.
+   * 서버가 없거나 실패하면 그냥 안 보여줍니다 — 화면이 죽을 일은 아닙니다.
+   */
+  const [myPro, setMyPro] = useState<MyProfessional | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn) { setMyPro(null); return; }
+    let alive = true;
+    void listMyProfessionals()
+      .then((rows) => { if (alive) setMyPro(rows.find((r) => r.status === 'ACTIVE') ?? null); })
+      .catch(() => { /* 연결 정보를 못 받으면 조용히 넘어갑니다 */ });
+    return () => { alive = false; };
+  }, [isLoggedIn]);
   useEffect(() => {
     if (!isLoggedIn) { setBodyNote(null); return; }
     let alive = true;
@@ -370,6 +388,44 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
           ))}
         </div>
       </Card>
+
+      {/* VIP CARE — 전문가가 붙어 있을 때만 다르게 보입니다.
+          기존 미션 화면을 갈아엎지 않습니다. 오늘 할 일은 그대로 두고 위에 한 겹 얹습니다. */}
+      {myPro ? (
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: BRAND.green }}>
+              VIP CARE
+            </span>
+            <span style={{
+              fontSize: '0.6875rem', fontWeight: 800, color: BRAND.green,
+              background: SURFACE.subtle, borderRadius: 'var(--mebody-r-pill, 999px)', padding: '3px 9px',
+            }}>
+              연결됨
+            </span>
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
+            담당 {myPro.professionalName}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+            내 결과와 몸 기록을 함께 보고 계세요. 전문가가 넣어준 동작은 아래 오늘 할 일에
+            「담당 전문가가 추가한 동작입니다」로 함께 나옵니다.
+          </p>
+        </Card>
+      ) : (
+        <Card>
+          <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: BRAND.green, marginBottom: '7px' }}>
+            VIP CARE
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
+            전문가와 함께 관리받기
+          </div>
+          <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+            내 mebody Code와 몸 기록을 전문가가 함께 확인하고, 나에게 맞는 관리를 넣어줍니다.
+            전문가에게 받은 초대 링크를 열면 연결됩니다.
+          </p>
+        </Card>
+      )}
 
       {/* 오늘의 몸 기록 — 미션을 안 한 날의 몸도 남습니다. */}
       <Card>
