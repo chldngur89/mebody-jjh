@@ -19,6 +19,8 @@ import {
 } from '../../api/routineHistory';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { CARE_ROUTINE_TOTAL_SEC, formatRoutineDuration } from '../../utils/careRoutine';
+import { fetchTodayBodyNote, summarize, type BodyNote } from '../../api/bodyNote';
+import { BodyNoteSheet } from '../status/BodyNoteSheet';
 import { CodePlanDetailContent, useCodePlanData } from '../codePlanShared';
 import { Card, CTA, PageTitle, ProgressTrack, SectionHeading } from '../ui';
 
@@ -57,6 +59,21 @@ export interface MissionScreenProps {
 }
 
 export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = false, onRequireAuth }: MissionScreenProps) {
+  /**
+   * 오늘의 몸 기록.
+   *
+   * 미션 피드백과 묻는 것이 다릅니다 — 저기는 "방금 한 동작", 여기는 "오늘 하루" 입니다.
+   * 미션을 안 한 날의 몸은 지금까지 아무 데도 남지 않았습니다.
+   * 미션 탭 아래에 두는 이유: 매일 여는 화면이 여기이고, 새 탭을 만들면 기존 구조가 바뀝니다.
+   */
+  const [bodyNote, setBodyNote] = useState<BodyNote | null>(null);
+  const [bodyNoteOpen, setBodyNoteOpen] = useState(false);
+  useEffect(() => {
+    if (!isLoggedIn) { setBodyNote(null); return; }
+    let alive = true;
+    void fetchTodayBodyNote().then((n) => { if (alive) setBodyNote(n); }).catch(() => { /* 없으면 없는 대로 */ });
+    return () => { alive = false; };
+  }, [isLoggedIn]);
   const data = useCodePlanData(questionnaireId);
   const [history, setHistory] = useState<RoutineDay[]>([]);
   /*
@@ -353,6 +370,42 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
           ))}
         </div>
       </Card>
+
+      {/* 오늘의 몸 기록 — 미션을 안 한 날의 몸도 남습니다. */}
+      <Card>
+        <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: BRAND.green, marginBottom: '7px' }}>
+          MY BODY NOTE
+        </div>
+        {bodyNote ? (
+          <>
+            <div style={{ fontSize: '1rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
+              오늘 기록 완료
+            </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: BRAND.text, marginBottom: '12px', wordBreak: 'keep-all' }}>
+              {summarize(bodyNote)}
+            </div>
+            <CTA variant="outline" onClick={() => setBodyNoteOpen(true)}>수정하기</CTA>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: '1rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
+              오늘 내 몸은 어땠나요?
+            </div>
+            <p style={{ margin: '0 0 12px', fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
+              고르기만 하면 30초면 끝나요. 쌓이면 내 몸이 어떤 날 힘든지 보입니다.
+            </p>
+            <CTA onClick={() => setBodyNoteOpen(true)}>오늘 기록하기</CTA>
+          </>
+        )}
+      </Card>
+
+      {bodyNoteOpen && (
+        <BodyNoteSheet
+          existing={bodyNote}
+          onClose={() => setBodyNoteOpen(false)}
+          onSaved={(n) => { setBodyNote(n); setBodyNoteOpen(false); }}
+        />
+      )}
     </div>
   );
 }
