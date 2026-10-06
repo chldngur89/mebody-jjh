@@ -23,6 +23,17 @@ export const PRODUCT = {
   program: '14일 루틴',
 } as const
 
+/**
+ * 진단의 분량과 체감 시간. **랜딩에 시작 전에 보여줍니다.**
+ *
+ * 모르고 들어오면 중간에 그만둡니다. 실측으로 자동 입력이 2분, 사람이 사진을 보며 하면
+ * 4분 안팎이었습니다(docs/MEBODY_TESTER_WALKTHROUGH_2026-10-06.md).
+ *
+ * 문항 수는 question_version 'mebody_v1_32' 와 같이 움직입니다. 세트를 바꾸면 여기도
+ * 바꿔야 합니다 — 화면이 실제보다 적게 말하면 그게 더 나쁩니다.
+ */
+export const DIAGNOSIS_SCALE = '32문항 · 약 4분'
+
 export const LEGAL = {
   privacyPath: '/privacy.html',
   termsPath: '/terms.html',

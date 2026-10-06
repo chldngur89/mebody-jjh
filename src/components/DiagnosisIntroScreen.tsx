@@ -232,12 +232,31 @@ export function DiagnosisIntroScreen({ onBack, onBegin }: DiagnosisIntroScreenPr
                   wordBreak: 'keep-all',
                 }}
               >
-                정답을 맞히는 방식이 아니라, 지금 몸이 더 가깝게 느끼는 방향을 선택해주면 됩니다.
+                {/* 예전 문구는 "방향을 선택해주면 됩니다" 였습니다. 바로 아래에 손잡이 달린
+                    축 그림이 있어서, 그걸 끌어서 답하는 줄 알고 만지게 됐습니다(실제로 만졌습니다).
+                    고르는 것은 **다음 화면의 문항**이라는 걸 먼저 말합니다. */}
+                이어지는 문항에서 지금 몸이 더 가깝게 느끼는 쪽을 고르면 됩니다. 정답은 없습니다.
               </p>
             </div>
 
-            <div style={{ maxWidth: '420px', margin: '0 auto' }}>
-              <AxisIntroDemo compact={isShortViewport} />
+            {/* 이 블록은 **설명용 그림**입니다. 입력이 아닙니다.
+                손잡이가 스스로 움직여서 조작할 수 있는 것처럼 보이므로,
+                만져지지 않게 막고 아래에 예시라고 적습니다. */}
+            <div style={{ maxWidth: '420px', margin: '0 auto' }} aria-hidden="true">
+              <div style={{ pointerEvents: 'none' }}>
+                <AxisIntroDemo compact={isShortViewport} />
+              </div>
+              <p
+                style={{
+                  margin: '8px 0 0',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textAlign: 'center',
+                  color: 'var(--mebody-t-587761, #587761)',
+                }}
+              >
+                결과 화면에서 보게 될 모습입니다 · 예시
+              </p>
             </div>
 
             <div

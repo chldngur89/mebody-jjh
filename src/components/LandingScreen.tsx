@@ -1,6 +1,6 @@
 import { ChevronRight, Clock3, LayoutDashboard } from 'lucide-react';
 import { BRAND_PAGE_BG } from '../theme/brand';
-import { CTA, PRODUCT } from '../theme/copy';
+import { CTA, PRODUCT, DIAGNOSIS_SCALE } from '../theme/copy';
 import { useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react';
 import { preferredScrollBehavior } from '../lib/viewport';
 import { useMediaQuery } from '../utils/useMediaQuery';
@@ -290,6 +290,20 @@ export function LandingScreen({
                 {PRODUCT.codeGuide} 확인 후,
                 <br />
                 나에게 맞는 개인화 웰니스 가이드를 받아보세요
+              </p>
+              {/* 몇 문항인지, 얼마나 걸리는지 **시작 전에** 알려줍니다.
+                  모르고 들어오면 중간에 그만둡니다. 숫자는 문항 세트와 같이 움직이므로
+                  theme/copy.ts 의 DIAGNOSIS_SCALE 한 곳만 봅니다. */}
+              <p
+                style={{
+                  marginTop: '10px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 800,
+                  color: 'var(--mebody-t-587761, #587761)',
+                  textAlign: 'center',
+                }}
+              >
+                {DIAGNOSIS_SCALE}
               </p>
             </div>
 

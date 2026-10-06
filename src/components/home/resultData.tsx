@@ -353,7 +353,9 @@ function buildStoreItems(
 
 export interface ResultData {
   isLoading: boolean;
-  error: string | null;
+  error: string | null
+  /** 못 불러온 이유. 'offline' 이면 결과가 없는 게 아니라 연결이 끊긴 것입니다. */
+  errorKind: 'missing' | 'offline' | null;
   result: ResultWithContent | null;
   content: BodyCodeContent | null;
   bodyCode: string;
@@ -390,6 +392,15 @@ export function useResultData(
   const [result, setResult] = useState<ResultWithContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * 못 불러온 **이유**를 구분합니다.
+   *
+   * 예전에는 "결과가 없다" 와 "연결이 안 됐다" 가 같은 문장을 썼습니다. 그래서 비행기모드로
+   * 앱을 열면 "저장된 결과를 찾지 못했습니다. 다시 분석하면 새 결과를 만들 수 있어요" 가
+   * 떴습니다. 결과는 멀쩡히 있는데요. 그 말을 믿은 사람은 32문항을 다시 풉니다
+   * (테스터 체험기 1-2).
+   */
+  const [errorKind, setErrorKind] = useState<'missing' | 'offline' | null>(null);
   const [appImages, setAppImages] = useState<Record<string, string>>({});
   const [appContent, setAppContent] = useState<Record<string, string | unknown>>({});
   const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
@@ -408,6 +419,7 @@ export function useResultData(
     let cancelled = false;
     setIsLoading(true);
     setError(null);
+    setErrorKind(null);
 
     const applyCodeOnlyFallback = async (code: string) => {
       const content = await fetchBodyCodeContentWithFallback(code);
@@ -457,6 +469,7 @@ export function useResultData(
           return;
         }
         setResult(null);
+        setErrorKind('missing');
         setError('저장된 결과를 찾지 못했습니다. 홈에서 다시 분석하면 새 결과를 만들 수 있어요.');
       })
       .catch(async (loadError) => {
@@ -471,7 +484,12 @@ export function useResultData(
             /* fall through */
           }
         }
-        setError('저장된 결과를 찾지 못했습니다. 홈에서 다시 분석하면 새 결과를 만들 수 있어요.');
+        // 연결이 끊긴 것이면 **결과가 없다고 말하지 않습니다.** 결과는 그대로 있습니다.
+        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        setErrorKind(offline ? 'offline' : 'missing');
+        setError(offline
+          ? '지금은 연결이 안 돼서 결과를 불러오지 못했습니다. 연결되면 그대로 다시 보여드릴게요.'
+          : '결과를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.');
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -590,7 +608,7 @@ export function useResultData(
   );
 
   return {
-    isLoading, error, result, content, bodyCode, characterName, characterImage,
+    isLoading, error, errorKind, result, content, bodyCode, characterName, characterImage,
     identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
     strategyTitle, strategySummary, journeyTitle, oneLineAction, recommendedStartMinutes,
     axisRows, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,

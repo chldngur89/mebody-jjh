@@ -13,6 +13,7 @@ import { AdSlot } from '../AdSlot';
 import { ScrollIndicator } from '../ScrollIndicator';
 import { TabBar, type AppTab } from './TabBar';
 import { TopBar } from './TopBar';
+import { useOnline } from '../../utils/useOnline';
 
 export type { AppTab };
 
@@ -59,6 +60,7 @@ export function AppShell({
    *      restore() 는 지역 변수에 남아 있는 옛 목표를 그대로 밀어 넣어 ②를 무효로 만듭니다.
    * 신호가 오면 "복원 중" 을 끄고 목표를 0 으로 바꿔야 그 되돌림이 멈춥니다.
    */
+  const online = useOnline();
   const restoringRef = useRef(true);
   const targetTopRef = useRef(0);
   useLayoutEffect(() => {
@@ -154,6 +156,27 @@ export function AppShell({
     >
       <TopBar onBrandClick={onBrandClick} right={topBarRight} />
 
+      {/* 연결이 끊기면 **끊겼다고 말합니다.**
+          예전에는 아무 표시가 없어서, 화면이 비거나 "결과가 없다" 고 나오면
+          사용자는 앱이 고장 난 줄 알았습니다(테스터 체험기 1-2). */}
+      {!online && (
+        <div
+          role="status"
+          style={{
+            flexShrink: 0,
+            padding: '8px 18px',
+            background: 'var(--mebody-mint, #E8F3EC)',
+            borderBottom: '1px solid rgba(1,71,37,0.10)',
+            color: BRAND.green,
+            fontSize: '0.8125rem',
+            fontWeight: 800,
+            textAlign: 'center',
+          }}
+        >
+          연결이 끊겼어요 · 저장된 기록은 그대로 있습니다
+        </div>
+      )}
+
       <div
         ref={scrollRef}
         style={{
@@ -169,7 +192,13 @@ export function AppShell({
         <div ref={contentRef}>{children}</div>
       </div>
 
-      <ScrollIndicator containerRef={scrollRef} bottomOffset="calc(var(--mebody-tabbar-h) + 12px)" />
+      {/* 마켓에서는 띄우지 않습니다.
+          떠 있는 ⌄ 버튼이 오른쪽 열 상품의 담기(+) 버튼과 같은 자리에 겹쳐서
+          살 수 있는 버튼을 가렸습니다(테스터 체험기 3-3).
+          긴 상품 격자에서는 스크롤이 자명하므로 안내가 없어도 됩니다. */}
+      {activeTab !== 'market' && (
+        <ScrollIndicator containerRef={scrollRef} bottomOffset="calc(var(--mebody-tabbar-h) + 12px)" />
+      )}
       <TabBar active={activeTab} onChange={onTabChange} />
       {/*
           모든 탭에서 같은 배너가 같은 자리에 뜹니다.

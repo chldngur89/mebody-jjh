@@ -126,10 +126,24 @@ export function HomeScreen({
     );
   }
   if (data.error || !data.result) {
+    // 연결이 끊긴 것과 결과가 없는 것은 **다른 일**입니다.
+    //
+    // 예전에는 둘 다 "결과를 찾을 수 없습니다 + 다시 확인하기" 였습니다. 비행기모드로 연
+    // 사람은 결과가 날아간 줄 알고 버튼을 눌러 **32문항을 다시 풀게** 됩니다.
+    // 연결이 문제일 때는 다시 풀라고 하지 않고, 다시 시도만 권합니다.
+    const offline = data.errorKind === 'offline';
     return (
       <Card>
-        <PageTitle eyebrow="RESULT" title="결과를 찾을 수 없습니다" lead={data.error ?? '결과 화면에서 다시 진입해 주세요.'} />
-        {onRemeasure && <CTA onClick={onRemeasure}>mebody Code 다시 확인하기</CTA>}
+        <PageTitle
+          eyebrow="RESULT"
+          title={offline ? '지금은 연결이 끊겼어요' : '결과를 찾을 수 없습니다'}
+          lead={data.error ?? '결과 화면에서 다시 진입해 주세요.'}
+        />
+        {offline ? (
+          <CTA onClick={() => window.location.reload()}>다시 시도하기</CTA>
+        ) : (
+          onRemeasure && <CTA onClick={onRemeasure}>mebody Code 다시 확인하기</CTA>
+        )}
       </Card>
     );
   }

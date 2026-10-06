@@ -104,7 +104,10 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
   /** 방금 담은 상품에 체크 표시를 잠깐 보여줍니다 */
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState<string | null>(() => { try { return sessionStorage.getItem('mebody:market-category'); } catch { return null; } });
+  // sessionStorage 는 빈 값을 '' 로 돌려줍니다. 그대로 쓰면 「전체」 선택 판정이
+  // (c.key || null) === active 에서 null === '' 가 되어 **선택 표시가 사라집니다.**
+  // 처음 들어올 땐 초록인데 한 번 저장되고 나면 전부 흰색이 되던 이유입니다.
+  const [active, setActive] = useState<string | null>(() => { try { return sessionStorage.getItem('mebody:market-category') || null; } catch { return null; } });
   const [query, setQuery] = useState(() => { try { return sessionStorage.getItem('mebody:market-query') ?? ''; } catch { return ''; } });
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -150,7 +153,39 @@ export function MarketScreen({ isPaid = false, bodyCode, onOpenMembership, onOpe
     <div style={{ display: 'grid', gap: '14px' }}>
       {/* eyebrow 는 text-transform: uppercase 입니다 — 여기에 브랜드명을 넣으면
           소스가 소문자여도 화면에 「MEBODY」로 찍힙니다. 다른 화면과 같이 영문 라벨을 씁니다. */}
-      <PageTitle eyebrow="MARKET" title="마켓" lead="셀프케어와 운동에 필요한 도구를 한곳에서." />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <PageTitle eyebrow="MARKET" title="마켓" lead="셀프케어와 운동에 필요한 도구를 한곳에서." />
+        {/* 담은 것이 있으면 **위에서** 바로 갈 수 있어야 합니다.
+            예전에는 입구가 상품 15개를 다 지나친 맨 아래에만 있어서, 담고 나서
+            어디로 가야 하는지 알 수 없었습니다(테스터 체험기 2-3). */}
+        {inCart > 0 && onOpenCart && (
+          <button
+            type="button"
+            onClick={onOpenCart}
+            aria-label={`장바구니 ${inCart}개 보기`}
+            className="mebody-hit"
+            style={{
+              flexShrink: 0,
+              marginTop: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              minHeight: '44px',
+              padding: '0 14px',
+              borderRadius: 'var(--mebody-r-pill, 999px)',
+              border: BRAND_CARD_BORDER,
+              background: BRAND.card,
+              color: BRAND.green,
+              fontFamily: 'inherit',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            <ShoppingCart size={16} /> {inCart}
+          </button>
+        )}
+      </div>
 
       {/* 검색바 */}
       <div

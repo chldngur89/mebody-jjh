@@ -79,6 +79,24 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
   const submitBlocked = loading || passwordMismatch || consentPending
     || passwordTooShort || recoveryEmailMissing || phoneSignupBlocked;
 
+  /**
+   * 버튼이 **왜 막혔는지를 버튼 글자로** 말합니다.
+   *
+   * 예전에는 막힌 이유가 버튼 **아래** 작은 글씨에만 있었습니다. 버튼을 누른 사람은
+   * 버튼을 보고 있지 그 아래를 안 봅니다. 빈 양식에서 눌러도 화면이 1픽셀도 안 변해서
+   * 왜 안 되는지 알 길이 없었습니다(테스터 체험기 2-1).
+   *
+   * 진단 동의 화면이 이미 같은 방식입니다 — 조건을 버튼이 말합니다.
+   * 순서는 **사용자가 먼저 손대야 하는 것**부터입니다.
+   */
+  const blockReason = mode !== 'signup' ? null
+    : phoneSignupBlocked ? '지금은 이메일로 가입해 주세요'
+    : recoveryEmailMissing ? '복구용 이메일을 넣어주세요'
+    : passwordTooShort ? '비밀번호를 8자 이상으로'
+    : passwordMismatch ? '비밀번호가 서로 다릅니다'
+    : consentPending ? '위 두 가지에 동의해 주세요'
+    : null;
+
   useEffect(() => {
     setMode(purpose === 'save-result' ? 'signup' : initialMode);
     setError(null);
@@ -813,13 +831,9 @@ export function AuthScreen({ user, initialMode = 'signin', purpose = 'default', 
                     boxShadow: '0 10px 22px var(--mebody-d-k30, rgba(1,71,37,0.30))',
                   }}
                 >
-                  {loading ? '처리 중...' : mode === 'signup' ? CTA.authSignup : CTA.authLogin}
+                  {loading ? '처리 중...' : blockReason ?? (mode === 'signup' ? CTA.authSignup : CTA.authLogin)}
                 </button>
-                {consentPending && (
-                  <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--mebody-t-4a6b58, #4A6B58)' }}>
-                    위 두 가지에 동의하면 가입할 수 있습니다.
-                  </p>
-                )}
+                {/* 같은 말을 버튼이 이미 하고 있어 아래 중복 문장은 뺐습니다. */}
 
                 {mode === 'signin' && (
                   <button

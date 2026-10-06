@@ -42,8 +42,18 @@ export function AdSlot({ isPaid, placement, house, nativeBanner = true }: AdSlot
   // 이 배너는 웹뷰 위에 겹쳐 그려지므로 여기서는 자리만 비워둡니다.
   useEffect(() => {
     if (isPaid || !native || !nativeBanner) return undefined;
-    void showBanner(placement);
+    // 배너를 **바로 띄우지 않고 잠깐 늦춥니다.**
+    //
+    // 문항 화면의 「다음」 버튼과 결과 화면의 배너가 화면에서 거의 같은 높이입니다.
+    // 마지막 문항에서 「다음」을 누르고 화면이 뜨기 전에 한 번 더 누르면, 그 손가락이
+    // 방금 나타난 광고에 떨어집니다(테스터 체험기 2-2 — 실제로 브라우저가 열렸습니다).
+    // 사고로 눌리는 광고는 AdMob 정책에서 가장 민감하게 보는 항목입니다.
+    //
+    // 1.2초는 화면 전환 직후의 연타를 흘려보내기에 충분하고, 사용자가 광고를 기다리는
+    // 것은 아니므로 체감 손해가 없습니다.
+    const timer = window.setTimeout(() => { void showBanner(placement); }, 1200);
     return () => {
+      window.clearTimeout(timer);
       void hideBanner();
     };
   }, [isPaid, native, placement, nativeBanner]);

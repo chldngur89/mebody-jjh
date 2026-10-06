@@ -34,6 +34,30 @@ export function RoutineTab({
       <div style={{ display: 'grid', gap: '14px' }}>
         <PageTitle eyebrow="MY ROUTINE" title="14일 루틴" lead="내 코드에 맞는 미션이 하루 한 가지씩 배정됩니다." />
         <Card>
+          <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: BRAND.green, marginBottom: '10px' }}>
+            14일 루틴은 이렇게 돌아갑니다
+          </div>
+          {/* 미션 탭과 같은 방식입니다 — **무엇을 받는지 먼저 보여주고** 로그인을 권합니다.
+              전역 CSS 가 list-style 을 지워서 체크 표시를 직접 답니다. */}
+          <ul style={{ margin: '0 0 16px', padding: 0, listStyle: 'none', display: 'grid', gap: '8px' }}>
+            {[
+              '내 mebody Code 에 맞춰 하루 한 가지씩 배정됩니다',
+              '한 동작은 몇 분이면 끝납니다',
+              '마친 날이 쌓이는 것을 달력에서 봅니다',
+              '첫 14일 루틴은 무료입니다',
+            ].map((line) => (
+              <li
+                key={line}
+                style={{
+                  display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px', alignItems: 'start',
+                  fontSize: '0.875rem', lineHeight: 1.55, color: BRAND.text, wordBreak: 'keep-all',
+                }}
+              >
+                <span aria-hidden="true" style={{ color: BRAND.green, fontWeight: 900 }}>✓</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
           <CTA onClick={onRequireAuth}>로그인 / 회원가입</CTA>
         </Card>
       </div>
