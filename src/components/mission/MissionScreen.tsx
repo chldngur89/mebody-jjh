@@ -19,7 +19,8 @@ import {
 } from '../../api/routineHistory';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { CARE_ROUTINE_TOTAL_SEC, formatRoutineDuration } from '../../utils/careRoutine';
-import { fetchTodayBodyNote, summarize, type BodyNote } from '../../api/bodyNote';
+import { fetchBodyNoteHistory, fetchTodayBodyNote, summarize, type BodyNote } from '../../api/bodyNote';
+import { BodyNoteHistorySheet, BodyNoteStrip, bodyNoteRepeats } from '../status/BodyNoteHistory';
 import { BodyNoteSheet } from '../status/BodyNoteSheet';
 import { listMyProfessionals, type MyProfessional } from '../../api/professionalInvite';
 import { CodePlanDetailContent, useCodePlanData } from '../codePlanShared';
@@ -86,12 +87,17 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
       .catch(() => { /* 연결 정보를 못 받으면 조용히 넘어갑니다 */ });
     return () => { alive = false; };
   }, [isLoggedIn]);
+  const [bodyNotes, setBodyNotes] = useState<BodyNote[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [noteReload, setNoteReload] = useState(0);
   useEffect(() => {
-    if (!isLoggedIn) { setBodyNote(null); return; }
+    if (!isLoggedIn) { setBodyNote(null); setBodyNotes([]); return; }
     let alive = true;
     void fetchTodayBodyNote().then((n) => { if (alive) setBodyNote(n); }).catch(() => { /* 없으면 없는 대로 */ });
+    // **적는 자리에서 쌓인 것도 보여야 합니다.** 오늘 것만 보이면 왜 적는지 알 수 없습니다.
+    void fetchBodyNoteHistory(30).then((rows) => { if (alive) setBodyNotes(rows); }).catch(() => { /* 없으면 없는 대로 */ });
     return () => { alive = false; };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, noteReload]);
   const data = useCodePlanData(questionnaireId);
   const [history, setHistory] = useState<RoutineDay[]>([]);
   /*
@@ -437,10 +443,28 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
             <div style={{ fontSize: '1rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
               오늘 기록 완료
             </div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: BRAND.text, marginBottom: '12px', wordBreak: 'keep-all' }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: BRAND.text, marginBottom: '14px', wordBreak: 'keep-all' }}>
               {summarize(bodyNote)}
             </div>
-            <CTA variant="outline" onClick={() => setBodyNoteOpen(true)}>수정하기</CTA>
+            {/* 7일 스트립 — 며칠 이어졌는지가 한눈에 보입니다. */}
+            {bodyNotes.length > 0 && (
+              <div style={{ marginBottom: '14px' }}><BodyNoteStrip notes={bodyNotes} /></div>
+            )}
+            {/* 반복 — 쌓여야 보이는 것. 해석하지 않고 센 것만 보여줍니다. */}
+            {bodyNoteRepeats(bodyNotes) && (
+              <div style={{
+                marginBottom: '14px', padding: '10px 12px', borderRadius: 'var(--mebody-r-md, 16px)',
+                background: SURFACE.subtle, fontSize: '0.8125rem', fontWeight: 800, color: BRAND.green,
+              }}>
+                최근 30일 · {bodyNoteRepeats(bodyNotes)}
+              </div>
+            )}
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <CTA variant="outline" onClick={() => setBodyNoteOpen(true)}>수정하기</CTA>
+              {bodyNotes.length > 1 && (
+                <CTA variant="outline" onClick={() => setHistoryOpen(true)}>기록 보기</CTA>
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -459,9 +483,10 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
         <BodyNoteSheet
           existing={bodyNote}
           onClose={() => setBodyNoteOpen(false)}
-          onSaved={(n) => { setBodyNote(n); setBodyNoteOpen(false); }}
+          onSaved={(n) => { setBodyNote(n); setBodyNoteOpen(false); setNoteReload((x) => x + 1); }}
         />
       )}
+      {historyOpen && <BodyNoteHistorySheet onClose={() => setHistoryOpen(false)} />}
     </div>
   );
 }

@@ -11,7 +11,7 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  CONDITION_LABEL, fetchBodyNoteHistory, kstToday, summarize,
+  CONDITION_LABEL, PART_LABEL, fetchBodyNoteHistory, kstToday, summarize,
   type BodyCondition, type BodyNote,
 } from '../../api/bodyNote';
 import { BRAND, SURFACE } from '../../theme/brand';
@@ -63,6 +63,28 @@ export function BodyNoteStrip({ notes }: { notes: BodyNote[] }) {
       })}
     </div>
   );
+}
+
+
+/**
+ * 쌓여야 보이는 것 — 최근 N일 동안 **무엇이 반복됐나.**
+ *
+ * 하루치만 보면 적을 이유가 없습니다. "어깨가 8번" 처럼 반복이 보여야
+ * 기록이 쓸모가 되고, 그래야 내일도 적습니다.
+ * 해석하지 않습니다 — 센 것만 보여주고 원인은 말하지 않습니다.
+ */
+export function bodyNoteRepeats(notes: BodyNote[], top = 3): string | null {
+  if (notes.length < 3) return null
+  const count = new Map<string, number>()
+  for (const n of notes) {
+    for (const p of n.parts) {
+      if (p === 'none') continue
+      count.set(PART_LABEL[p], (count.get(PART_LABEL[p]) ?? 0) + 1)
+    }
+  }
+  const ranked = [...count.entries()].filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, top)
+  if (ranked.length === 0) return null
+  return ranked.map(([label, c]) => `${label} ${c}번`).join(' · ')
 }
 
 /** 날짜 한 줄 — 10/06 형태 */

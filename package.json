@@ -78,6 +78,7 @@
     "build:axis-icons": "node scripts/build-axis-icons.mjs",
     "check:bundle": "node scripts/check-bundle-secrets.mjs",
     "verify:professional-schedule": "node scripts/verify-professional-schedule.mjs",
+    "verify:legal-docs": "node scripts/verify-legal-docs.mjs",
     "verify:body-note": "node scripts/verify-body-note.mjs",
     "verify:ad-units": "node scripts/verify-ad-units.mjs"
   }
