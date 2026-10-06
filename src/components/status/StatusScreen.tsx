@@ -29,6 +29,14 @@ export interface StatusScreenProps {
   characterName?: string;
   /** 활성 구독 여부 */
   isPaid?: boolean;
+  /**
+   * 지금 14일 루틴을 새로 시작할 수 있는가(무료 체험이 남았거나 멤버십).
+   *
+   * 이게 없으면 화면이 **거짓말을 합니다.** 체험을 다 쓴 사람에게도
+   * 「14일 루틴 시작하기」가 보이고, 누르면 결제 화면으로 갑니다.
+   * 같은 순간 루틴 탭은 「무료 체험을 모두 사용했습니다」라고 말합니다 — 두 화면이 어긋납니다.
+   */
+  canStartJourney?: boolean;
   tier?: string;
   /** 진행 중인 저니 요약 */
   journeyProgress?: { progress: number; dayNo: number; totalDays: number; completed: number; total: number };
@@ -56,6 +64,7 @@ export function StatusScreen({
   bodyCode,
   characterName,
   isPaid = false,
+  canStartJourney = true,
   journeyProgress,
   onOpenResult,
   onOpenRoutine,
@@ -317,7 +326,7 @@ export function StatusScreen({
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: BRAND.text }}>14일 루틴</div>
               <small style={{ fontSize: '0.75rem', color: BRAND.muted, fontWeight: 700 }}>
-                아직 시작하지 않았어요
+                {canStartJourney ? '아직 시작하지 않았어요' : '무료 체험을 모두 사용했어요'}
               </small>
             </div>
             <ChevronRight size={18} color={BRAND.muted} />
@@ -360,10 +369,16 @@ export function StatusScreen({
         <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.muted, wordBreak: 'keep-all' }}>
           {journeyProgress
             ? `진행 중입니다. DAY ${journeyProgress.dayNo} / ${journeyProgress.totalDays}`
-            : '내 코드에 맞는 미션이 하루 한 가지씩 배정됩니다.'}
+            : canStartJourney
+              ? '내 코드에 맞는 미션이 하루 한 가지씩 배정됩니다.'
+              : '무료 체험을 모두 사용했어요. 공통 스트레칭과 적립은 지금처럼 계속 무료예요.'}
         </p>
+        {/* 버튼은 **자기가 하는 일을 말해야** 합니다. 체험을 다 쓴 사람에게
+            「시작하기」를 보여주고 결제 화면으로 보내면 속은 기분이 듭니다. */}
         <CTA variant="outline" onClick={onOpenRoutine}>
-          {journeyProgress ? COPY_CTA.missionToday : COPY_CTA.missionStart} <ChevronRight size={18} />
+          {journeyProgress
+            ? COPY_CTA.missionToday
+            : canStartJourney ? COPY_CTA.missionStart : '멤버십 보기'} <ChevronRight size={18} />
         </CTA>
       </Card>
 

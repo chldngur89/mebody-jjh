@@ -1195,6 +1195,7 @@ export default function App() {
                   user={currentUser}
                   bodyCode={bodyCode}
                   isPaid={entitlement.isPaid}
+                  canStartJourney={entitlement.canStartJourney}
                   tier={entitlement.tier !== 'free' ? entitlement.tier : undefined}
                   journeyProgress={journeySummary ?? undefined}
                   onOpenResult={(id) => {

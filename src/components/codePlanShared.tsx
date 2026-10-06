@@ -2062,7 +2062,15 @@ export function CodePlanDetailContent({ data, hideGuideSection = false, isLogged
                       */}
                       {rewardAmount != null && !rewardRolling
                         ? '오늘 적립이 완료되었습니다. 내일 오전 6시에 다시 굴릴 수 있습니다.'
-                        : `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
+                        /*
+                           굴리기 전 안내는 **규칙의 고지 문구를 그대로** 씁니다.
+                           여기 문장을 따로 박아 두면 출처가 둘이 되고, DB 규칙을 바꿔도 화면은
+                           옛말을 계속 합니다. 실제로 073 에서 하루 경계를 6시로 옮기며 고지에
+                           「오전 6시」를 넣었는데 이 화면에는 반영되지 않았습니다.
+                           가져오지 못했을 때만 아래 기본 문장으로 떨어집니다.
+                        */
+                        : rewardDisclosure
+                          ?? `${routineTotalLabel} · ${routineStepCount}단계를 모두 마쳤습니다. 내일 같은 시간에 한 번 더 이어가면 좋아요.`}
                     </div>
                     {rewardNotice && (
                       <div style={{ marginTop: '10px', fontSize: '0.8125rem', lineHeight: 1.6, fontWeight: 700, color: 'var(--mebody-t-4a6b58, #4A6B58)', wordBreak: 'keep-all' }}>
