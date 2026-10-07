@@ -2,7 +2,15 @@
 
 > **문서 목적**: 클로드(Claude) 및 기술/경영진 공유용 통합 최종 검증 보고서  
 > **기준일**: 2026-10-07  
-> **원칙**: 추측·지어낸 경로/숫자 배제, 실제 코드 및 40여 개 스크립트 실행 출력(Ground Truth) 기준 작성  
+> **원칙**: 추측·지어낸 경로/숫자 배제, 실제 코드 및 스크립트 실행 출력(Ground Truth) 기준 작성
+>
+> **교차 검증 이력**
+> - 2026-10-07 Claude 가 이 문서의 모든 수치·경로를 코드와 대조했습니다.
+>   파일 경로 7개, 스위트 수치 6개, P0 2건은 **일치**를 확인했습니다.
+> - 같은 날 **오류 3건을 바로잡았습니다**: 바디 노트의 하루 경계(오전 6시 → 달력 날짜),
+>   전문가 콘솔의 몸 기록 블록(당시 미구현 → 이후 구현), SQL 파일 수(70 → 75).
+> - 이 문서보다 먼저 있던 6개 문서(`PRE_LAUNCH_AUDIT.md` 등)는 16개 코드 캐릭터 이름이
+>   **16개 모두 실제와 달랐고** P0 를 0건으로 적어, 폐기했습니다.
 
 ---
 
@@ -31,6 +39,24 @@ CLOSED BETA ONLY / READY AFTER P0 FIXES
 
 ---
 
+## 2-1. 2026-10-07 이후 완료된 것
+
+| 항목 | 내용 |
+|---|---|
+| **전문가 콘솔 몸 기록** | 서버 엔드포인트 2개 + 콘솔 블록. 「반복: 어깨 3번」 요약을 맨 위에 둠. 전문가는 **읽기만** 가능(고치는 경로를 서버·DB 어디에도 만들지 않음) |
+| **Analytics** | `body_note_started/completed/history_viewed`, `vip_care_viewed`. **원문 미전송** — 개수와 0/1 만 |
+| **세로 고정** | 가로 회전 시 탭바가 화면 중간에 뜨고 본문이 잘리던 것. `android:screenOrientation="portrait"` |
+| **법적 문서 동기화** | 앱·웹 사본이 갈라져 있던 것(몸 기록 수집 항목이 앱에만 있었음). `verify:legal-docs` 로 재발 차단 |
+| **탈퇴 검증** | `verify:account-deletion` 이 바디 노트를 보지 않던 것 → 「몸 기록 0건」·「전문가 안내 0건」 추가 |
+
+### 기기 조건 점검 (2026-10-07, 에뮬레이터 API 36)
+- 시스템 글꼴 **2.0배**: 가로 넘침 0, 저장 버튼 화면 안 — **통과**
+- **다크 모드**: 크림 테마 유지, 깨진 색 없음 — **통과**
+- **가로 회전**: 깨짐 → 세로 고정으로 해결, `ROTATION_0` 유지 확인
+- 미확인: 느린 네트워크, 딥링크 왕복(`net.mebody.app://auth`), Play 사전 출시 보고서, 대용량 데이터
+
+---
+
 ## 3. P1 BEFORE LAUNCH (공개 유료 전환 전 필요 작업)
 
 1. **`P1-01` [PG 결제 연동]**: `CheckoutScreen.tsx` UI 및 `user_subscriptions` DB 구조는 정상이나, 실시간 카드 결제 PG(Toss/Portone/IAP) 모듈 미연동 (`PaymentGatewayRegistry`에서 `"구독 결제 수단이 아직 연결되지 않았습니다"` 반환).
@@ -56,17 +82,21 @@ CLOSED BETA ONLY / READY AFTER P0 FIXES
 - `npm run verify:flow` (`scripts/verify-flow-navigation.mjs`): **29 / 29 PASS** (Navigation, Draft recovery, Timer, History)
 - `npm run verify:professional` (`scripts/verify-professional.mjs`): **24 / 24 PASS** (Supabase DB Direct RPC, Client isolation, Revoke)
 - `npm run verify:professional-schedule` (`scripts/verify-professional-schedule.mjs`): **20 / 20 PASS** (Note, Assignment, Schedule)
-- `npm run verify:body-note` (`scripts/verify-body-note.mjs`): **41 / 41 PASS** (Daily note, 1 per day `23505`, 06:00 AM cutoff)
+- `npm run verify:body-note` (`scripts/verify-body-note.mjs`): **41 / 41 PASS** (하루 1건 `23505`, 미래 날짜 차단, '없음' 정리, 탈퇴 시 삭제)
+  - 주의: 바디 노트는 **한국시간 달력 날짜** 기준입니다. 오전 6시 경계(`mebody_service_day`)는
+    주사위 적립에만 쓰고 `074_body_notes.sql` 은 그 함수를 참조하지 않습니다(참조 0건).
+    둘을 섞으면 새벽에 적은 기록이 전날로 가는 줄 오해하게 됩니다.
 - `npm run verify:entitlement` (`scripts/verify-entitlement.mjs`): **25 / 25 PASS** (Free 1st journey, 2nd journey block `42501`)
 - `npm run verify:metrics` (`scripts/verify-metrics.mjs`): **25 / 25 PASS** (Supabase `analytics_events` table & Admin funnel dashboard)
-- `npm run verify:professional-api` (`scripts/verify-professional-api.mjs`): **총 71개 HTTP 단언** (Spring Server `:8081` 구동 시)
+- `npm run verify:professional-api` (`scripts/verify-professional-api.mjs`): **77 / 77 PASS** (기본 설정 서버 구동 시 · 단언 78개 중 조건부 1개 제외)
+  - 주의: 이 스위트는 **실제 Supabase 토큰**을 씁니다. HS256 검증용 설정으로 띄우면 전부 401 입니다(`docs/VERIFY_RUNBOOK.md`).
 
 ### 4.3 DB 마이그레이션 현황 (SQL File Counts)
 - `db/journey/`: **55개** SQL 파일
-- `db/v1/`: **9개** SQL 파일
+- `db/v1/`: **13개** SQL 파일
 - `db/bootstrap/`: **4개** SQL 파일
 - `db/hardening/`: **2개** SQL 파일
-- **총합**: **70개 SQL 파일**
+- **총합**: **75개 SQL 파일**
 
 ---
 
@@ -80,8 +110,8 @@ CLOSED BETA ONLY / READY AFTER P0 FIXES
 | **Result (결과 리포트)** | `VERIFIED_WORKING` | `resultData.tsx`, `codePlanShared.tsx` 1/2순위 액션 카드 및 케어 전략 정상 표출 |
 | **Journey (14일 저니)** | `VERIFIED_WORKING` | `020_journey_schema.sql`, Day 진행, 완주 보너스, 재측정 추천 동작 |
 | **Today / Mission** | `VERIFIED_WORKING` | Mebody 미션 + Professional 미션 출처 표시, 피드백(UNCOMFORTABLE) 반영 |
-| **Daily Body Note** | `VERIFIED_WORKING` | `074_body_notes.sql`, 41/41 PASS (1일 1회 제약, 미래 날짜 차단, 06시 하루 경계) |
-| **Professional Console** | `VERIFIED_WORKING` | 24/24 PASS (고객 목록, 체형 코드, 바디 노트 요약, 미션 배정, 동의 철회 시 차단) |
+| **Daily Body Note** | `VERIFIED_WORKING` | `074_body_notes.sql`, 41/41 PASS (1일 1회 제약, 미래 날짜 차단, 달력 날짜 기준) |
+| **Professional Console** | `VERIFIED_WORKING` | HTTP 77/77 PASS (`verify:professional-api`). 고객 목록·체형 코드·수행 기록·미션 배정·**몸 기록 블록**(2026-10-07 추가)·동의 철회 시 차단. 콘솔 화면은 `assets/web.js` 의 `renderClientBodyNotes` |
 | **Analytics** | `VERIFIED_WORKING` | `analytics_events` DB 저장 및 관리자 대시보드 검증 25/25 PASS (외부 SDK 없이 작동) |
 | **Security & RLS** | `VERIFIED_WORKING` | PostgreSQL RLS 적용, `auth.uid() = user_id` 검증, 익명/타인 데이터 조회 차단 |
 | **Membership / PG** | `PARTIAL` | DB Entitlement(25/25 PASS)는 정상이나 PG 실시간 카드 결제는 Simulated/Mock |
