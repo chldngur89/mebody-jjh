@@ -15,6 +15,7 @@ import {
   type BodyCondition, type BodyNote,
 } from '../../api/bodyNote';
 import { BRAND, SURFACE } from '../../theme/brand';
+import { track } from '../../lib/analytics';
 import { useOverlayBack } from '../../utils/useOverlayBack';
 
 /** 컨디션 네 단계의 점 색. 경고색을 쓰지 않습니다. */
@@ -111,6 +112,8 @@ export function BodyNoteRow({ note }: { note: BodyNote }) {
 export function BodyNoteHistorySheet({ onClose }: { onClose: () => void }) {
   const close = useOverlayBack(true, onClose);
   const [notes, setNotes] = useState<BodyNote[] | null>(null);
+
+  useEffect(() => { track('body_note_history_viewed'); }, []);
 
   useEffect(() => {
     let alive = true;

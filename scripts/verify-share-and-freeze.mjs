@@ -72,7 +72,17 @@ const props = [...analyticsSrc.matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1])
  *   feeling        BETTER·SAME·UNCOMFORTABLE 중 하나. 건강 관련이지만 세 값뿐이고
  *                  누구의 것인지 이어 붙일 방법이 없다(이 표에는 user_id 가 없다)
  */
-const ALLOWED_PROPS = ['body_code', 'share_channel', 'ref', 'reason', 'day_no', 'plan_code', 'feeling']
+// 이벤트에 실어도 되는 값. **사람을 가리키거나 몸 상태를 드러내는 값은 넣지 않습니다.**
+//
+// 바디 노트(074)에서 더한 네 개는 전부 **개수나 0/1** 입니다 —
+// 어느 부위가 불편했는지는 몸 상태라 개인정보이고, 분석에 필요한 것은
+// "쓰다 마는가 / 몇 개나 고르는가" 이지 "어디가 아픈가" 가 아닙니다.
+//   editing       수정인가 새로 쓰는가 (1/0)
+//   partCount     부위를 몇 개 골랐나
+//   activityCount 활동을 몇 개 골랐나
+//   connected     전문가가 붙어 있나 (1/0) — 누구인지는 담지 않습니다
+const ALLOWED_PROPS = ['body_code', 'share_channel', 'ref', 'reason', 'day_no', 'plan_code', 'feeling',
+                       'editing', 'partCount', 'activityCount', 'connected']
 const extraProps = props.filter((p) => !ALLOWED_PROPS.includes(p))
 ok('이벤트 payload 에 개인 식별 값이 없다', extraProps.length === 0,
   extraProps.length ? `허용 목록에 없는 값: ${extraProps.join(', ')}` : props.join(', '))

@@ -7,7 +7,7 @@
  *
  * 시안은 EXP 였지만 우리는 적립금입니다(사용자 확정).
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gift } from 'lucide-react';
 import {
   claimMonthlyChallenge,
@@ -23,6 +23,7 @@ import { fetchBodyNoteHistory, fetchTodayBodyNote, summarize, type BodyNote } fr
 import { BodyNoteHistorySheet, BodyNoteStrip, bodyNoteRepeats } from '../status/BodyNoteHistory';
 import { BodyNoteSheet } from '../status/BodyNoteSheet';
 import { listMyProfessionals, type MyProfessional } from '../../api/professionalInvite';
+import { track } from '../../lib/analytics';
 import { CodePlanDetailContent, useCodePlanData } from '../codePlanShared';
 import { Card, CTA, PageTitle, ProgressTrack, SectionHeading } from '../ui';
 
@@ -87,6 +88,14 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
       .catch(() => { /* 연결 정보를 못 받으면 조용히 넘어갑니다 */ });
     return () => { alive = false; };
   }, [isLoggedIn]);
+
+  // VIP CARE 블록을 봤는가. 연결 여부만 남깁니다 — 전문가가 누구인지는 보내지 않습니다.
+  const vipSeen = useRef(false);
+  useEffect(() => {
+    if (!isLoggedIn || vipSeen.current) return;
+    vipSeen.current = true;
+    track('vip_care_viewed', { connected: myPro ? 1 : 0 });
+  }, [isLoggedIn, myPro]);
   const [bodyNotes, setBodyNotes] = useState<BodyNote[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [noteReload, setNoteReload] = useState(0);

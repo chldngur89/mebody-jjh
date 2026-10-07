@@ -23,6 +23,12 @@ export type AnalyticsEvent =
   | 'shared_link_opened'
   | 'shared_questionnaire_started'
   | 'shared_questionnaire_completed'
+  // 바디 노트 — **원문은 절대 싣지 않습니다.** 고른 항목의 개수만 남깁니다(아래 track 호출부 참고).
+  | 'body_note_started'
+  | 'body_note_completed'
+  | 'body_note_history_viewed'
+  // VIP CARE
+  | 'vip_care_viewed'
   // 진단 퍼널
   | 'landing_viewed'
   | 'questionnaire_started'
@@ -73,6 +79,17 @@ export interface AnalyticsProps {
   feeling?: string
   /** 실패 사유 분류. 원문 오류 메시지가 아니라 짧은 라벨입니다. */
   reason?: string
+  /**
+   * 바디 노트 — **고른 내용이 아니라 개수만** 담습니다.
+   *
+   * 어느 부위가 불편했는지는 몸 상태라 개인정보입니다. 분석에 필요한 것은
+   * "쓰다 마는가 / 몇 개나 고르는가" 이지 "어디가 아픈가" 가 아닙니다.
+   */
+  editing?: number
+  partCount?: number
+  activityCount?: number
+  /** VIP CARE — 전문가가 붙어 있는가(1/0). 누구인지는 담지 않습니다. */
+  connected?: number
 }
 
 /**

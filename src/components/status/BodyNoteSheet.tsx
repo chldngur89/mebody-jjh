@@ -16,6 +16,7 @@ import {
   type BodyActivity, type BodyCondition, type BodyNote, type BodyPart, type BodySide,
 } from '../../api/bodyNote';
 import { BRAND, BRAND_CARD_BORDER, SURFACE } from '../../theme/brand';
+import { track } from '../../lib/analytics';
 import { useOverlayBack } from '../../utils/useOverlayBack';
 import { CTA } from '../ui';
 
@@ -70,6 +71,8 @@ export function BodyNoteSheet({
   onSaved: (note: BodyNote) => void;
 }) {
   const close = useOverlayBack(true, onClose);
+  // 열었다는 사실만 남깁니다. **고른 내용은 보내지 않습니다** — 몸 상태는 개인정보입니다.
+  useEffect(() => { track('body_note_started', { editing: existing ? 1 : 0 }); }, [existing]);
   const [parts, setParts] = useState<BodyPart[]>(existing?.parts ?? []);
   const [side, setSide] = useState<BodySide | null>(existing?.side ?? null);
   const [activities, setActivities] = useState<BodyActivity[]>(existing?.activities ?? []);
@@ -108,6 +111,12 @@ export function BodyNoteSheet({
         condition: condition as BodyCondition,
       });
       if (!saved) throw new Error('저장되지 않았습니다');
+      // 무엇을 골랐는지가 아니라 **몇 개를 골랐는지**만 남깁니다.
+      track('body_note_completed', {
+        editing: existing ? 1 : 0,
+        partCount: parts.length,
+        activityCount: activities.length,
+      });
       onSaved(saved);
       close();
     } catch {

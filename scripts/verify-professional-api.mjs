@@ -353,6 +353,29 @@ try {
   r = await call(`/api/invites/relations/${accepted.relationId}`, { token: strangerToken, method: 'DELETE' })
   ok('남이 남의 연결을 끊을 수 없다', r.status === 404, `status=${r.status}`)
 
+  console.log('\n■ 몸 기록 (074) — 전문가는 읽기만')
+  // 고객이 하나 남깁니다. 서비스 역할로 직접 넣습니다(앱 경로는 verify:body-note 가 봅니다).
+  await db.query(`INSERT INTO public.body_notes
+    (user_id, record_date, discomfort_parts, side, activity_tags, condition)
+    VALUES ($1, (now() AT TIME ZONE 'Asia/Seoul')::date,
+            ARRAY['shoulder']::text[], 'right', ARRAY['sitting_long']::text[], 'slightly_uncomfortable')
+    ON CONFLICT (user_id, record_date) DO UPDATE SET discomfort_parts = EXCLUDED.discomfort_parts`,
+    [clientProfile])
+
+  r = await call(`/api/professional/clients/${clientProfile}/body-notes?days=30`, { token: proToken })
+  ok('내 고객 몸 기록 조회 → 200', r.status === 200, `status=${r.status}`)
+  ok('기록이 실려 온다', (r.body?.data?.notes ?? []).length >= 1, `${(r.body?.data?.notes ?? []).length}건`)
+  ok('반복 요약이 함께 온다', (r.body?.data?.summary?.parts?.shoulder ?? 0) >= 1,
+     JSON.stringify(r.body?.data?.summary?.parts))
+
+  r = await call(`/api/professional/clients/${clientProfile}/body-notes`, { token: clientToken })
+  ok('전문가가 아니면 403', r.status === 403, `status=${r.status}`)
+
+  r = await call(`/api/professional/clients/${clientProfile}/body-notes/guidance`, {
+    token: proToken, method: 'POST',
+    body: { guidanceType: 'comment', message: '어깨가 반복되네요. 다음에 같이 볼게요.' } })
+  ok('안내 작성 → 200', r.status === 200, `status=${r.status}`)
+
   r = await call(`/api/invites/relations/${accepted.relationId}`, { token: clientToken, method: 'DELETE' })
   ok('고객 본인은 동의를 거둘 수 있다', r.status === 200, `status=${r.status}`)
 
@@ -360,6 +383,13 @@ try {
   ok('거둔 뒤 결과 조회 → 404', r.status === 404, `status=${r.status}`)
   r = await call(`/api/professional/clients/${clientProfile}/journey`, { token: proToken })
   ok('거둔 뒤 수행 기록도 404', r.status === 404, `status=${r.status}`)
+  r = await call(`/api/professional/clients/${clientProfile}/body-notes`, { token: proToken })
+  // 읽기는 404 가 아니라 **빈 결과**입니다 — 404 로 구분해 주면 관계 유무를 떠볼 수 있습니다.
+  ok('거둔 뒤 몸 기록은 빈 결과', r.status === 200 && (r.body?.data?.notes ?? []).length === 0,
+     `status=${r.status} ${(r.body?.data?.notes ?? []).length}건`)
+  r = await call(`/api/professional/clients/${clientProfile}/body-notes/guidance`, {
+    token: proToken, method: 'POST', body: { guidanceType: 'comment', message: '거둔 뒤' } })
+  ok('거둔 뒤 안내 작성은 403 (쓰기는 실패를 알린다)', r.status === 403, `status=${r.status}`)
 
   r = await call('/api/professional/clients', { token: proToken })
   const revoked = (r.body?.data ?? []).find((x) => x.status === 'REVOKED')

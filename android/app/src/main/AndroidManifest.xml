@@ -11,9 +11,16 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- 세로 고정(android:screenOrientation).
+             가로로 돌리면 탭바가 화면 중간에 뜨고 본문이 잘렸습니다. 셸이 세로 기준으로 잰
+             높이(mebody-app-height CSS 변수)와 배너 여백을 그대로 쓰기 때문입니다.
+             손에 들고 15분 스트레칭하는 앱이라 가로를 제대로 만들 값어치보다
+             깨진 화면을 내보내지 않는 쪽이 낫습니다.
+             XML 주석은 속성 사이에 둘 수 없고 두 번 이어진 붙임표도 못 씁니다. 그래서 태그 바깥입니다. -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
