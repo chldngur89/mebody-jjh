@@ -64,6 +64,21 @@ export function installAndroidBack(): () => void {
  *
  * 허용 목록에 없는 주소는 무시합니다 — 밖에서 온 값으로 아무 데나 보내면 안 됩니다.
  */
+/**
+ * 딥링크가 들어왔다고 앱에 알리는 이름.
+ *
+ * 네이티브에서는 WebView 가 먼저 `https://localhost/` 를 열고, 인텐트 주소는 **그 뒤에**
+ * `appUrlOpen` 으로 따로 옵니다. 그래서 첫 렌더에서 `location.search` 를 한 번 읽는 코드는
+ * 네이티브에서 절대 그 값을 못 봅니다. 웹에서만 되고 앱에서는 안 되는 차이가 여기서 납니다.
+ */
+export const DEEP_LINK_EVENT = 'mebody:deeplink'
+
+/** 딥링크로 들어온 주소. `detail.search` 는 `?` 를 포함합니다. */
+export interface DeepLinkDetail {
+  search: string
+  hash: string
+}
+
 export function installDeepLinks(): () => void {
   if (typeof window === 'undefined') return () => {}
   let detach: (() => void) | null = null
@@ -85,6 +100,13 @@ export function installDeepLinks(): () => void {
           const next = `/${parsed.search}${parsed.hash}`
           window.history.replaceState(window.history.state, '', next)
           window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }))
+          // popstate 만으로는 부족합니다. 그 쪽은 **히스토리에 적힌 화면**으로 되돌리는
+          // 일을 하는데, 방금 들어온 주소는 히스토리에 없습니다. 그래서 전문가 초대처럼
+          // 쿼리로만 전달되는 것은 앱이 영영 못 봅니다(실측 2026-10-12: 초대 링크를 눌러도
+          // 동의 화면이 안 뜨고 평소 화면만 떴습니다 — 콜드·웜 둘 다).
+          window.dispatchEvent(new CustomEvent(DEEP_LINK_EVENT, {
+            detail: { search: parsed.search, hash: parsed.hash },
+          }))
         } catch {
           /* 이상한 주소는 무시합니다 */
         }

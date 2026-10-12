@@ -82,6 +82,7 @@
     "verify:legal-docs": "node scripts/verify-legal-docs.mjs",
     "verify:body-note": "node scripts/verify-body-note.mjs",
     "verify:ad-units": "node scripts/verify-ad-units.mjs",
+    "verify:app-origin": "node scripts/verify-app-origin.mjs",
     "build:share-pages": "node scripts/build-share-pages.mjs"
   }
 }

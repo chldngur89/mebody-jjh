@@ -51,6 +51,7 @@ import type { AnswerMap } from './utils/bodyCodeCalculator';
 import { readFlowEntry, type Screen, type FlowRoute } from './lib/flowNavigation';
 import { ProfessionalConsentScreen } from './components/ProfessionalConsentScreen';
 import { readInviteToken } from './api/professionalInvite';
+import { DEEP_LINK_EVENT, type DeepLinkDetail } from './lib/androidBack';
 import { withDeadline } from './lib/deadline';
 import { flowSession, useFlowHistory } from './utils/useFlowHistory';
 import { emptyQuestionnaireProgress, hasIncompleteProgress, readQuestionnaireProgress, persistQuestionnaireProgress } from './lib/questionnaireProgress';
@@ -148,8 +149,39 @@ export default function App() {
    * 토큰이 있다고 연결되는 것이 아닙니다. 화면에서 직접 눌러야 동의입니다
    * — 카카오톡 미리보기 크롤러가 링크를 열어도 아무 일도 일어나지 않아야 합니다.
    */
-  const inviteToken = useRef(readInviteToken(window.location.search)).current;
+  //
+  // **상태입니다, ref 가 아닙니다.** 네이티브에서는 WebView 가 `https://localhost/` 를 먼저
+  // 열고 인텐트 주소는 그 뒤에 `appUrlOpen` 으로 옵니다. 첫 렌더에 한 번만 읽으면
+  // 앱에서는 토큰을 영영 못 봅니다(실측 2026-10-12).
+  const [inviteToken, setInviteToken] = useState(() => readInviteToken(window.location.search));
   const [inviteHandled, setInviteHandled] = useState(false);
+  /**
+   * 부팅 복구가 **지금** 초대가 살아 있는지 보려면 필요합니다.
+   * 그 쪽은 `recoverAuthSession()` 을 기다리는 async 함수라, 클로저에 잡힌 값은
+   * 효과가 처음 돌 때의 값(= 콜드 스타트에서는 undefined)에서 멈춰 있습니다.
+   * 그래서 딥링크로 초대가 들어와도 복구가 "마지막에 보던 화면" 으로 덮어썼습니다.
+   */
+  const inviteLiveRef = useRef<string | undefined>(undefined);
+  inviteLiveRef.current = inviteHandled ? undefined : inviteToken;
+  // 앱이 떠 있는 동안 초대 링크를 누른 경우. popstate 는 **히스토리에 적힌 화면**으로
+  // 되돌리는 쪽이라 방금 들어온 쿼리를 보지 않습니다. 그래서 따로 받습니다.
+  useEffect(() => {
+    const apply = (search: string) => {
+      const token = readInviteToken(search);
+      if (!token) return;
+      setInviteToken(token);
+      setInviteHandled(false);
+      setCurrentScreen('professionalConsent');
+    };
+    const onDeepLink = (event: Event) => apply((event as CustomEvent<DeepLinkDetail>).detail?.search ?? '');
+    window.addEventListener(DEEP_LINK_EVENT, onDeepLink);
+    // 리스너를 달기 **전에** 이미 도착했을 수 있어서 한 번 더 읽습니다.
+    // 콜드 스타트가 정확히 그렇습니다 — 첫 렌더와 이 effect 사이에 `appUrlOpen` 이
+    // 끼어들어서, 이벤트는 허공에 뿌려지고 화면은 평소 화면이 떴습니다(실측 2026-10-12).
+    apply(window.location.search);
+    return () => window.removeEventListener(DEEP_LINK_EVENT, onDeepLink);
+  }, []);
+
   const previewScreenParam = bootSearchParams.get('ui');
   // ?ui=<screen> 로 특정 화면을 바로 여는 QA 용 파라미터. 결제 화면도 로그인 없이 확인할 수 있어야
   // 검증이 가능해서 membership·checkout 을 함께 둡니다(결제 자체는 로그인이 필요합니다).
@@ -568,7 +600,7 @@ export default function App() {
         // "마지막에 보던 것" 으로 돌려보내는 일을 하는데, 그게 초대 화면을 덮어쓰면
         // 고객은 트레이너 링크를 열고도 자기 결과 화면만 보게 됩니다.
         // (공유 링크 sharedCode 를 같은 이유로 먼저 막고 있습니다)
-        if (inviteToken && !inviteHandled) {
+        if (inviteLiveRef.current) {
           setCurrentScreen('professionalConsent');
           return;
         }

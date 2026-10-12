@@ -3,6 +3,7 @@ import { completionHistoryOffset, readFlowEntry, sameFlowPage, flowUrl } from '.
 import { parseQuestionnaireProgress } from '../src/lib/questionnaireProgress.ts';
 import { parseTimerProgress } from '../src/lib/timerProgress.ts';
 import { withDeadline } from '../src/lib/deadline.ts';
+import { scrollRestoreTarget } from '../src/lib/scrollRestore.ts';
 
 let checks = 0;
 const check = (name, fn) => { fn(); checks++; console.log(`PASS ${name}`); };
@@ -30,6 +31,20 @@ check('invalid question keys and values cannot become answers', () => assert.dee
 check('paused timer restores remaining seconds', () => assert.deepEqual(parseTimerProgress('{"remaining":43,"started":true}', 60), { remaining: 43, started: true }));
 check('expired timer can complete on explicit resume', () => assert.equal(parseTimerProgress('{"remaining":0,"started":true}', 60).remaining, 0));
 check('invalid timer duration cannot skip a step', () => assert.deepEqual(parseTimerProgress('{"remaining":-10}', 60), { remaining: 60, started: false }));
+// 탭 복귀 스크롤 복원 — 끝까지 내려본 사람에게만 깨지던 자리입니다.
+check('bottom-of-list position is restored despite sub-pixel rounding', () =>
+  assert.equal(scrollRestoreTarget(3182, 744, 2438.09521484375), 2438));
+check('mid-list position is restored exactly', () =>
+  assert.equal(scrollRestoreTarget(3182, 744, 1200), 1200));
+check('content not grown yet means wait, not jump', () =>
+  assert.equal(scrollRestoreTarget(900, 744, 2438), null));
+check('shrunk list clamps instead of overshooting', () =>
+  assert.equal(scrollRestoreTarget(1500, 744, 756.4), 756));
+check('nothing saved goes to the top', () =>
+  assert.equal(scrollRestoreTarget(3182, 744, 0), 0));
+check('unscrollable page never claims a position', () =>
+  assert.equal(scrollRestoreTarget(744, 744, 100), null));
+
 const controller = new AbortController();
 await assert.rejects(withDeadline(() => new Promise(() => {}), controller, 10));
 check('hanging save is aborted at the deadline', () => assert.equal(controller.signal.aborted, true));

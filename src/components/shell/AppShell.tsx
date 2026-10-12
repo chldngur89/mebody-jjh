@@ -14,6 +14,7 @@ import { ScrollIndicator } from '../ScrollIndicator';
 import { TabBar, type AppTab } from './TabBar';
 import { TopBar } from './TopBar';
 import { useOnline } from '../../utils/useOnline';
+import { scrollRestoreTarget } from '../../lib/scrollRestore';
 
 export type { AppTab };
 
@@ -82,8 +83,9 @@ export function AppShell({
     // (상품이 줄었다거나) 맨 위에 있는 게 맞습니다 — 억지로 밀어 넣지 않습니다.
     const restore = () => {
       if (!restoringRef.current) return;
-      if (element.scrollHeight - element.clientHeight < targetTopRef.current) return;
-      element.scrollTop = targetTopRef.current;
+      const target = scrollRestoreTarget(element.scrollHeight, element.clientHeight, targetTopRef.current);
+      if (target == null) return;
+      element.scrollTop = target;
       restoringRef.current = false;
     };
     // 스크롤 위치 저장은 **스크롤이 멎은 뒤에** 합니다.
@@ -95,7 +97,7 @@ export function AppShell({
       if (restoringRef.current) return;
       window.clearTimeout(saveTimer);
       saveTimer = window.setTimeout(() => {
-        try { sessionStorage.setItem(key, String(element.scrollTop)); } catch { /* memory only */ }
+        try { sessionStorage.setItem(key, String(Math.round(element.scrollTop))); } catch { /* memory only */ }
       }, 150);
     };
     const userScroll = () => { restoringRef.current = false; };
