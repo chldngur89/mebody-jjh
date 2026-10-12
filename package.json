@@ -42,7 +42,7 @@
     "verify:plan-cashback": "node scripts/verify-plan-cashback.mjs",
     "verify:routine-bonus": "node scripts/verify-routine-bonus.mjs",
     "ads:check": "node scripts/check-ads-config.mjs",
-    "app:build": "npm run env:check && npm run typecheck && npm run verify:no-sample-link && npm run verify:cookie-banner && npm run verify:ad-units && vite build && npm run check:bundle && cap sync android",
+    "app:build": "npm run env:check && npm run typecheck && npm run verify:no-sample-link && npm run verify:cookie-banner && npm run verify:ad-units && npm run build:share-pages && vite build && npm run check:bundle && cap sync android",
     "app:open": "cap open android",
     "app:apk": "npm run app:build && cd android && JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ./gradlew assembleDebug",
     "verify:redesign": "node scripts/verify-redesign.mjs",
@@ -78,8 +78,10 @@
     "build:axis-icons": "node scripts/build-axis-icons.mjs",
     "check:bundle": "node scripts/check-bundle-secrets.mjs",
     "verify:professional-schedule": "node scripts/verify-professional-schedule.mjs",
+    "verify:seo": "node scripts/verify-seo.mjs",
     "verify:legal-docs": "node scripts/verify-legal-docs.mjs",
     "verify:body-note": "node scripts/verify-body-note.mjs",
-    "verify:ad-units": "node scripts/verify-ad-units.mjs"
+    "verify:ad-units": "node scripts/verify-ad-units.mjs",
+    "build:share-pages": "node scripts/build-share-pages.mjs"
   }
 }

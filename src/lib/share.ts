@@ -27,10 +27,16 @@ export function isShareableBodyCode(code: unknown): code is string {
 
 export function buildShareUrl(bodyCode: string): string {
   const base = shareBaseUrl()
-  // 프로덕션: OG 미리보기 엔드포인트 → 봇은 og 태그, 사람은 SPA 공유 랜딩으로.
-  // 로컬 Vite 에는 /api 가 없으므로 SPA 쿼리로 둡니다.
+  // 프로덕션: 코드별 **정적 공유 페이지** → 봇은 og 태그, 사람은 곧바로 앱으로.
+  //
+  // 예전에는 `/api/share-og?code=` 를 가리켰는데 **그 엔드포인트가 없었습니다.**
+  // SPA 의 index.html 로 떨어져서 누가 무슨 코드를 공유하든 미리보기가 똑같았습니다.
+  // 카카오톡·트위터 크롤러는 자바스크립트를 돌리지 않으므로 SPA 로는 해결되지 않습니다.
+  // scripts/build-share-pages.mjs 가 16장을 미리 구워 둡니다.
+  //
+  // 로컬 Vite 에는 그 파일이 없으므로 개발 중에는 SPA 쿼리로 둡니다.
   if (!import.meta.env.DEV && isShareableBodyCode(bodyCode)) {
-    return `${base}/api/share-og?code=${encodeURIComponent(bodyCode)}`
+    return `${base}/s/${encodeURIComponent(bodyCode)}`
   }
   const url = new URL(`${base}/`)
   url.searchParams.set('ref', SHARE_REF)
