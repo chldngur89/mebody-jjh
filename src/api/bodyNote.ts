@@ -179,3 +179,63 @@ export function summarize(note: BodyNote): string {
   bits.push(CONDITION_LABEL[note.condition])
   return bits.join(' · ')
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 전문가 안내
+ *
+ * 전문가가 내 몸 기록을 보고 남긴 한마디입니다. **내 기록을 고친 것이 아니라**
+ * 따로 쌓인 글입니다(074). 읽기는 RLS 로 바로 하고, 읽음 처리만 함수로 합니다 —
+ * UPDATE 권한을 주면 사용자가 message 까지 고칠 수 있기 때문입니다.
+ *
+ * 전문가가 철회하면 withdrawn_at 이 찍히고 RLS 가 그 줄을 빼므로, 여기서 따로
+ * 거르지 않아도 사라집니다.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+export type GuidanceType = 'comment' | 'check_next_session' | 'lifestyle_suggestion' | 'linked_mission'
+
+/** 안내의 성격. 전문가가 고른 값을 사용자 말로 옮깁니다. */
+export const GUIDANCE_LABEL: Record<GuidanceType, string> = {
+  comment: '한마디',
+  check_next_session: '다음에 같이 볼 것',
+  lifestyle_suggestion: '생활 제안',
+  linked_mission: '추천 동작',
+}
+
+export interface Guidance {
+  id: string
+  type: GuidanceType
+  message: string
+  createdAt: string
+  readAt: string | null
+}
+
+/** 나에게 온 안내. 철회된 것은 RLS 가 이미 빼고 줍니다. */
+export async function fetchMyGuidance(limit = 5): Promise<Guidance[]> {
+  const { data, error } = await supabase
+    .from('professional_body_note_guidance')
+    .select('id, guidance_type, message, created_at, read_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) {
+    if (missingTable(error)) return []
+    throw error
+  }
+  return ((data ?? []) as Array<{
+    id: string; guidance_type: string; message: string; created_at: string; read_at: string | null
+  }>).map((r) => ({
+    id: r.id,
+    type: r.guidance_type as GuidanceType,
+    message: r.message,
+    createdAt: r.created_at,
+    readAt: r.read_at,
+  }))
+}
+
+/** 읽음 처리. 실패해도 화면을 막지 않습니다 — 안내를 본 것이 더 중요합니다. */
+export async function markGuidanceRead(id: string): Promise<void> {
+  try {
+    await supabase.rpc('mark_guidance_read', { p_guidance_id: id })
+  } catch {
+    /* 다음에 열 때 다시 시도됩니다 */
+  }
+}

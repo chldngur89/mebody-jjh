@@ -51,6 +51,27 @@ const insertNote = (uid, date, parts, side, acts, cond, note = null) =>
     VALUES ($1,$2::date,$3::text[],$4,$5::text[],$6,$7) RETURNING id`,
     [uid, date, parts, side, acts, cond, note])
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * 화면에 **실제로 보이는가** — DB 만 맞아도 소용없습니다.
+ *
+ * 2026-10-12 에 정확히 이 구멍이 있었습니다. 전문가는 안내를 쓸 수 있고 DB 검증도
+ * 다 통과했는데, 앱에 그걸 보여주는 화면이 없어서 **사용자가 평생 못 보는 글**이었습니다.
+ * 쓰기 경로만 검증하면 다시 같은 일이 생깁니다.
+ * ───────────────────────────────────────────────────────────────────────── */
+console.log('\n■ 안내가 앱 화면까지 닿는가')
+const srcApi = readFileSync(new URL('../src/api/bodyNote.ts', import.meta.url).pathname, 'utf8')
+const srcMission = readFileSync(new URL('../src/components/mission/MissionScreen.tsx', import.meta.url).pathname, 'utf8')
+
+ok('읽어오는 함수가 있다', /export async function fetchMyGuidance/.test(srcApi))
+ok('안내 표를 직접 읽는다', /from\('professional_body_note_guidance'\)/.test(srcApi))
+ok('읽음 처리는 함수로만 한다',
+   /rpc\('mark_guidance_read'/.test(srcApi) && !/professional_body_note_guidance'\)\s*\n?\s*\.update/.test(srcApi),
+   'UPDATE 권한을 주면 message 까지 고칠 수 있습니다')
+ok('화면이 안내를 불러온다', /fetchMyGuidance\(/.test(srcMission))
+ok('화면이 안내 본문을 그린다', /\{g\.message\}/.test(srcMission))
+ok('안 읽은 개수를 보여준다', /unread\b/.test(srcMission))
+ok('누르면 읽음으로 바뀐다', /markGuidanceRead\(/.test(srcMission))
+
 await c.connect(); await c.query('BEGIN')
 try {
   await svc()
@@ -241,6 +262,17 @@ try {
   ok('프로필이 지워지면 기록도 지워진다', before > 0 && after === 0, `${before}건 → ${after}건`)
 
   // ────────────────────────────────────────────────────────────────────────
+  console.log('\n■ 안내 종류가 화면 라벨과 맞는가')
+  // 전문가가 쓸 수 있는 종류 중 하나라도 라벨이 없으면 사용자 화면에 빈 칸이 뜹니다.
+  const checkSrc = (await c.query(`SELECT pg_get_constraintdef(oid) d FROM pg_constraint
+     WHERE conname='pbng_type_check'`)).rows[0]?.d ?? ''
+  const dbTypes = [...checkSrc.matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]).sort()
+  const labelBlock = srcApi.match(/GUIDANCE_LABEL[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+  const uiTypes = [...labelBlock.matchAll(/^\s*([a-z_]+):/gm)].map((m) => m[1]).sort()
+  ok('DB 가 허용하는 종류를 다 읽었다', dbTypes.length === 4, dbTypes.join(','))
+  ok('종류마다 화면 라벨이 있다', dbTypes.length > 0 && dbTypes.join(',') === uiTypes.join(','),
+     `DB ${dbTypes.join(',')} vs 화면 ${uiTypes.join(',')}`)
+
   console.log('\n■ 의료 표현')
   const medical = (await c.query(`SELECT count(*)::int n FROM information_schema.columns
      WHERE table_schema='public' AND table_name='body_notes'

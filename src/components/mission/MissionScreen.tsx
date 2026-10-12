@@ -19,7 +19,7 @@ import {
 } from '../../api/routineHistory';
 import { BRAND, SURFACE } from '../../theme/brand';
 import { CARE_ROUTINE_TOTAL_SEC, formatRoutineDuration } from '../../utils/careRoutine';
-import { fetchBodyNoteHistory, fetchTodayBodyNote, summarize, type BodyNote } from '../../api/bodyNote';
+import { fetchBodyNoteHistory, fetchMyGuidance, fetchTodayBodyNote, markGuidanceRead, summarize, GUIDANCE_LABEL, type BodyNote, type Guidance } from '../../api/bodyNote';
 import { BodyNoteHistorySheet, BodyNoteStrip, bodyNoteRepeats } from '../status/BodyNoteHistory';
 import { BodyNoteSheet } from '../status/BodyNoteSheet';
 import { listMyProfessionals, type MyProfessional } from '../../api/professionalInvite';
@@ -36,6 +36,17 @@ function serviceToday(): Date {
   kst.setHours(kst.getHours() - 6);
   kst.setHours(0, 0, 0, 0);
   return kst;
+}
+
+/**
+ * 전문가 안내가 올라온 날 — 「10/12」.
+ * 저장은 UTC 타임스탬프라 그대로 쓰면 밤 9시 이후가 다음 날로 보입니다. KST 로 옮겨 적습니다.
+ */
+function guidanceDate(iso8601: string): string {
+  const d = new Date(iso8601);
+  if (Number.isNaN(d.getTime())) return '';
+  const kst = new Date(d.getTime() + (d.getTimezoneOffset() + 540) * 60_000);
+  return `${kst.getMonth() + 1}/${kst.getDate()}`;
 }
 
 function iso(d: Date): string {
@@ -90,6 +101,30 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
   }, [isLoggedIn]);
 
   // VIP CARE 블록을 봤는가. 연결 여부만 남깁니다 — 전문가가 누구인지는 보내지 않습니다.
+  /**
+   * 전문가가 남긴 안내.
+   *
+   * 지금까지 전문가는 쓸 수 있는데 **사용자가 볼 화면이 없었습니다.** 써도 닿지 않으면
+   * 전문가는 두 번째부터 안 씁니다. VIP CARE 블록 안에 둡니다 — 전문가 관계가
+   * 드러나는 자리가 거기이고, 새 탭을 만들면 기존 구조가 바뀝니다.
+   */
+  const [guidance, setGuidance] = useState<Guidance[]>([]);
+  useEffect(() => {
+    if (!isLoggedIn) { setGuidance([]); return; }
+    let alive = true;
+    void fetchMyGuidance(5).then((rows) => { if (alive) setGuidance(rows); }).catch(() => { /* 없으면 없는 대로 */ });
+    return () => { alive = false; };
+  }, [isLoggedIn]);
+
+  const openGuidance = (g: Guidance) => {
+    if (g.readAt) return;
+    // 화면에서 먼저 지우고 서버에 알립니다. 실패해도 다음에 열 때 다시 시도됩니다.
+    setGuidance((cur) => cur.map((x) => (x.id === g.id ? { ...x, readAt: new Date().toISOString() } : x)));
+    void markGuidanceRead(g.id);
+  };
+
+  const unread = guidance.filter((g) => !g.readAt).length;
+
   const vipSeen = useRef(false);
   useEffect(() => {
     if (!isLoggedIn || vipSeen.current) return;
@@ -418,6 +453,15 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
             }}>
               연결됨
             </span>
+            {unread > 0 && (
+              <span style={{
+                fontSize: '0.6875rem', fontWeight: 900,
+                color: 'var(--mebody-t-ffffff-2, #ffffff)', background: BRAND.green,
+                borderRadius: 'var(--mebody-r-pill, 999px)', padding: '3px 9px',
+              }}>
+                새 안내 {unread}
+              </span>
+            )}
           </div>
           <div style={{ fontSize: '1rem', fontWeight: 900, color: BRAND.green, marginBottom: '6px' }}>
             담당 {myPro.professionalName}
@@ -426,6 +470,52 @@ export function MissionScreen({ questionnaireId, isLoggedIn = false, isPaid = fa
             내 결과와 몸 기록을 함께 보고 계세요. 전문가가 넣어준 동작은 아래 오늘 할 일에
             「담당 전문가가 추가한 동작입니다」로 함께 나옵니다.
           </p>
+
+          {/* 전문가가 남긴 안내. 안 읽은 것은 왼쪽에 점을 찍고, 누르면 읽음으로 바뀝니다. */}
+          {guidance.length > 0 && (
+            <div style={{ marginTop: '14px', display: 'grid', gap: '8px' }}>
+              {guidance.map((g) => {
+                const isUnread = !g.readAt;
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => openGuidance(g)}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr',
+                      gap: '10px',
+                      alignItems: 'start',
+                      textAlign: 'left',
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: 'var(--mebody-r-md, 16px)',
+                      border: `1px solid ${isUnread ? BRAND.green : SURFACE.hairline}`,
+                      background: isUnread ? BRAND.mint : SURFACE.subtle,
+                      fontFamily: 'inherit',
+                      cursor: isUnread ? 'pointer' : 'default',
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        marginTop: '6px', width: '8px', height: '8px', borderRadius: '50%',
+                        background: isUnread ? BRAND.green : 'transparent',
+                      }}
+                    />
+                    <span>
+                      <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 900, color: BRAND.green, marginBottom: '4px' }}>
+                        {GUIDANCE_LABEL[g.type] ?? '한마디'} · {guidanceDate(g.createdAt)}
+                      </span>
+                      <span style={{ display: 'block', fontSize: '0.875rem', lineHeight: 1.6, color: BRAND.text, wordBreak: 'keep-all' }}>
+                        {g.message}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </Card>
       ) : (
         <Card>
