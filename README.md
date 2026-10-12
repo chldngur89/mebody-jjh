@@ -2,7 +2,7 @@
 
 > 내부 개발·기획 기술팀을 위한 통합 현황 문서
 >
-> 기준일: 2026-08-27
+> 기준일: 2026-10-12
 
 MEBODY는 사용자가 자기 점검 설문을 통해 현재 몸의 정렬과 움직임 경향을 확인하고, 4축 기반 mebody 코드와 관리 콘텐츠를 살펴볼 수 있는 웰니스 서비스입니다.
 
@@ -38,7 +38,9 @@ MEBODY의 결과는 의료 진단, 통증 판독, 치료, 교정 또는 재활 �
 
 세부 서버 실행 방법과 API는 [서버 README](https://github.com/MebodyCTO/MebodyServer/blob/main/README.md), 간이 설문 빌드 방법은 [간이 설문 README](https://github.com/MebodyCTO/MebodyServer/blob/main/sample-questionnaire/README.md)를 참고합니다.
 
-> 배포 확인: 설정과 기존 문서에 기록된 Railway 주소는 2026-08-27 기준 `/`, `/sample`, `/api/public/config`에서 HTTP 404를 반환합니다. 아래 홈페이지 흐름은 현재 코드 기준이며 Railway 서비스·도메인 연결 상태는 별도로 확인해야 합니다.
+> 배포 확인(2026-10-12): Railway 주소는 `/`, `/privacy`, `/terms`, `/api/public/health` 모두 정상 응답합니다.
+> `mebody.net` 은 **아직 연결 전**이라 스퀘어스페이스 「공사 중」 페이지가 응답합니다 —
+> 그 상태로 검색엔진에 제출하면 canonical 이 빈 페이지를 가리켜 색인에서 밀립니다(`npm run verify:seo` 가 막습니다).
 
 ## 현재 사용자 플로우
 
@@ -143,7 +145,7 @@ flowchart LR
 | 홈페이지 → Vercel 모바일 앱 | `미구현` | 앱 URL 설정은 있지만 사용자용 직접 CTA 없음 |
 | 간이 결과 → Vercel 회원가입·정밀 체크 | `미구현` | `APP_SIGNUP_URL` 상수만 존재하고 현재 UI에서는 사용하지 않음 |
 | 모바일 앱 → Supabase | `완료` | Auth, 문항·결과·콘텐츠 DB, Storage 직접 사용 |
-| 모바일 앱 → Spring 서버 | `부분 구현` | `VITE_API_BASE_URL`이 있을 때 관리자 콘솔 상태 확인·열기에 사용 |
+| 모바일 앱 → Spring 서버 | `완료` · **필수** | 회원가입·로그인·비밀번호 재설정·탈퇴·전문가 초대가 전부 이 경로입니다. 없으면 가입 자체가 안 됩니다 |
 | Spring 서버 → Supabase Postgres | `완료` | 관리자·회원 API가 JPA로 직접 연결 |
 | 홈페이지 인증 화면 → Supabase Auth → Spring API | `완료` | 브라우저가 Supabase 로그인 후 access token으로 서버 API 호출 |
 
@@ -155,7 +157,7 @@ flowchart LR
 | `VITE_APP_URL` | 12문항 간이 설문 | `APP_SIGNUP_URL` 생성에 사용되지만 현재 결과 UI에서는 해당 URL을 사용하지 않음 |
 | `VITE_HOMEPAGE_URL` | 12문항 간이 설문 | 결과의 홈페이지 버튼 목적지. 기본값은 `/` |
 | `VITE_SAMPLE_RESULT_FORM_URL` | 12문항 간이 설문 | 결과 페이지의 Google Forms CTA를 배포 환경에서 덮어씀 |
-| `VITE_API_BASE_URL` | 32문항 모바일 앱 | 마이페이지의 관리자 콘솔 상태 확인·열기. 없어도 진단과 결과는 동작함 |
+| `VITE_API_BASE_URL` | 32문항 모바일 앱 | **회원가입·로그인·비밀번호 재설정·탈퇴·전문가 초대·결제.** 없으면 진단·결과만 동작하고 계정 기능이 전부 막힙니다 |
 | `VITE_SUPABASE_URL` | 32문항 모바일 앱 | Supabase 프로젝트 URL |
 | `VITE_SUPABASE_ANON_KEY` | 32문항 모바일 앱 | 브라우저용 Supabase anon key |
 
@@ -178,6 +180,14 @@ flowchart LR
 - 회원가입, 로그인, 마이페이지
 - 로그인 회원의 최근 완료 결과 조회
 - Supabase Storage 이미지 우선 로딩과 로컬 fallback
+- 회원가입·로그인·비밀번호 재설정·탈퇴 (서버 경유, `db/journey/046`·`055`)
+- 적립금과 상한 (`057`·`058`·`065`~`067`·`072`)
+- 주문·결제 원장·배송 단계 (`verify:fulfillment`·`verify:order-api`)
+- 전문가 확장 Phase 1~3 — 초대·동의·결과 열람·미션 배정 (`052`·`053`·`056`·`059`·`060`)
+- 마이 바디 노트와 전문가 안내 (`074`)
+- 이벤트 수집과 운영 지표 (`054`·`068`)
+- 검색 노출 — sitemap·canonical·OG·JSON-LD·FAQPage·코드별 공유 미리보기
+- 안드로이드 APK — 배너·보상형 광고, 세로 고정, 딥링크
 
 ### 부분 구현
 
@@ -185,20 +195,24 @@ flowchart LR
 |---|---|---|
 | 15분 루틴 | `부분 구현` | UI와 조합 코드가 있으나 16개 코드별 콘텐츠·태그·조합 규칙 확정 필요 |
 | 미션 관리 | `부분 구현` | 앱 UI와 서버 기본 테이블은 있으나 지속 관리 시퀀스까지 연결되지 않음 |
-| 멤버십 | `부분 구현` | 플랜·체크아웃 화면과 DB 조회는 있으나 실제 결제는 mock |
-| 상품 | `부분 구현` | 서버 상품 API shell은 있으나 판매·주문·결제 미구현 |
+| 멤버십·결제 | `부분 구현` | 플랜·체크아웃 화면과 주문 원장은 동작하나 **실제 PG 연동은 미착수**(사용자 요청으로 보류) |
+| 상품 | `부분 구현` | 등록·장바구니·주문·배송 단계까지 동작. 결제만 남음. **상품 사진 15장이 전부 같은 이미지** |
 | 홈페이지와 모바일 앱 | `부분 구현` | URL 설정은 있으나 실제 사용자 CTA 연결 미완료 |
 
 ### 기술 부채·확인 필요
 
-- 설정된 Railway 배포 주소가 현재 HTTP 404를 반환하므로 서비스·도메인 연결 상태를 확인해야 합니다.
+- `mebody.net` 도메인이 아직 연결되지 않았습니다(스퀘어스페이스 주차 페이지). 검색엔진 제출 전에 붙여야 합니다.
 - 간이 결과 JSON 원문에 `2차 정밀 체크`가 남아 있고 실행 시 `정밀 체크`로 치환됩니다.
 - 간이 설문 README의 과거 GIF·Lottie 파일 규칙이 현재 WebP 질문 미디어 매핑과 다릅니다.
 - 비회원 결과를 로그인 계정에 귀속하는 서버 API가 없습니다.
-- `questionnaire_responses` RLS와 운영 환경의 권한 정책을 재점검해야 합니다.
-- 회원가입 약관·개인정보 동의 저장 시각과 버전 이력이 없습니다.
-- 주요 퍼널 이벤트 수집과 에러 로깅이 연결되지 않았습니다.
-- 실제 결제 webhook과 결제 원장 테이블이 없습니다.
+- 실제 결제 PG 연동과 webhook 이 없습니다(주문 원장과 배송 단계는 있습니다).
+- 쓰이지 않는 테이블이 남아 있습니다 — `prompts`·`sere_contents`(앱·서버 참조 0),
+  `body_bti_results`·`user_mission_progress`. **지우기 전에 DB 함수·뷰·트리거까지 훑으세요** —
+  `body_bti_results` 를 지웠을 때 `prepare_account_deletion()` 이 부러져 탈퇴가 503 이 됐습니다.
+- Supabase 기본 SMTP 는 시간당 몇 통이라 외부 가입자를 받기 전에 자체 SMTP 가 필요합니다.
+
+끝난 항목(2026-10 기준): Railway 404, `questionnaire_responses` RLS(`044`·`045`),
+가입 동의 시각·버전(`055`), 퍼널 이벤트 수집(`054`·`068`).
 
 세부 우선순위는 [TODO.md](./TODO.md)를 기준으로 관리합니다.
 
@@ -710,6 +724,53 @@ curl -X POST "$BASE/api/admin/professionals" -H "Authorization: Bearer $ADMIN_TO
 
 화면과 API 는 아직 없습니다. Phase 1 에서 서버 관리자 콘솔에 탭으로 붙입니다.
 
+## 마이 바디 노트와 전문가 안내 (`db/journey/074`)
+
+사용자가 하루에 한 번 **자기 몸 상태를 직접 적는** 기록입니다. 미션 피드백과 **역할이 다릅니다.**
+섞으면 같은 것을 두 번 적게 되고 두 숫자가 어긋나기 시작합니다.
+
+| | 묻는 것 | 단위 |
+|---|---|---|
+| 미션 피드백 | 방금 한 동작이 어땠나 | 동작 1회 |
+| 바디 노트 | 오늘 내 몸과 생활이 어땠나 | 하루 1건 |
+
+적는 항목은 넷입니다 — 불편했던 부위 · 더 편했던 쪽 · 그날 많이 한 활동 · 컨디션.
+**컨디션만 필수**이고 나머지는 선택입니다. 안 적어도 서비스는 그대로 돌아갑니다.
+
+### 의료 표현을 쓰지 않습니다
+
+사용자가 **스스로 느낀 것**을 적어 두는 것이지 증상·진단이 아닙니다. 컬럼 이름에
+`pain`·`symptom`·`diagnos` 같은 단어가 들어가지 않는지 `verify:body-note` 가 막습니다.
+기록 화면의 점 색도 경고색(빨강)을 쓰지 않습니다 — 색이 판정으로 읽히면 안 됩니다.
+
+### 전문가 안내는 **따로 쌓입니다**
+
+전문가는 고객의 바디 노트를 보고 한마디를 남길 수 있습니다(`professional_body_note_guidance`).
+**사용자 기록을 고치는 것이 아닙니다** — 경로 자체가 없습니다.
+
+- 읽기는 RLS 로 바로, **읽음 처리만 함수**(`mark_guidance_read`)로 합니다.
+  UPDATE 권한을 주면 사용자가 전문가가 쓴 `message` 까지 고칠 수 있습니다.
+- 전문가가 철회하면 `withdrawn_at` 이 찍히고 RLS 가 그 줄을 뺍니다.
+- 안내 종류를 늘릴 때는 **화면 라벨(`GUIDANCE_LABEL`)도 같이** 늘립니다.
+  DB CHECK 와 라벨을 대조하는 검사가 `verify:body-note` 에 있습니다.
+
+### 쓰는 것과 보는 것은 **다른 일입니다**
+
+전문가가 쓸 수 있는데 **앱에 보여주는 화면이 없어서** 사용자가 평생 못 보는 글이던 적이
+있습니다(2026-10-12). DB 검증은 전부 통과하고 있었습니다. 쓰기 경로만 검증하면 또 생깁니다 —
+`verify:body-note` 가 이제 **화면까지 닿는지**도 봅니다.
+
+## 하루 경계는 오전 6시입니다 (`db/journey/073`)
+
+`mebody_service_day()` 가 기준입니다. 자정이 아니라 **한국시간 오전 6시**에 날이 바뀝니다 —
+새벽에 운동하는 사람이 "어제" 로 기록되면 연속 기록이 끊기기 때문입니다.
+
+바디 노트는 **예외로 달력 날짜**를 씁니다(`kstToday()`). 어젯밤에 적은 것이 오늘로 보이는 편이
+더 혼란스럽습니다. 두 기준이 다르다는 것을 알고 쓰십시오.
+
+> 이 함수는 다른 함수 본문 안에서만 쓰입니다. **인덱스나 생성 컬럼에 넣지 마세요** —
+> 시간에 따라 값이 바뀌므로 IMMUTABLE 이 아닙니다.
+
 ## 적립금 (`db/journey/057`, `058`, `065`, `066`, `067`)
 
 무료 적립은 **한 달 49원**을 넘지 않습니다. 평균은 42원입니다.
@@ -852,6 +913,37 @@ npm run seed:analytics -- --clean # 가상 이벤트만 삭제
 사람이 해야 하는 준비: Kakao Developers 앱 생성 → JavaScript 키 발급 →
 플랫폼 Web 에 도메인 등록 → 카카오톡 공유 활성화 → `VITE_KAKAO_JAVASCRIPT_KEY` 설정.
 
+## 검색 노출 (SEO · AEO/GEO)
+
+문자열을 **한 곳에서만** 만듭니다 — `mebody-server/scripts/build-seo.js`.
+sitemap, robots 의 Sitemap 줄, canonical, OG, Twitter, JSON-LD(Organization·WebSite·FAQPage),
+그리고 화면에 보이는 FAQ 섹션까지 전부 여기서 나옵니다. HTML 을 손으로 고치면 어긋납니다.
+
+```bash
+cd mebody-server && node scripts/build-seo.js      # 기본 origin: https://www.mebody.net
+MEBODY_SITE_ORIGIN=https://example.test node scripts/build-seo.js
+```
+
+`<!-- seo:start -->` · `<!-- faq:start -->` 표시 사이만 갈아끼우므로 여러 번 돌려도 안전합니다.
+
+### 지켜야 하는 것
+
+- **canonical 이 가리키는 주소가 그 사이트를 서빙해야 합니다.** 안 그러면 글이 있는 쪽이
+  "원본이 아니다" 로 읽혀 색인에서 밀립니다. `verify:seo` 가 실제로 접속해 확인합니다.
+- **FAQPage 스키마의 답이 화면에도 그대로 있어야 합니다.** 없으면 구글이 위반으로 보고
+  리치 결과를 끕니다. 한 배열에서 HTML 과 스키마를 둘 다 만드는 이유입니다.
+- **없는 것을 적지 않습니다** — 평점·후기(`aggregateRating`)나 사업자 정보를 지어내면
+  리치 결과가 아예 꺼집니다.
+- **진단한다고 말하지 않습니다.** AI 가 "진단해준다" 로 요약하면 그게 곧 우리 책임입니다.
+- **금액·확률을 적지 않습니다.** 바뀌는 숫자를 AI 가 계속 퍼뜨립니다.
+
+### 공유 미리보기
+
+카카오톡·트위터 크롤러는 자바스크립트를 돌리지 않습니다. SPA 로는 코드별 미리보기가 안 나옵니다.
+그래서 `npm run build:share-pages` 가 코드 16개의 정적 `public/s/<CODE>.html` 을 구워 둡니다
+(`app:build` 가 자동으로 부릅니다). 캐릭터 이름은 `bodyCodeCalculator.ts` 에서 읽습니다 —
+베껴 적으면 반드시 어긋납니다.
+
 ## 법적 문서
 
 `public/{privacy,terms}.html` 과 `mebody-server/src/main/resources/static/{privacy,terms}.html`
@@ -914,8 +1006,25 @@ id 가 새면 **읽기는 여전히 됩니다.** id 자체가 자기 결과를 �
 - `src/lib/identifier.ts`: 이메일·휴대폰 판별과 별칭 이메일 변환
 - `src/api/accountDeletion.ts`: 탈퇴 요청(서버 경유)
 - `src/components/status/StatusScreen.tsx`: 내 상태. 탈퇴와 불러오기 실패 표시
+- `src/api/bodyNote.ts`: 마이 바디 노트 저장·조회와 전문가 안내 읽기(`074`)
+- `src/components/shell/AppShell.tsx`: 탭 셸. 스크롤 저장·복원, 오프라인 안내, 배너 자리
+- `src/lib/scrollRestore.ts`: 탭 복귀 시 되돌릴 위치 판정 (소수점 오차 때문에 복원이 통째로 죽었던 자리)
+- `src/lib/publicOrigin.ts`: 밖으로 나가는 링크의 기준 주소. 앱에서 `location.origin` 은 `https://localhost` 입니다
+- `src/lib/androidBack.ts`: 하드웨어 백과 딥링크. 초대 링크가 들어오는 입구
+- `../mebody-server/scripts/build-seo.js`: sitemap·canonical·OG·JSON-LD·FAQ 를 한 곳에서 생성
 
 ## 변경 시 검증 체크리스트
+
+검증 스위트는 **44개**입니다. 한 번에 다 돌릴 수 없습니다 — 서버 설정이 서로 다른 두 묶음이
+섞여 있습니다. 돌리는 법은 [docs/VERIFY_RUNBOOK.md](./docs/VERIFY_RUNBOOK.md) 에 있습니다.
+
+> **`verify:app-origin` 만은 운영 서버에도 한 번 돌리세요.**
+> ```bash
+> MEBODY_SERVER_BASE=https://mebodyserver-production.up.railway.app npm run verify:app-origin
+> ```
+> 막히는 자리가 운영 서버이기 때문입니다. 통과하지 못하면 **APK 안에서 회원가입·로그인·
+> 비밀번호 재설정·탈퇴·전문가 초대가 전부 막힙니다.** 브라우저에서는 멀쩡해 보입니다 —
+> 웹 주소는 `FRONTEND_ORIGIN` 에 있으니까요. 2026-10-12 에 실제로 이 상태로 있었습니다.
 
 - 서버를 끄고도 모바일 앱 첫 문항과 결과 흐름이 동작하는지 확인합니다.
 - Supabase active questions가 `question_set=mebody_v1_32`, `total=32`, `precheck=0`, `scored=32`인지 확인합니다.
@@ -961,3 +1070,19 @@ id 가 새면 **읽기는 여전히 됩니다.** id 자체가 자기 결과를 �
   (`npm run verify:reward-cap` 이 payout 표를 거치지 않는 경로를 잡습니다).
 - 옛 마이그레이션을 재적용해 검증하는 스위트는 **그 뒤 파일까지 번호순으로** 이어 붙입니다.
 - 광고 단위를 바꿨다면 `npm run ads:check` 로 앱 ID(`~`)와 단위 ID(`/`)를 혼동하지 않았는지 확인합니다.
+- **서버에 새 API 를 추가했다면 `npm run verify:app-origin` 을 운영 주소로 돌립니다.**
+  호출 경로를 소스에서 뽑으므로 새 주소도 자동으로 따라옵니다.
+- 앱 안에서만 깨지는 것이 있습니다. **브라우저 확인으로 대신하지 마세요** — 에뮬레이터에
+  설치해 눌러봐야 나옵니다(실측: CORS 403, 초대 딥링크 무반응, 탭 복귀 스크롤 복원 실패).
+- 바디 노트·전문가 안내를 바꿨다면 `npm run verify:body-note` — **화면까지 닿는지**도 봅니다.
+  전문가가 쓸 수 있는데 앱에 보여주는 화면이 없던 적이 있습니다.
+- 안내·미션 종류를 늘렸다면 **화면 라벨도 같이** 늘립니다. DB CHECK 와 라벨을 대조합니다.
+- 하루 경계를 바꿨다면 `mebody_service_day()` 를 쓰는 함수를 전부 찾습니다.
+  인덱스·생성 컬럼에는 **넣을 수 없습니다**(IMMUTABLE 이 아닙니다).
+- 법적 문서를 고쳤다면 `npm run verify:legal-docs` — 앱 문구와 웹 문서가 갈라지지 않게 합니다.
+- 검색 노출 문자열을 고쳤다면 `node scripts/build-seo.js` 로 다시 생성하고
+  `npm run verify:seo` 를 돌립니다. HTML 을 손으로 고치면 스키마와 화면이 어긋납니다.
+- 공유 링크 분석 키를 더했다면 `npm run verify:share-freeze` 의 허용 목록에
+  **이유와 함께** 적습니다. 결과 id 는 링크에 실리면 안 됩니다.
+- 탭 셸의 스크롤 동작을 고쳤다면 `npm run verify:flow` — 되돌릴 위치 판정을 직접 봅니다.
+  `scrollTop` 은 소수, `scrollHeight` 는 정수라 끝까지 내린 사람에게만 복원이 죽었습니다.

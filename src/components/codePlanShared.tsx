@@ -1083,69 +1083,6 @@ function ActionDetailOverlay({
   );
 }
 
-/**
- * 코드 플랜 하단의 14일 저니 진입 카드.
- * 코드 플랜 화면과 랜딩 모달이 같은 진입점을 쓰도록 여기서 한 벌만 정의합니다.
- * 진행 중인 저니가 있으면 인트로를 건너뛰고 바로 오늘의 미션으로 보냅니다.
- */
-export function JourneyEntryCard({
-  hasActiveJourney,
-  dayNo,
-  totalDays,
-  onOpen,
-}: {
-  hasActiveJourney: boolean;
-  dayNo?: number;
-  totalDays?: number;
-  onOpen: () => void;
-}) {
-  return (
-    <section
-      style={{
-        borderRadius: '24px',
-        border: `1px solid ${AXIS_GREEN_THEME.borderStrong}`,
-        background: 'linear-gradient(135deg, var(--mebody-s-w96-3, rgba(232,245,238,0.96)) 0%, var(--mebody-s-w98-2, rgba(255,255,255,0.98)) 100%)',
-        padding: '20px 18px',
-      }}
-    >
-      <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--mebody-t-014725, #014725)', marginBottom: '6px' }}>
-        {hasActiveJourney ? `IN PROGRESS · DAY ${dayNo ?? 1} / ${totalDays ?? 14}` : 'NEXT'}
-      </div>
-      <h2 style={{ fontSize: '1.1875rem', fontWeight: 900, color: 'var(--mebody-t-014725, #014725)', marginBottom: '8px' }}>
-        {hasActiveJourney ? '오늘의 내 코드 미션이 준비됐습니다' : '내 코드에 맞는 14일 루틴 시작하기'}
-      </h2>
-      <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--mebody-t-3d6b54, #3D6B54)', wordBreak: 'keep-all', marginBottom: '14px' }}>
-        {hasActiveJourney
-          ? '진행 중인 14일 루틴이 있습니다. 바로 오늘 미션으로 이어집니다.'
-          : '위 공통 스트레칭과 별개로, 내 코드와 관리 우선순위에 맞춘 미션이 하루 한 가지씩 배정됩니다.'}
-      </p>
-      <button
-        type="button"
-        onClick={onOpen}
-        style={{
-          display: 'inline-flex',
-          width: '100%',
-          height: '52px',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          borderRadius: '16px',
-          border: 'none',
-          background: 'linear-gradient(90deg, var(--mebody-s-016b38, #016B38) 0%, var(--mebody-s-014725, #014725) 100%)',
-          color: 'var(--mebody-t-ffffff-2, #ffffff)',
-          fontSize: '0.9375rem',
-          fontWeight: 800,
-          fontFamily: 'inherit',
-          cursor: 'pointer',
-        }}
-      >
-        {hasActiveJourney ? '오늘의 내 코드 미션 하러 가기' : CTA.missionStart}
-        <ChevronRight size={18} />
-      </button>
-    </section>
-  );
-}
-
 function formatClock(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
