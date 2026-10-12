@@ -56,6 +56,7 @@ if (reachable) {
   for (const path of paths) {
     let allow = null
     let status = 0
+    let trace = ''
     try {
       const r = await fetch(`${BASE}${path}`, {
         method: 'OPTIONS',
@@ -68,10 +69,15 @@ if (reachable) {
       })
       status = r.status
       allow = r.headers.get('access-control-allow-origin')
+      // 실패했을 때 Railway 로그와 맞춰 볼 수 있어야 합니다. 시각과 요청 id 가 없으면
+      // "아까는 됐는데" 로 끝나고 원인을 영영 못 찾습니다(2026-10-12 에 실제로 그랬습니다).
+      trace = [new Date().toTimeString().slice(0, 8),
+               r.headers.get('x-railway-request-id'),
+               r.headers.get('x-railway-edge')].filter(Boolean).join(' · ')
     } catch (e) {
       allow = `오류: ${String(e).slice(0, 40)}`
     }
-    ok(`${path}`, allow === APP_ORIGIN, allow === APP_ORIGIN ? '' : `HTTP ${status} · allow-origin=${allow ?? '없음'}`)
+    ok(`${path}`, allow === APP_ORIGIN, allow === APP_ORIGIN ? '' : `HTTP ${status} · allow-origin=${allow ?? '없음'} · ${trace}`)
   }
 
   console.log('\n■ 아무 주소나 열어 주지는 않는가')
