@@ -89,6 +89,52 @@ if (ld) {
   ok('주소가 canonical 도메인과 같다', flat.includes(origin ?? '\u0000'))
 }
 
+console.log('\n■ FAQ — AEO/GEO')
+// FAQPage 스키마의 답이 **화면에 그대로** 있어야 합니다. 없으면 구글이 위반으로 보고
+// 리치 결과를 끕니다. build-seo.js 가 한 배열에서 둘 다 만들지만, 누가 HTML 을 손으로
+// 고치면 어긋날 수 있어 여기서 다시 봅니다.
+const faqLd = (() => {
+  const raw = pick(indexHtml, /<script type="application\/ld\+json">([\s\S]*?)<\/script>/)
+  try { return (JSON.parse(raw) || []).find((x) => x['@type'] === 'FAQPage') } catch { return null }
+})()
+ok('FAQPage 스키마가 있다', Boolean(faqLd))
+if (faqLd) {
+  const qs = faqLd.mainEntity ?? []
+  ok('질문이 5개 이상이다', qs.length >= 5, `${qs.length}개`)
+
+  // 화면 텍스트(태그 제거)에 답이 들어 있는지
+  const visible = indexHtml
+    .replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+  const missing = qs.filter((q) => !visible.includes(q.name) || !visible.includes(q.acceptedAnswer?.text ?? '\u0000'))
+  ok('모든 질문·답이 화면에도 있다', missing.length === 0,
+     missing.slice(0, 2).map((q) => q.name).join(' / '))
+
+  // 이 서비스는 진단하지 않습니다. AI 가 "진단해준다" 로 요약하면 그게 곧 우리 책임입니다.
+  const all = qs.map((q) => `${q.name} ${q.acceptedAnswer?.text ?? ''}`).join(' ')
+  // **부정문은 통과시켜야 합니다.** "진단하지 않습니다" 는 오히려 꼭 있어야 하는 문장입니다.
+  // 그래서 부정 표현을 먼저 걷어낸 뒤 남은 **긍정 주장**만 봅니다.
+  const affirmative = all
+    .replace(/(진단|치료|교정|처방|판독)\s*(을|를)?\s*(하지|해 드리지|하지도)\s*않[^.]*/g, ' ')
+    .replace(/(진단|치료|교정|처방|판독)[^.]{0,12}?(대신하지|포함되지|아닌|아닙니다)[^.]*/g, ' ')
+    .replace(/의료행위가 아닌[^.]*/g, ' ')
+  ok('의료 행위를 한다고 말하지 않는다',
+     !/(진단|치료|교정|처방|완치)(합니다|해 드립니다|해드립니다|해 줍니다|됩니다)/.test(affirmative),
+     (affirmative.match(/(진단|치료|교정|처방|완치)(합니다|해 드립니다|해드립니다|해 줍니다|됩니다)/) ?? [''])[0])
+  ok('의료가 아님을 분명히 적었다', /의료행위가 아닌|진단하지 않습니다|의료 전문가/.test(all))
+
+  // 금액·확률은 바뀝니다. AI 가 옛 숫자를 계속 퍼뜨립니다.
+  ok('금액을 적지 않는다', !/\d{1,3},?\d{0,3}\s*원/.test(all))
+  ok('확률을 적지 않는다', !/\d+\s*%|확률/.test(all))
+
+  // 첫 문장만 떼어가도 말이 되는가 — 앞을 받아야 뜻이 통하는 문장을 거릅니다.
+  const dangling = qs.filter((q) => /^(그것|이것|그건|이건|그는|그래서|하지만)/.test((q.acceptedAnswer?.text ?? '').trim()))
+  ok('답이 앞 문장에 기대지 않는다', dangling.length === 0,
+     dangling.slice(0, 2).map((q) => q.name).join(' / '))
+}
+
 if (CHECK_LIVE && origin) {
   console.log(`\n■ ${origin} 이 실제로 이 사이트를 서빙하는가`)
   // 여기가 핵심입니다. 안 서빙하는 도메인을 canonical 로 걸고 제출하면
