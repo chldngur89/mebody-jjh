@@ -9,7 +9,7 @@
  *   Kakao Developers → 앱 생성 → JavaScript 키 → 플랫폼 Web 에 도메인 등록
  *   → 카카오톡 공유 활성화. 등록하지 않은 도메인에서는 전송이 거부됩니다.
  */
-import { buildShareTitle, buildShareUrl, buildShareDescription, shareBaseUrl, type SharePayload, type ShareOutcome } from './share'
+import { buildShareTitle, buildShareUrl, buildShareDescription, isShareableBodyCode, shareBaseUrl, type SharePayload, type ShareOutcome } from './share'
 import { PRODUCT } from '../theme/copy'
 
 const SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
@@ -105,9 +105,16 @@ export async function shareToKakao(payload: SharePayload): Promise<ShareOutcome>
       content: {
         title: buildShareTitle(payload),
         description: buildShareDescription(payload),
-        // 캐릭터 PNG 는 세로 비율이라 피드에서 잘립니다. 가로 카드(1200×630)를 씁니다.
-        // TODO 코드별 가로 카드 이미지가 생기면 여기만 바꾸면 됩니다.
-        imageUrl: `${shareBaseUrl()}/og-image.png?v=20260909`,
+        // **그 사람의 코드 카드**를 보냅니다.
+        //
+        // 예전에는 공용 og-image 를 보냈습니다. 코드별 카드가 없던 때의 임시 조치였는데,
+        // 카드 16장(1200×630)이 생긴 뒤에도 그대로였습니다. 그러면 "내 코드는 FRRS" 라고
+        // 써 놓고 그림은 남들과 똑같이 나갑니다 — 공유받은 사람이 눌러 볼 이유가 사라집니다.
+        //
+        // 형식이 어긋난 코드면 공용 이미지로 떨어집니다(없는 주소를 보내면 카드가 아예 빕니다).
+        imageUrl: isShareableBodyCode(payload.bodyCode)
+          ? `${shareBaseUrl()}/share-cards/${payload.bodyCode}.png`
+          : `${shareBaseUrl()}/og-image.png?v=20260909`,
         link,
       },
       buttons: [{ title: `나도 ${PRODUCT.codeName} 해보기`, link }],

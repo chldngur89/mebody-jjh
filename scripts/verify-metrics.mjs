@@ -75,6 +75,51 @@ try {
   ok('관리자 → 200', r.status === 200, `status=${r.status}`)
 
   const m = r.body?.data
+  console.log('\n■ 바이럴 퍼널')
+  // **단조를 요구하면 안 됩니다.** 「공유 보냄 → 받은 사람이 링크 엶」은 늘어날 수 있고,
+  // 늘어나는 것이 곧 바이럴입니다(한 번 공유가 여러 명을 데려옴). 보내는 쪽과 받는 쪽은
+  // 서로 다른 세션이라 체인으로 셀 수도 없습니다 — chainedCounts 를 쓰면 2번째 칸부터 0 입니다.
+  const viral = m?.viral
+  ok('바이럴 퍼널이 온다', Array.isArray(viral) && viral.length === 6, `${viral?.length ?? 0}칸`)
+  if (Array.isArray(viral) && viral.length === 6) {
+    const at = (e) => viral.find((x) => x.event === e)
+    const order = ['result_viewed', 'result_share_opened', 'result_share_succeeded',
+                   'shared_link_opened', 'shared_questionnaire_started', 'shared_questionnaire_completed']
+    ok('칸 순서가 보내는 쪽 → 받는 쪽', viral.map((x) => x.event).join(',') === order.join(','),
+       viral.map((x) => x.event).join(','))
+    ok('첫 칸에는 비율이 없다', viral[0].rate == null, String(viral[0].rate))
+
+    // 보내는 쪽(0~2)은 한 세션 안이므로 줄어들어야 합니다.
+    let senderOk = true, where = ''
+    for (let i = 1; i <= 2; i += 1) {
+      if (Number(viral[i].count) > Number(viral[i - 1].count)) {
+        senderOk = false; where = `${viral[i - 1].label}(${viral[i - 1].count}) → ${viral[i].label}(${viral[i].count})`; break
+      }
+    }
+    ok('보내는 쪽은 뒤로 갈수록 줄어든다', senderOk, where)
+
+    // 받는 쪽(3~5)도 한 세션 안입니다.
+    let receiverOk = true; where = ''
+    for (let i = 4; i <= 5; i += 1) {
+      if (Number(viral[i].count) > Number(viral[i - 1].count)) {
+        receiverOk = false; where = `${viral[i - 1].label}(${viral[i - 1].count}) → ${viral[i].label}(${viral[i].count})`; break
+      }
+    }
+    ok('받는 쪽은 뒤로 갈수록 줄어든다', receiverOk, where)
+
+    // 이음매는 **늘어나도 됩니다.** 비율만 제대로 계산되면 됩니다.
+    const k = at('shared_link_opened')
+    ok('바이럴 계수 칸에 비율이 있다', k?.rate !== undefined, `rate=${k?.rate}`)
+    const sent = Number(at('result_share_succeeded').count)
+    if (sent > 0) {
+      const expect = Math.round((Number(k.count) / sent) * 1000) / 10
+      ok('바이럴 계수가 공유 보냄 대비로 계산된다', Math.abs(Number(k.rate) - expect) < 0.2,
+         `${k.rate} vs ${expect}`)
+    } else {
+      ok('공유가 아직 없으면 비율이 null', k.rate == null, String(k.rate))
+    }
+  }
+
   console.log('\n■ 퍼널이 말이 되는가')
   const funnels = [['진단', m?.diagnosis], ['저니', m?.journey], ['수익', m?.revenue], ['전문가', m?.professional]]
   for (const [name, steps] of funnels) {
