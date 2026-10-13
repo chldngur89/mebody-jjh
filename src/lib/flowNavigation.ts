@@ -44,6 +44,13 @@ export function sameFlowPage(a: FlowRoute, b: FlowRoute) {
 
 export function flowUrl(route: FlowRoute, href: string) {
   const url = new URL(href);
+  // 앱은 언제나 `/` 에서 돕니다. 다른 경로로 들어왔으면 주소부터 바로잡습니다.
+  //
+  // 공유 링크가 잘리거나 오타가 나면 `/s/ZZZZ` 같은 주소로 들어옵니다. 그 자리에서
+  // 화면은 정상으로 뜨지만(vercel.json 이 앱으로 보냅니다), 주소를 그대로 두면
+  // **그 뒤의 모든 이동이 `/s/ZZZZ` 아래에서** 일어납니다. 사용자가 그 주소를 다시
+  // 공유하면 깨진 링크가 또 퍼집니다.
+  url.pathname = '/';
   // QA entry parameters must not force a stale screen after a reload.
   url.searchParams.delete('ui');
   url.searchParams.delete('mode');

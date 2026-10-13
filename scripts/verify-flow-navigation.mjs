@@ -20,6 +20,13 @@ check('question changes make distinct browser destinations', () => assert.equal(
 check('past result ID makes a distinct destination', () => assert.equal(sameFlowPage(route, { ...route, resultId: 'older' }), false));
 check('answer update on same question does not add an entry', () => assert.equal(sameFlowPage(route, { ...route }), true));
 check('QA parameter does not override reload; unrelated query preserved', () => assert.equal(flowUrl(route, 'https://example.test/?ui=auth&mode=signup&utm_source=test'), '/?utm_source=test&result=previous-result'));
+// 잘린 공유 링크로 들어와도 주소는 `/` 로 돌아옵니다. 그대로 두면 그 뒤의 모든 이동이
+// 깨진 경로 아래에서 일어나고, 사용자가 그 주소를 다시 공유하면 또 퍼집니다.
+check('broken share path is normalised back to the app root', () =>
+  assert.equal(flowUrl({ screen: 'landing', tab: 'home' }, 'https://example.test/s/ZZZZ'), '/'));
+check('valid share landing keeps ref and code but not the path', () =>
+  assert.equal(flowUrl({ screen: 'landing', tab: 'home', shareCode: 'FRRS' }, 'https://example.test/s/FRRS'),
+    '/?ref=share&code=FRRS'));
 check('result URL removed when destination has no result', () => assert.equal(flowUrl({ screen: 'landing', tab: 'home' }, 'https://example.test/?result=old'), '/'));
 const saved = parseQuestionnaireProgress(JSON.stringify({ index: 4, id: 'diagnosis', draftId: 'draft', answers: { A1: '①', A2: '③', D7: '②' } }));
 check('login/reload preserves answer choices, position and draft', () => assert.deepEqual(saved, { index: 4, id: 'diagnosis', draftId: 'draft', answers: { A1: '①', A2: '③', D7: '②' }, completedResultId: undefined }));

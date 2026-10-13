@@ -154,6 +154,25 @@ if (CHECK_LIVE && origin) {
      parked ? '주차 페이지(공사 중)가 응답합니다 — 아직 제출하지 마세요'
             : status === 200 ? (ours ? 'OK' : '다른 내용이 응답합니다') : `HTTP ${status}`)
 
+  // og:image 가 **진짜 이미지인지** 봅니다.
+  //
+  // 두 번 당했습니다. ① 코드별 공유 페이지의 og:image 가 상대경로여서 크롤러가 아예 못
+  // 가져갔고, ② 홈페이지는 미연결 도메인을 가리켜 주차 페이지의 **HTML** 을 받았습니다.
+  // 둘 다 HTTP 200 이라 상태 코드만 보면 통과합니다. content-type 까지 봐야 합니다.
+  const ogImage = pick(indexHtml, /<meta property="og:image" content="([^"]+)"/)
+  ok('og:image 가 절대주소', Boolean(ogImage && /^https?:\/\//.test(ogImage)), ogImage ?? '없음')
+  if (ogImage && /^https?:\/\//.test(ogImage)) {
+    let type = ''
+    let imgStatus = 0
+    try {
+      const r = await fetch(ogImage, { signal: AbortSignal.timeout(20000) })
+      imgStatus = r.status
+      type = r.headers.get('content-type') ?? ''
+    } catch (e) { type = `오류: ${String(e).slice(0, 40)}` }
+    ok('og:image 가 실제 이미지로 열린다', imgStatus === 200 && /^image\//.test(type),
+       `HTTP ${imgStatus} · ${type || '타입 없음'}${/text\/html/.test(type) ? ' — 이미지가 아니라 페이지가 왔습니다' : ''}`)
+  }
+
   let smStatus = 0
   try {
     const r = await fetch(`${origin}/sitemap.xml`, { signal: AbortSignal.timeout(15000) })
