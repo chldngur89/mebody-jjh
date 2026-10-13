@@ -41,8 +41,12 @@
   ],
   "rewrites": [
     {
-      "source": "/s/:code",
+      "source": "/s/:code([FC][RL][RL][SF])",
       "destination": "/s/:code.html"
+    },
+    {
+      "source": "/s/:path*",
+      "destination": "/index.html"
     }
   ]
 }

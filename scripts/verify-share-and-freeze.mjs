@@ -8,7 +8,7 @@
  * DB 검증은 트랜잭션 안에서 045 를 적용하고 ROLLBACK 합니다.
  * 사용: npm run verify:share-freeze
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import pg from 'pg'
 import { randomUUID } from 'node:crypto'
 
@@ -53,6 +53,66 @@ const params = [...shareSrc.matchAll(/searchParams\.set\('([^']+)'/g)].map((m) =
 ok('공유 URL 파라미터는 ref·code 뿐', params.length === 2 && params.includes('ref') && params.includes('code'), params.join(', '))
 ok('공유 코드에 result id 를 넣지 않는다', !/result|questionnaireId|\.id\b/.test(shareSrc.split('buildShareUrl')[1]?.slice(0, 400) ?? ''))
 ok('몸BTI 코드 형식만 허용', /\^\[FC\]\[RL\]\[RL\]\[SF\]\$/.test(shareSrc))
+
+// ── 1-2. 공유 미리보기가 **실제로 뜨는가** ────────────────────────────────────
+// 카드 16장을 만들어 두고도 미리보기에 아무것도 안 뜬 적이 있습니다(2026-10-13).
+// og:image 가 상대경로였기 때문입니다 — 크롤러는 우리 페이지를 자기 서버에서 긁어가므로
+// 「어느 호스트의 /share-cards 인가」를 알 방법이 없습니다. 카카오톡이 주 공유 경로라
+// 이게 안 되면 바이럴 설계가 통째로 죽습니다.
+console.log('\n■ 코드별 공유 미리보기')
+const codesDir = new URL('../public/s/', import.meta.url).pathname
+const cardsDir = new URL('../public/share-cards/', import.meta.url).pathname
+const pages = readdirSync(codesDir).filter((f) => f.endsWith('.html'))
+ok('코드 16장이 구워져 있다', pages.length === 16, `${pages.length}장`)
+
+const BODY_CODE = /^[FC][RL][RL][SF]$/
+let relativeOg = []
+let missingCard = []
+let noOgUrl = []
+let badCanonical = []
+for (const f of pages) {
+  const code = f.replace(/\.html$/, '')
+  if (!BODY_CODE.test(code)) continue
+  const html = readFileSync(`${codesDir}${f}`, 'utf8')
+  const pick = (re) => (html.match(re) ?? [])[1] ?? ''
+  const img = pick(/<meta property="og:image" content="([^"]+)"/)
+  const tw = pick(/<meta name="twitter:image" content="([^"]+)"/)
+  const ogUrl = pick(/<meta property="og:url" content="([^"]+)"/)
+  const canon = pick(/<link rel="canonical" href="([^"]+)"/)
+  if (!/^https?:\/\//.test(img) || !/^https?:\/\//.test(tw)) relativeOg.push(code)
+  if (!/^https?:\/\//.test(ogUrl)) noOgUrl.push(code)
+  // canonical 은 이 페이지 자신이어야 합니다. ref=share 가 붙은 주소를 적으면
+  // 추적 파라미터가 원본으로 색인됩니다.
+  if (!canon.endsWith(`/s/${code}`)) badCanonical.push(code)
+  if (!existsSync(`${cardsDir}${code}.png`)) missingCard.push(code)
+  if (!html.includes(code)) ok(`${code} 페이지에 코드가 들어 있다`, false)
+}
+ok('og:image·twitter:image 가 절대주소', relativeOg.length === 0, relativeOg.slice(0, 3).join(','))
+ok('og:url 이 절대주소로 있다', noOgUrl.length === 0, noOgUrl.slice(0, 3).join(','))
+ok('canonical 이 공유 페이지 자신을 가리킨다', badCanonical.length === 0, badCanonical.slice(0, 3).join(','))
+ok('코드마다 카드 이미지가 있다', missingCard.length === 0, missingCard.slice(0, 3).join(','))
+
+// 사람이 열면 앱으로 가야 합니다. 크롤러만 og 를 읽고 갑니다.
+const sample = readFileSync(`${codesDir}FRRS.html`, 'utf8')
+ok('사람은 앱으로 넘어간다', /http-equiv="refresh"/.test(sample) && /location\.replace/.test(sample))
+ok('유입 구분 파라미터가 붙는다', /ref=share&code=FRRS/.test(sample))
+
+// ── 1-3. 링크가 잘리거나 오타가 나면 ─────────────────────────────────────────
+// 공유를 받은 사람이 벌거벗은 404 를 보면 거기서 잃습니다.
+console.log('\n■ 잘못된 공유 링크')
+const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url).pathname, 'utf8'))
+const rules = vercel.rewrites ?? []
+const exact = rules.find((r) => /\[FC\]\[RL\]\[RL\]\[SF\]/.test(r.source ?? ''))
+const fallback = rules.find((r) => /^\/s\//.test(r.source ?? '') && (r.destination ?? '').includes('index.html'))
+ok('16가지 코드에만 정적 페이지를 준다', Boolean(exact), exact?.source ?? '규칙 없음')
+ok('그 밖의 /s/* 는 앱 첫 화면으로 보낸다', Boolean(fallback), fallback?.source ?? '규칙 없음 — 404 가 그대로 노출됩니다')
+ok('되돌림 규칙이 정확한 쪽보다 뒤에 있다',
+   Boolean(exact && fallback) && rules.indexOf(exact) < rules.indexOf(fallback),
+   '순서가 바뀌면 정상 코드도 전부 앱으로 떨어집니다')
+
+// 앱은 형식에 안 맞는 코드를 **무시**해야 합니다(없는 친구 결과를 지어내지 않게).
+const appSrc = readFileSync(new URL('../src/App.tsx', import.meta.url).pathname, 'utf8')
+ok('앱도 코드 형식을 검사한다', /isShareableBodyCode\(bootSearchParams\.get\('code'\)\)/.test(appSrc))
 
 const analyticsSrc = readFileSync(new URL('../src/lib/analytics.ts', import.meta.url).pathname, 'utf8')
 const props = [...analyticsSrc.matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1])

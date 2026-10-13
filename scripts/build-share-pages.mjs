@@ -27,6 +27,28 @@ import { dirname } from 'node:path'
 const ROOT = new URL('../', import.meta.url).pathname
 const OUT = `${ROOT}public/s/`
 
+/**
+ * 링크의 기준 주소. **반드시 절대경로여야 합니다.**
+ *
+ * og:image 를 `/share-cards/FRRS.png` 처럼 상대경로로 두면 카카오톡·트위터·페이스북이
+ * 이미지를 못 가져옵니다. 크롤러는 우리 페이지를 자기 서버에서 긁어가므로 "어느 호스트의
+ * /share-cards 인가" 를 알 방법이 없습니다. 카드 16장을 만들어 두고도 미리보기에
+ * 아무것도 안 뜨던 이유입니다(실측 2026-10-13).
+ *
+ * 값은 앱과 **같은 출처**에서 가져옵니다 — lib/publicOrigin.ts. 여기에 베껴 적으면
+ * 도메인을 바꿀 때 한쪽만 바뀝니다.
+ */
+function siteOrigin() {
+  const fromEnv = String(process.env.VITE_PUBLIC_SITE_URL ?? '').trim()
+  if (fromEnv) return fromEnv.replace(/\/+$/, '')
+  const src = readFileSync(`${ROOT}src/lib/publicOrigin.ts`, 'utf8')
+  const m = src.match(/FALLBACK_ORIGIN\s*=\s*'([^']+)'/)
+  if (!m) throw new Error('publicOrigin.ts 에서 FALLBACK_ORIGIN 을 찾지 못했습니다')
+  return m[1].replace(/\/+$/, '')
+}
+
+const ORIGIN = siteOrigin()
+
 /** 캐릭터 이름은 앱과 **같은 출처**에서 읽습니다. 여기에 베껴 적으면 반드시 어긋납니다. */
 function characterNames() {
   const src = readFileSync(`${ROOT}src/utils/bodyCodeCalculator.ts`, 'utf8')
@@ -55,6 +77,10 @@ for (const code of codes) {
   const desc = `자세·체형 셀프 체크로 나온 mebody Code 는 ${code}(${names[code]})입니다. 나의 코드도 확인해보세요.`
   // 사람이 열면 앱으로 보냅니다. ref=share 로 유입을 구분합니다(lib/share.ts 와 같은 값).
   const to = `/?ref=share&code=${code}`
+  const cardUrl = `${ORIGIN}/share-cards/${code}.png`
+  // canonical 은 **이 페이지 자신**입니다. 넘어갈 주소(ref=share 가 붙은)를 적으면
+  // 추적 파라미터가 원본으로 색인됩니다.
+  const self = `${ORIGIN}/s/${code}`
 
   writeFileSync(`${OUT}${code}.html`, `<!doctype html>
 <html lang="ko">
@@ -65,19 +91,21 @@ for (const code of codes) {
     <meta name="description" content="${esc(desc)}" />
     <!-- 사람은 바로 앱으로. 크롤러는 아래 og 태그만 읽고 갑니다. -->
     <meta http-equiv="refresh" content="0; url=${to}" />
-    <link rel="canonical" href="${to}" />
+    <link rel="canonical" href="${self}" />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="${self}" />
     <meta property="og:site_name" content="mebody" />
     <meta property="og:locale" content="ko_KR" />
     <meta property="og:title" content="${esc(title)}" />
     <meta property="og:description" content="${esc(desc)}" />
-    <meta property="og:image" content="/share-cards/${code}.png" />
+    <meta property="og:image" content="${cardUrl}" />
+    <meta property="og:image:alt" content="${esc(`${code} ${names[code]} mebody Code 카드`)}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${esc(title)}" />
     <meta name="twitter:description" content="${esc(desc)}" />
-    <meta name="twitter:image" content="/share-cards/${code}.png" />
+    <meta name="twitter:image" content="${cardUrl}" />
     <script>location.replace(${JSON.stringify(to)})</script>
   </head>
   <body>
@@ -88,4 +116,4 @@ for (const code of codes) {
   made += 1
 }
 
-console.log(`[build-share-pages] 공유 페이지 ${made}장 → public/s/<CODE>.html`)
+console.log(`[build-share-pages] 공유 페이지 ${made}장 → public/s/<CODE>.html  (기준 주소 ${ORIGIN})`)
