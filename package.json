@@ -1,6 +1,6 @@
 {
   "name": "mebody",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
