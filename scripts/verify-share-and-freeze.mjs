@@ -97,6 +97,19 @@ const sample = readFileSync(`${codesDir}FRRS.html`, 'utf8')
 ok('사람은 앱으로 넘어간다', /http-equiv="refresh"/.test(sample) && /location\.replace/.test(sample))
 ok('유입 구분 파라미터가 붙는다', /ref=share&code=FRRS/.test(sample))
 
+// ── 1-2-2. 이미지로 공유해도 **돌아올 길**이 있는가 ──────────────────────────
+// 가장 많이 눌리는 버튼이 「카드 이미지 저장·공유」입니다. 그런데 files·title·text 만
+// 보내고 있어서, 받은 사람이 **그림 한 장**만 받았습니다. 마음에 들어도 들어올 방법이
+// 없으면 바이럴은 거기서 끊깁니다(실측 2026-10-14).
+console.log('\n■ 이미지 공유에 링크가 붙는가')
+const cardSrc = readFileSync(new URL('../src/lib/shareCardImage.ts', import.meta.url).pathname, 'utf8')
+const imageShare = cardSrc.split('shareShareCardImage')[1] ?? ''
+ok('공유 본문에 링크를 넣는다', /buildShareUrl\(/.test(imageShare))
+ok('navigator.share 에 url 을 넘긴다', /url:\s*link/.test(imageShare))
+// 앨범에 저장하거나 캡처해서 전달하면 링크가 따라가지 않습니다. 그림 자체에 주소가 있어야 합니다.
+ok('카드 그림에 주소를 그린다', /fillText\(\s*shareBaseUrl\(\)/.test(cardSrc),
+   '저장·캡처 전달에는 링크가 따라가지 않습니다')
+
 // ── 1-3. 링크가 잘리거나 오타가 나면 ─────────────────────────────────────────
 // 공유를 받은 사람이 벌거벗은 404 를 보면 거기서 잃습니다.
 console.log('\n■ 잘못된 공유 링크')

@@ -4,7 +4,7 @@
  */
 import { PRODUCT } from '../theme/copy'
 import { getCharacterStorageUrl } from '../utils/characterImages'
-import type { SharePayload } from './share'
+import { buildShareUrl, shareBaseUrl, type SharePayload } from './share'
 
 const W = 1080
 const H = 1350
@@ -179,7 +179,16 @@ export async function renderShareCardBlob(payload: SharePayload): Promise<Blob |
   ctx.textAlign = 'center'
   ctx.fillStyle = '#6F8C7B'
   ctx.font = `600 28px ${FONT}`
-  ctx.fillText(PRODUCT.codeWithGuide, W / 2, H - 120)
+  ctx.fillText(PRODUCT.codeWithGuide, W / 2, H - 140)
+
+  // **주소를 그려 넣습니다.**
+  //
+  // 이미지로 공유하면 링크가 따라가지 않는 경우가 많습니다(앨범 저장, 캡처 후 전달,
+  // files 만 받는 앱). 그러면 받은 사람이 카드를 보고도 **돌아올 길이 없습니다.**
+  // 그림 안에 주소가 있으면 적어도 쳐서 들어올 수 있습니다.
+  ctx.fillStyle = '#014725'
+  ctx.font = `800 30px ${FONT}`
+  ctx.fillText(shareBaseUrl().replace(/^https?:\/\//, ''), W / 2, H - 88)
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png')
@@ -207,12 +216,23 @@ export async function shareShareCardImage(payload: SharePayload): Promise<'share
   const file = new File([blob], `mebody-${payload.bodyCode}.png`, { type: 'image/png' })
   const nav = typeof navigator !== 'undefined' ? navigator : null
 
+  // **링크를 반드시 같이 보냅니다.**
+  //
+  // 예전에는 files·title·text 만 보냈습니다. 그래서 가장 많이 눌리는 버튼(카드 이미지
+  // 공유)으로 나간 공유가 **돌아올 길 없는 그림 한 장**이었습니다. 받은 사람이 마음에
+  // 들어도 들어올 방법이 없습니다 — 바이럴이 거기서 끊깁니다.
+  //
+  // url 필드는 파일을 함께 보낼 때 무시하는 앱이 많아서 **본문에도 한 줄 넣습니다.**
+  const link = buildShareUrl(payload.bodyCode)
+  const body = `${payload.shareDescription || payload.summaryLine || ''}\n${link}`.trim()
+
   if (nav && typeof nav.canShare === 'function' && nav.canShare({ files: [file] }) && typeof nav.share === 'function') {
     try {
       await nav.share({
         files: [file],
         title: payload.shareTitle || `내 ${PRODUCT.codeName}`,
-        text: payload.shareDescription || payload.summaryLine,
+        text: body,
+        url: link,
       })
       return 'shared'
     } catch (error) {
