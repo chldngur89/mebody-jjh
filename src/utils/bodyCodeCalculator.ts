@@ -7,7 +7,7 @@
  * - 강화 규칙은 점수 변경 없이 scoringMeta에 반영 (⑭)
  */
 
-import { V1_CHOICE_SCORE_MAP, type V1AxisKey, type V1Choice } from '../data/v1ScoreMapping'
+import { V1_CHOICE_SCORE_MAP, type V1AxisKey, type V1Choice } from '../data/v1ScoreMapping.ts'
 
 export type AnswerValue = string | string[]
 export type AnswerMap = Record<string, AnswerValue>
@@ -431,6 +431,25 @@ export function getAxisScoreBreakdown(answers: AnswerMap, _scoringQuestions?: Sc
   }
 
   return out
+}
+
+/**
+ * **어느 쪽인지 정해지지 않은 축.**
+ *
+ * 축 점수가 완전 동점이면 `resolveAxisWinner` 가 앵커 비교까지 해 보고, 그래도 같으면
+ * 각 축의 첫 글자(F/R/R/S)를 그대로 돌려줍니다. 즉 **아무것도 정해지지 않아도
+ * 코드 문자열은 FRRS 가 나옵니다.** 전 문항 ② 가 정확히 그 경우입니다.
+ *
+ * 그 상태를 화면이 말해주지 않으면, 앱이 확인하지 못한 것을 확인한 것처럼 보여주게 됩니다.
+ * 코드 문자열은 바꾸지 않고(저장·공유·콘텐츠가 전부 여기 묶여 있습니다) **어느 축이
+ * 또렷하지 않았는지만** 따로 알려주기 위한 함수입니다.
+ */
+export function getUndeterminedAxes(answers: AnswerMap): AxisKey[] {
+  const result = calculateBodyCode(answers)
+  return AXIS_ORDER.filter((axis) => {
+    const d = result.axisDetails?.[axis]
+    return Boolean(d?.tie || d?.mixed)
+  })
 }
 
 /** 결과 화면 호환: 답변 map에서 축별 비율 추정 */

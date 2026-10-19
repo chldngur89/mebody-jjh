@@ -165,9 +165,17 @@ export function ResultShareCard({
           wordBreak: 'keep-all',
         }}
       >
-        카드 이미지로 보내거나, 링크로 앱에 초대할 수 있어요
+        {/*
+          둘이 담는 것이 **다릅니다.** 예전에는 한 줄로 「개인 점수·응답은 포함되지 않아요」라고
+          적어 뒀는데, 바로 아래 버튼이 보내는 카드 이미지에는 **내 4축 막대 위치가 그려집니다.**
+          링크 기준으로는 맞는 말이지만 이미지 기준으로는 사실이 아닙니다.
+          화면은 시스템이 보장할 수 있는 것만 말해야 하므로 두 경로를 나눠 적습니다.
+        */}
+        <span style={{ fontWeight: 600 }}>링크</span>로 보내면 코드와 캐릭터만 전해져요.
         <br />
-        <span style={{ fontWeight: 600 }}>개인 점수·응답은 포함되지 않아요</span>
+        <span style={{ fontWeight: 600 }}>카드 이미지</span>에는 내 4축 결과가 함께 그려져요.
+        <br />
+        어느 쪽이든 문항별 답변은 보내지 않아요.
       </p>
 
       <CTA onClick={() => void run('image')} disabled={busy !== null} style={{ marginTop: '14px' }}>

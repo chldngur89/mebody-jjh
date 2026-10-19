@@ -23,7 +23,7 @@ import { PRODUCT } from '../../theme/copy';
 import { fetchRewardBalance } from '../../api/journey';
 import { previewRewardUse } from '../../api/orders';
 import { SUPABASE_STORAGE_PUBLIC, supabase } from '../../lib/supabase';
-import { characterNames, getAxisScoreBreakdown } from '../../utils/bodyCodeCalculator';
+import { characterNames, getAxisScoreBreakdown, getUndeterminedAxes } from '../../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../../utils/characterImages';
 
 export type AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility';
@@ -374,6 +374,8 @@ export interface ResultData {
   oneLineAction: string;
   recommendedStartMinutes: number;
   axisRows: AxisRow[];
+  /** 동점이라 방향이 정해지지 않은 축. 비어 있으면 모두 또렷합니다. */
+  undeterminedAxes: AxisKey[];
   axisDetails: Array<{ key: AxisKey; code: string; title: string; description: string }>;
   /** 각 축을 가장 크게 가른 내 답변. "왜 이 코드인지" 를 보여주는 데 씁니다. */
   axisReasons: Record<AxisKey, Array<{ questionCode: string; summary: string; side: 'left' | 'right' }>>;
@@ -530,6 +532,11 @@ export function useResultData(
   const characterName = content?.character_name || characterNames[bodyCode] || `나의 ${PRODUCT.codeName}`;
   const characterImage = resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls);
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
+  /** 어느 쪽인지 정해지지 않은 축. 코드 문자열에는 드러나지 않습니다(계산기 주석 참고). */
+  const undeterminedAxes = useMemo(
+    () => (result?.answers ? getUndeterminedAxes(result.answers) : []),
+    [result?.answers],
+  );
   const identityTitle = content?.identity_title?.trim() || null;
   const identityKeywords = asStringList(content?.identity_keywords);
   const shareTitle = content?.share_title?.trim() || null;
@@ -611,6 +618,6 @@ export function useResultData(
     isLoading, error, errorKind, result, content, bodyCode, characterName, characterImage,
     identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
     strategyTitle, strategySummary, journeyTitle, oneLineAction, recommendedStartMinutes,
-    axisRows, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
+    axisRows, undeterminedAxes, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
   };
 }

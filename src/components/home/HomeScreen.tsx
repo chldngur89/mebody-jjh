@@ -6,6 +6,11 @@ import { ChevronDown, ChevronRight, ChevronUp, ExternalLink } from 'lucide-react
 import { AdSlot } from '../AdSlot';
 import { AxisTrack, Card, CTA, Chip, DirectionCard, PageTitle, SectionHeading } from '../ui';
 import { BRAND, SURFACE } from '../../theme/brand';
+
+/** 안내 문구에 쓰는 축 이름. 「목 위치」가 아니라 「목」으로 짧게 적습니다. */
+const AXIS_SHORT_LABEL: Record<string, string> = {
+  neck: '목', shoulder: '어깨', pelvis: '골반', flexibility: '하체',
+};
 import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl, preloadCharacterImage } from '../../utils/characterImages';
 import { ResultShareCard } from './ResultShareCard';
@@ -345,6 +350,40 @@ export function HomeScreen({
                   );
                 })}
               </div>
+
+              {/*
+                **정해지지 않은 축은 정해지지 않았다고 말합니다.**
+
+                축 점수가 완전 동점이면 계산기는 각 축의 첫 글자(F/R/R/S)를 그대로 돌려줍니다.
+                그래서 아무것도 확인되지 않아도 코드 문자열은 FRRS 가 나옵니다 — 전 문항 ②가
+                정확히 그 경우입니다. 그 상태를 화면이 말해주지 않으면 **앱이 확인하지 못한 것을
+                확인한 것처럼** 보여주게 됩니다.
+
+                겁주지 않습니다. 틀렸다고도 하지 않습니다. 또렷하지 않았다는 사실과,
+                다시 해보면 달라질 수 있다는 것만 적습니다.
+              */}
+              {data.undeterminedAxes.length > 0 && (
+                <p
+                  style={{
+                    margin: '14px 0 0',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--mebody-r-md, 16px)',
+                    background: SURFACE.subtle,
+                    fontSize: '0.75rem',
+                    lineHeight: 1.6,
+                    color: BRAND.muted,
+                    wordBreak: 'keep-all',
+                  }}
+                >
+                  {data.undeterminedAxes.length === 4
+                    ? '이번에는 네 축 모두 어느 쪽인지 또렷하지 않았어요. '
+                    : `${data.undeterminedAxes
+                        .map((key) => AXIS_SHORT_LABEL[key])
+                        .join('·')} 축은 어느 쪽인지 또렷하지 않았어요. `}
+                  막대가 가운데에 가까운 것이 그 뜻입니다. 거울이나 사진을 보면서 다시 체크하면
+                  결과가 달라질 수 있어요.
+                </p>
+              )}
             </div>
           )}
 

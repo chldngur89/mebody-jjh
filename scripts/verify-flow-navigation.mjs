@@ -4,6 +4,8 @@ import { parseQuestionnaireProgress } from '../src/lib/questionnaireProgress.ts'
 import { parseTimerProgress } from '../src/lib/timerProgress.ts';
 import { withDeadline } from '../src/lib/deadline.ts';
 import { scrollRestoreTarget } from '../src/lib/scrollRestore.ts';
+import { calculateBodyCode, getUndeterminedAxes } from '../src/utils/bodyCodeCalculator.ts';
+import { V1_QUESTIONS_SNAPSHOT } from '../src/data/v1QuestionsSnapshot.ts';
 
 let checks = 0;
 const check = (name, fn) => { fn(); checks++; console.log(`PASS ${name}`); };
@@ -51,6 +53,22 @@ check('nothing saved goes to the top', () =>
   assert.equal(scrollRestoreTarget(3182, 744, 0), 0));
 check('unscrollable page never claims a position', () =>
   assert.equal(scrollRestoreTarget(744, 744, 100), null));
+
+// 정해지지 않은 축을 정해진 것처럼 보여주지 않는가.
+//
+// 축 점수가 완전 동점이면 계산기는 각 축의 첫 글자(F/R/R/S)를 그대로 돌려줍니다.
+// 그래서 **아무것도 확인되지 않아도 코드 문자열은 FRRS** 가 나옵니다. 화면이 그 사실을
+// 말해주지 않으면 앱이 확인하지 못한 것을 확인한 것처럼 보여주게 됩니다.
+const QCODES = V1_QUESTIONS_SNAPSHOT.map((q) => q.question_code);
+const everyAnswer = (choice) => Object.fromEntries(QCODES.map((k) => [k, choice]));
+check('all-neutral answers still produce the FRRS fallback string', () =>
+  assert.equal(calculateBodyCode(everyAnswer('②')).code, 'FRRS'));
+check('all-neutral answers mark every axis undetermined', () =>
+  assert.deepEqual(getUndeterminedAxes(everyAnswer('②')), ['neck', 'shoulder', 'pelvis', 'flexibility']));
+check('decisive answers leave no axis undetermined', () => {
+  assert.deepEqual(getUndeterminedAxes(everyAnswer('①')), []);
+  assert.deepEqual(getUndeterminedAxes(everyAnswer('③')), []);
+});
 
 const controller = new AbortController();
 await assert.rejects(withDeadline(() => new Promise(() => {}), controller, 10));

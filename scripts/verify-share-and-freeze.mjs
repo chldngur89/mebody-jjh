@@ -110,6 +110,27 @@ ok('navigator.share 에 url 을 넘긴다', /url:\s*link/.test(imageShare))
 ok('카드 그림에 주소를 그린다', /fillText\(\s*shareBaseUrl\(\)/.test(cardSrc),
    '저장·캡처 전달에는 링크가 따라가지 않습니다')
 
+// ── 1-2-3. 공유 안내가 **사실과 맞는가** ─────────────────────────────────────
+// 「개인 점수·응답은 포함되지 않아요」 한 줄이 두 버튼 위에 걸려 있었습니다. 링크 기준으로는
+// 맞지만 바로 아래 버튼이 보내는 카드 이미지에는 **내 4축 막대 위치가 그려집니다.**
+// 화면은 시스템이 보장할 수 있는 것만 말해야 합니다.
+console.log('\n■ 공유 안내 문구')
+const shareUiRaw = readFileSync(new URL('../src/components/home/ResultShareCard.tsx', import.meta.url).pathname, 'utf8')
+// 주석은 뺍니다 — 왜 바꿨는지 적어 둔 설명이 옛 문구를 인용하고 있어서,
+// 그대로 보면 자기 자신의 주석에 걸립니다.
+const shareUi = shareUiRaw
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/^\s*\/\/.*$/gm, ' ')
+const cardDraws = /const axes = payload\.axes/.test(cardSrc)
+ok('카드 이미지가 4축을 그린다(전제 확인)', cardDraws)
+ok('「개인 점수·응답은 포함되지 않아요」로 뭉뚱그리지 않는다',
+   !/개인 점수·응답은 포함되지 않아요/.test(shareUi),
+   '이미지 공유에는 4축이 들어갑니다')
+ok('링크와 카드 이미지를 나눠 설명한다',
+   /링크<\/span>로 보내면/.test(shareUi) && /카드 이미지<\/span>에는/.test(shareUi))
+ok('문항별 답변은 안 나간다고만 말한다', /문항별 답변은 보내지 않아요/.test(shareUi))
+
 // ── 1-3. 링크가 잘리거나 오타가 나면 ─────────────────────────────────────────
 // 공유를 받은 사람이 벌거벗은 404 를 보면 거기서 잃습니다.
 console.log('\n■ 잘못된 공유 링크')
