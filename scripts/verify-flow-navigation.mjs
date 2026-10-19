@@ -4,7 +4,7 @@ import { parseQuestionnaireProgress } from '../src/lib/questionnaireProgress.ts'
 import { parseTimerProgress } from '../src/lib/timerProgress.ts';
 import { withDeadline } from '../src/lib/deadline.ts';
 import { scrollRestoreTarget } from '../src/lib/scrollRestore.ts';
-import { calculateBodyCode, getUndeterminedAxes } from '../src/utils/bodyCodeCalculator.ts';
+import { AXIS_SIDES, calculateBodyCode, characterNames, getAxisScoreBreakdown, getUndeterminedAxes } from '../src/utils/bodyCodeCalculator.ts';
 import { V1_QUESTIONS_SNAPSHOT } from '../src/data/v1QuestionsSnapshot.ts';
 
 let checks = 0;
@@ -68,6 +68,62 @@ check('all-neutral answers mark every axis undetermined', () =>
 check('decisive answers leave no axis undetermined', () => {
   assert.deepEqual(getUndeterminedAxes(everyAnswer('①')), []);
   assert.deepEqual(getUndeterminedAxes(everyAnswer('③')), []);
+});
+
+// ── 코드가 제대로·일관되게 나오는가 ─────────────────────────────────────────
+// 사용자가 문항을 다 누르면 **같은 답이면 늘 같은 코드**가 나오고, 화면의 축 막대와
+// 코드 글자가 서로 어긋나지 않아야 합니다. 둘 중 하나라도 흔들리면 결과를 믿을 수 없습니다.
+const CHOICES = ['①', '②', '③'];
+/** 재현 가능한 난수 — 실패했을 때 같은 입력을 다시 만들 수 있어야 합니다. */
+const seeded = (seed) => { let s = seed; return () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648; };
+const answersFrom = (rand) => Object.fromEntries(QCODES.map((k) => [k, CHOICES[Math.floor(rand() * 3)]]));
+
+check('same answers always produce the same code', () => {
+  const rand = seeded(7);
+  for (let i = 0; i < 120; i += 1) {
+    const a = answersFrom(rand);
+    const first = calculateBodyCode(a).code;
+    assert.equal(calculateBodyCode(a).code, first);
+    assert.equal(calculateBodyCode(a).code, first);
+  }
+});
+
+check('every code is a valid four-letter body code', () => {
+  const rand = seeded(555);
+  for (let i = 0; i < 500; i += 1) {
+    assert.match(calculateBodyCode(answersFrom(rand)).code, /^[FC][RL][RL][SF]$/);
+  }
+});
+
+check('code letters never contradict the axis bars on screen', () => {
+  const AXES = ['neck', 'shoulder', 'pelvis', 'flexibility'];
+  const rand = seeded(99);
+  for (let i = 0; i < 400; i += 1) {
+    const a = answersFrom(rand);
+    const { code } = calculateBodyCode(a);
+    const pct = getAxisScoreBreakdown(a);
+    const undecided = new Set(getUndeterminedAxes(a));
+    AXES.forEach((axis, idx) => {
+      if (undecided.has(axis)) return;        // 동점은 막대가 가운데 — 화면이 따로 알립니다
+      const { a: sideA, b: sideB } = AXIS_SIDES[axis];
+      const p = pct[axis];
+      if (p.percentLeft === p.percentRight) return;
+      // 하체만 표시 좌/우가 뒤집혀 있습니다(labelLeft=Flexible=sideB).
+      const leftSide = axis === 'flexibility' ? sideB : sideA;
+      const rightSide = axis === 'flexibility' ? sideA : sideB;
+      const dominant = p.percentLeft > p.percentRight ? leftSide : rightSide;
+      assert.equal(dominant, code[idx], `${axis}: 막대는 ${dominant} 인데 코드는 ${code[idx]}`);
+    });
+  }
+});
+
+check('all sixteen codes are reachable and every one has a character name', () => {
+  const seen = new Set();
+  const rand = seeded(2024);
+  for (let i = 0; i < 20000 && seen.size < 16; i += 1) seen.add(calculateBodyCode(answersFrom(rand)).code);
+  assert.equal(seen.size, 16);
+  for (const code of Object.keys(characterNames)) assert.ok(characterNames[code], `${code} 이름 없음`);
+  assert.equal(Object.keys(characterNames).length, 16);
 });
 
 const controller = new AbortController();

@@ -131,6 +131,42 @@ ok('링크와 카드 이미지를 나눠 설명한다',
    /링크<\/span>로 보내면/.test(shareUi) && /카드 이미지<\/span>에는/.test(shareUi))
 ok('문항별 답변은 안 나간다고만 말한다', /문항별 답변은 보내지 않아요/.test(shareUi))
 
+// ── 1-2-4. 캐릭터 그림 16장이 살아 있는가 ────────────────────────────────────
+// 그림은 저장소가 아니라 Supabase Storage 에 있습니다. 코드로는 안 보이므로 여기서 확인합니다.
+// 한 장이라도 없으면 그 코드가 나온 사람의 결과 화면과 공유 카드에 그림이 빠집니다.
+console.log('\n■ 캐릭터 그림')
+const calcSrc = readFileSync(new URL('../src/utils/bodyCodeCalculator.ts', import.meta.url).pathname, 'utf8')
+const nameBlock = calcSrc.match(/export const characterNames[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+const allCodes = [...nameBlock.matchAll(/([A-Z]{4}):\s*'([^']+)'/g)].map((m) => m[1])
+ok('코드 16개를 읽었다', allCodes.length === 16, `${allCodes.length}개`)
+
+// 앱 쪽 .env.local 에서 Supabase 주소를 읽습니다(서버 .env 에는 없습니다).
+const appEnv = {}
+try {
+  for (const l of readFileSync(new URL('../.env.local', import.meta.url).pathname, 'utf8').split('\n')) {
+    const t = l.trim(); if (!t || t.startsWith('#')) continue
+    const i = t.indexOf('='); if (i > 0) appEnv[t.slice(0, i)] = t.slice(i + 1)
+  }
+} catch { /* 없으면 아래에서 건너뜁니다 */ }
+const storageBase = appEnv.VITE_SUPABASE_URL
+  ? `${appEnv.VITE_SUPABASE_URL.replace(/\/+$/, '')}/storage/v1/object/public/images`
+  : null
+if (!storageBase) {
+  console.log('  주의  VITE_SUPABASE_URL 이 없어 그림 확인을 건너뜁니다')
+} else {
+  const missing = []
+  for (const code of allCodes) {
+    try {
+      const r = await fetch(`${storageBase}/characters/${code}.png`, { method: 'HEAD', signal: AbortSignal.timeout(20000) })
+      const type = r.headers.get('content-type') ?? ''
+      if (r.status !== 200 || !/^image\//.test(type)) missing.push(`${code}(${r.status} ${type || '타입없음'})`)
+    } catch (e) {
+      missing.push(`${code}(${String(e).slice(0, 24)})`)
+    }
+  }
+  ok('코드마다 캐릭터 그림이 있다', missing.length === 0, missing.slice(0, 3).join(', '))
+}
+
 // ── 1-3. 링크가 잘리거나 오타가 나면 ─────────────────────────────────────────
 // 공유를 받은 사람이 벌거벗은 404 를 보면 거기서 잃습니다.
 console.log('\n■ 잘못된 공유 링크')
