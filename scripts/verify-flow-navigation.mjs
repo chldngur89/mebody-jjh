@@ -4,7 +4,8 @@ import { parseQuestionnaireProgress } from '../src/lib/questionnaireProgress.ts'
 import { parseTimerProgress } from '../src/lib/timerProgress.ts';
 import { withDeadline } from '../src/lib/deadline.ts';
 import { scrollRestoreTarget } from '../src/lib/scrollRestore.ts';
-import { AXIS_SIDES, calculateBodyCode, characterNames, getAxisScoreBreakdown, getUndeterminedAxes } from '../src/utils/bodyCodeCalculator.ts';
+import { AXIS_SIDES, calculateBodyCode, characterNames, getAxisScoreBreakdown, getResultCertainty, getUndeterminedAxes, resultHeadlinePlan } from '../src/utils/bodyCodeCalculator.ts';
+import { readFileSync } from 'node:fs';
 import { V1_QUESTIONS_SNAPSHOT } from '../src/data/v1QuestionsSnapshot.ts';
 
 let checks = 0;
@@ -69,6 +70,105 @@ check('decisive answers leave no axis undetermined', () => {
   assert.deepEqual(getUndeterminedAxes(everyAnswer('①')), []);
   assert.deepEqual(getUndeterminedAxes(everyAnswer('③')), []);
 });
+
+// ── 동점이 화면에 드러나는가 ─────────────────────────────────────────────────
+// 「못 정했다」·「근거가 얇다」·「박빙이다」는 **서로 다른 말**입니다. 한 덩어리로 묶으면
+// 정작 새 정보를 담은 줄까지 같이 흘려보게 됩니다. 셋을 갈라 두는지 여기서 지킵니다.
+const AXES4 = ['neck', 'shoulder', 'pelvis', 'flexibility'];
+/** 재현 가능한 난수 — 실패했을 때 같은 입력을 다시 만들 수 있어야 합니다. */
+const seededCertainty = (seed) => { let s = seed; return () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648; };
+const answersFromCertainty = (rand) =>
+  Object.fromEntries(QCODES.map((k) => [k, ['①', '②', '③'][Math.floor(rand() * 3)]]));
+
+check('전 문항 ② — 네 축 전부 "정하지 못함", 근거 얇음과 섞이지 않는다', () => {
+  const c = getResultCertainty(everyAnswer('②'));
+  assert.deepEqual(c.undetermined, AXES4);
+  assert.deepEqual(c.thinEvidence, []);
+  assert.equal(c.nothingDetermined, true);
+  assert.equal(c.level, 'none');
+});
+
+check('무응답도 같은 자리 — 코드는 FRRS 지만 확인된 것은 없다', () => {
+  assert.equal(calculateBodyCode({}).code, 'FRRS');
+  assert.equal(getResultCertainty({}).nothingDetermined, true);
+});
+
+check('전 문항 ①·③ — 네 축 전부 또렷하다(회귀 방지)', () => {
+  for (const choice of ['①', '③']) {
+    const c = getResultCertainty(everyAnswer(choice));
+    assert.deepEqual(c.undetermined, []);
+    assert.deepEqual(c.thinEvidence, []);
+    assert.equal(c.level, 'clear');
+  }
+});
+
+check('세 가지가 서로 겹치지 않는다', () => {
+  const rand = seededCertainty(31);
+  for (let i = 0; i < 600; i += 1) {
+    const c = getResultCertainty(answersFromCertainty(rand));
+    for (const axis of AXES4) {
+      const bucket = [c.undetermined, c.thinEvidence, c.closeCall].filter((list) => list.includes(axis));
+      assert.ok(bucket.length <= 1, `${axis}: ${bucket.length}곳에 동시에 들어갔습니다`);
+    }
+    assert.equal(c.undetermined.length + c.thinEvidence.length + AXES4.filter((a) => c.byAxis[a] === 'clear').length, 4);
+  }
+});
+
+// 근거가 얇은 축은 막대가 **가장 세게 기울어 보입니다**(2:0 → 100%). 동점과 같은 줄에
+// 묶으면 "가운데에 가깝다" 는 설명이 붙는데, 화면에는 정반대로 그려집니다.
+check('근거가 얇은 축은 막대가 한쪽 끝으로 그려진다 — 동점과 다른 말이다', () => {
+  const rand = seededCertainty(1234);
+  let seen = 0;
+  for (let i = 0; i < 4000 && seen < 20; i += 1) {
+    const a = answersFromCertainty(rand);
+    const c = getResultCertainty(a);
+    if (!c.thinEvidence.length) continue;
+    const pct = getAxisScoreBreakdown(a);
+    for (const axis of c.thinEvidence) {
+      const { percentLeft, percentRight } = pct[axis];
+      assert.notEqual(percentLeft, percentRight, `${axis}: 얇은 근거인데 막대가 가운데입니다`);
+      seen += 1;
+    }
+  }
+  assert.ok(seen >= 20, `표본 ${seen}개 — 근거 얇은 축을 충분히 못 만났습니다`);
+});
+
+// ── 화면이 그 상태를 그대로 말하는가 ─────────────────────────────────────────
+// 분기를 JSX 안에만 두면 눈으로만 확인됩니다. 화면과 여기가 **같은 함수**를 봅니다.
+check('전 문항 ② — 머리글이 유형 설명을 내린다', () =>
+  assert.deepEqual(resultHeadlinePlan(getResultCertainty(everyAnswer('②'))), { kind: 'undetermined' }));
+check('전 문항 ① — 머리글은 지금처럼 유형 설명 그대로(회귀 방지)', () =>
+  assert.deepEqual(resultHeadlinePlan(getResultCertainty(everyAnswer('①'))), { kind: 'type' }));
+check('일부 축만 동점이면 유형 설명은 남기고 한 줄만 덧붙인다', () => {
+  const rand = seededCertainty(808);
+  let found = null;
+  for (let i = 0; i < 4000 && !found; i += 1) {
+    const c = getResultCertainty(answersFromCertainty(rand));
+    if (c.undetermined.length > 0 && !c.nothingDetermined) found = c;
+  }
+  assert.ok(found, '일부만 동점인 표본을 못 만들었습니다');
+  assert.deepEqual(resultHeadlinePlan(found), { kind: 'type-hedged', undetermined: found.undetermined });
+});
+check('응답을 아직 못 읽었을 때 "또렷하다"로 넘어가지 않는다', () =>
+  assert.equal(resultHeadlinePlan(null).kind, 'type'));
+
+// 홈 화면이 그 분기를 **실제로 따르는가**. 주석은 뺍니다 — 왜 바꿨는지 적어 둔 설명이
+// 옛 문구와 분기 이름을 인용하고 있어서, 그대로 보면 자기 주석에 걸립니다.
+const homeSrc = readFileSync(new URL('../src/components/home/HomeScreen.tsx', import.meta.url).pathname, 'utf8')
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/^\s*\/\/.*$/gm, ' ');
+check('홈이 머리글 분기를 계산기에서 받아 쓴다', () =>
+  assert.match(homeSrc, /const headline = resultHeadlinePlan\(certainty\)/));
+check('단정형 유형 설명이 "정하지 못함" 분기 밖에만 있다', () => {
+  const branch = homeSrc.indexOf("headline.kind === 'undetermined' ?");
+  const summary = homeSrc.indexOf('{data.summaryLine}', branch);
+  const elseArm = homeSrc.indexOf(') : (', branch);
+  assert.ok(branch > 0 && elseArm > branch, '머리글 분기를 못 찾았습니다');
+  assert.ok(summary > elseArm, 'identity_summary 가 또렷하지 않을 때도 그대로 나옵니다');
+});
+check('또렷하지 않을 때 화면이 재측정을 권한다', () =>
+  assert.match(homeSrc, /다시 체크하면 결과가 달라질 수 있어요/));
 
 // ── 코드가 제대로·일관되게 나오는가 ─────────────────────────────────────────
 // 사용자가 문항을 다 누르면 **같은 답이면 늘 같은 코드**가 나오고, 화면의 축 막대와

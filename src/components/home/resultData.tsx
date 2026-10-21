@@ -369,8 +369,11 @@ export interface ResultData {
   oneLineAction: string;
   recommendedStartMinutes: number;
   axisRows: AxisRow[];
-  /** 동점이라 방향이 정해지지 않은 축. 비어 있으면 모두 또렷합니다. */
-  undeterminedAxes: AxisKey[];
+  /**
+   * 무엇을 확인했고 무엇을 확인하지 못했는가.
+   * 응답을 아직 못 읽었으면 null — 「또렷하다」가 아니라 「모른다」 입니다.
+   */
+  certainty: ResultCertainty | null;
   axisDetails: Array<{ key: AxisKey; code: string; title: string; description: string }>;
   /** 각 축을 가장 크게 가른 내 답변. "왜 이 코드인지" 를 보여주는 데 씁니다. */
   axisReasons: Record<AxisKey, Array<{ questionCode: string; summary: string; side: 'left' | 'right' }>>;
@@ -536,7 +539,6 @@ export function useResultData(
     () => (result?.answers ? getResultCertainty(result.answers) : null),
     [result?.answers],
   );
-  const undeterminedAxes = certainty?.undetermined ?? [];
   const identityTitle = content?.identity_title?.trim() || null;
   const identityKeywords = asStringList(content?.identity_keywords);
   const shareTitle = content?.share_title?.trim() || null;
@@ -642,6 +644,6 @@ export function useResultData(
     isLoading, error, errorKind, result, content, bodyCode, characterName, characterImage,
     identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
     strategyTitle, strategySummary, journeyTitle, oneLineAction, recommendedStartMinutes,
-    axisRows, undeterminedAxes, certainty, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
+    axisRows, certainty, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
   };
 }

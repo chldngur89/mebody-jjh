@@ -445,11 +445,108 @@ export function getAxisScoreBreakdown(answers: AnswerMap, _scoringQuestions?: Sc
  * 또렷하지 않았는지만** 따로 알려주기 위한 함수입니다.
  */
 export function getUndeterminedAxes(answers: AnswerMap): AxisKey[] {
+  return getResultCertainty(answers).undetermined
+}
+
+/**
+ * 한 축을 **얼마나 확인했는지**. 서로 다른 말을 한 덩어리로 묶지 않습니다.
+ *
+ * - `undetermined` — 어느 쪽인지 **정하지 못했습니다.** 점수가 완전 동점이고 앵커까지
+ *   같아서, 코드 글자는 확인된 결과가 아니라 폴백(F/R/R/S)입니다.
+ * - `thin` — 방향은 갈렸지만 **그 방향을 떠받치는 답변이 적습니다.** 2:0 도 막대에서는
+ *   100% 로 그려집니다 — 화면이 가장 세게 단정해 보이는데 근거는 가장 얇은 자리입니다.
+ * - `clear` — 방향도 근거도 있습니다.
+ */
+export type AxisCertainty = 'undetermined' | 'thin' | 'clear'
+
+export interface ResultCertainty {
+  byAxis: Record<AxisKey, AxisCertainty>
+  /** 어느 쪽인지 정하지 못한 축 (tie·mixed) */
+  undetermined: AxisKey[]
+  /** 방향은 갈렸지만 근거가 얇은 축 (confidence === 'low', 동점은 제외) */
+  thinEvidence: AxisKey[]
+  /**
+   * 방향도 근거도 있지만 45~55% 로 박빙인 축.
+   *
+   * **화면 문구로는 올리지 않습니다.** 막대가 이미 52:48 로 그려져 그 사실을 보여주고
+   * 있고, 전체 결과의 1/3 에서 켜집니다(무작위 응답 2만 건 기준 33.2%). 한 줄을 더
+   * 얹으면 새로 알려주는 것 없이, 정작 새 정보를 담은 위 두 줄까지 같이 흘려보게 됩니다.
+   * 저장·분석용으로만 남깁니다.
+   */
+  closeCall: AxisKey[]
+  /** 네 축 전부 정하지 못함 — 전 문항 동일 응답·무응답이 여기로 옵니다. */
+  nothingDetermined: boolean
+  /**
+   * **유형 설명을 어디까지 단정해도 되는가.** 정하지 못한 축만 셉니다.
+   * 근거가 얇은 축(`thinEvidence`)은 방향 자체는 갈린 것이라 여기를 내리지 않고,
+   * 축 안내에서 따로 말합니다.
+   */
+  level: 'clear' | 'partial' | 'none'
+}
+
+/**
+ * **확인한 것과 확인하지 못한 것을 갈라 놓습니다.**
+ *
+ * 계산기는 완전 동점이어도 코드 글자를 돌려주므로(위 `getUndeterminedAxes` 주석),
+ * 결과 화면이 이 구분을 받지 않으면 확인하지 못한 것을 확인한 것처럼 말하게 됩니다.
+ * 코드 문자열은 건드리지 않습니다 — 공유 링크·정적 공유 페이지·캐릭터 그림·
+ * body_code_content 가 전부 거기 묶여 있습니다.
+ */
+export function getResultCertainty(answers: AnswerMap): ResultCertainty {
   const result = calculateBodyCode(answers)
-  return AXIS_ORDER.filter((axis) => {
+  const byAxis = {} as Record<AxisKey, AxisCertainty>
+  const undetermined: AxisKey[] = []
+  const thinEvidence: AxisKey[] = []
+  const closeCall: AxisKey[] = []
+
+  for (const axis of AXIS_ORDER) {
     const d = result.axisDetails?.[axis]
-    return Boolean(d?.tie || d?.mixed)
-  })
+    if (d?.tie || d?.mixed) {
+      byAxis[axis] = 'undetermined'
+      undetermined.push(axis)
+      continue
+    }
+    if (d?.confidence === 'low') {
+      byAxis[axis] = 'thin'
+      thinEvidence.push(axis)
+      continue
+    }
+    byAxis[axis] = 'clear'
+    if (result.borderline?.[axis]) closeCall.push(axis)
+  }
+
+  const nothingDetermined = undetermined.length === AXIS_ORDER.length
+  return {
+    byAxis,
+    undetermined,
+    thinEvidence,
+    closeCall,
+    nothingDetermined,
+    level: nothingDetermined ? 'none' : undetermined.length > 0 ? 'partial' : 'clear',
+  }
+}
+
+/**
+ * **결과 화면 머리글이 무엇을 말해도 되는가.**
+ *
+ * 화면과 검증이 같은 함수를 봅니다. 분기를 JSX 안에만 두면 "전 문항 ② 일 때 단정형
+ * 카피가 안 뜨는가" 를 사람 눈으로만 확인할 수 있습니다.
+ *
+ * - `type`        — 유형 설명을 그대로 보여줍니다.
+ * - `type-hedged` — 보여주되, 또렷하지 않은 축을 바로 아래에 한 줄로 덧붙입니다.
+ * - `undetermined`— 유형 설명을 **내리고** 재측정을 권합니다. 네 축 전부 동점 —
+ *                   확인된 것이 하나도 없고 코드 글자는 폴백입니다.
+ */
+export type ResultHeadlinePlan =
+  | { kind: 'type' }
+  | { kind: 'type-hedged'; undetermined: AxisKey[] }
+  | { kind: 'undetermined' }
+
+export function resultHeadlinePlan(certainty: ResultCertainty | null): ResultHeadlinePlan {
+  if (!certainty) return { kind: 'type' }
+  if (certainty.nothingDetermined) return { kind: 'undetermined' }
+  if (certainty.undetermined.length > 0) return { kind: 'type-hedged', undetermined: certainty.undetermined }
+  return { kind: 'type' }
 }
 
 /** 결과 화면 호환: 답변 map에서 축별 비율 추정 */

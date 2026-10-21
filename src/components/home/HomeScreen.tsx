@@ -13,6 +13,7 @@ const AXIS_SHORT_LABEL: Record<string, string> = {
 };
 import { CTA as COPY_CTA, PRODUCT } from '../../theme/copy';
 import { getCharacterStorageUrl, preloadCharacterImage } from '../../utils/characterImages';
+import { resultHeadlinePlan } from '../../utils/bodyCodeCalculator';
 import { ResultShareCard } from './ResultShareCard';
 import { track } from '../../lib/analytics';
 import { useResultData } from './resultData';
@@ -158,6 +159,16 @@ export function HomeScreen({
     data.axisDetails.length > 0 ? data.axisDetails.map((d) => d.code).join(' · ') : data.bodyCode;
   const tendencyLine =
     data.axisDetails.length > 0 ? `${axisCodeLine} — ${data.summaryLine}` : data.summaryLine;
+  /**
+   * 확인한 것과 확인하지 못한 것. 셋은 **서로 다른 말**이라 한 줄로 뭉치지 않습니다.
+   * · undetermined — 어느 쪽인지 정하지 못했다 (코드 글자가 폴백이다)
+   * · thinEvidence — 방향은 갈렸지만 기울기를 받치는 답변이 적다 (막대만 세게 기울어 보인다)
+   * · closeCall    — 박빙이다. 막대가 이미 그렇게 그려지므로 문구로는 올리지 않습니다.
+   */
+  const certainty = data.certainty;
+  /** 머리글이 무엇을 말해도 되는가 — 분기는 계산기에 두고 화면은 그대로 따릅니다. */
+  const headline = resultHeadlinePlan(certainty);
+  const axisNames = (keys: readonly string[]) => keys.map((key) => AXIS_SHORT_LABEL[key]).join('·');
   const careMinutes = data.recommendedStartMinutes;
   const journey = journeyProgress;
   const hasJourney = Boolean(journey && journey.total > 0);
@@ -281,14 +292,63 @@ export function HomeScreen({
             {data.bodyCode}
           </div>
           <Chip tone="solid">{data.characterName}</Chip>
-          {data.identityTitle && (
-            <p style={{ margin: '10px 0 0', color: BRAND.green, fontSize: '0.875rem', fontWeight: 800, wordBreak: 'keep-all' }}>
-              {data.identityTitle}
-            </p>
+
+          {/*
+            **확인하지 못한 것을 유형으로 말하지 않습니다.**
+
+            네 축이 전부 동점이면 확인된 것은 하나도 없고 코드 글자는 폴백(FRRS)입니다 —
+            전 문항 동일 응답·무응답이 정확히 그 경우입니다. 그 위에 「단단하게 버티는
+            고정형」을 그대로 띄우면 앱이 확인하지 못한 것을 확인한 것처럼 말하게 됩니다.
+            아래 축 안내 한 줄은 이미 있었지만, **단정형 카피가 그 위에 그대로 남아
+            있었습니다.**
+
+            body_code_content.identity_* 는 DB 값이라 건드리지 않고 화면에서만 덮습니다.
+            코드 문자열도 그대로입니다 — 공유 링크·공유 페이지·캐릭터 그림이 거기 묶여
+            있습니다. 겁주지 않습니다. 틀렸다고도 하지 않습니다.
+          */}
+          {headline.kind === 'undetermined' ? (
+            <>
+              <p style={{ margin: '10px 0 0', color: BRAND.green, fontSize: '0.875rem', fontWeight: 800, wordBreak: 'keep-all' }}>
+                아직 유형을 말하기 어려워요
+              </p>
+              <p style={{ margin: '10px 0 0', color: BRAND.muted, fontSize: '0.84375rem', lineHeight: 1.55, wordBreak: 'keep-all' }}>
+                네 축 모두 어느 쪽인지 또렷하지 않았어요. 지금 보이는 {data.bodyCode} 는 정해지지
+                않았을 때 쓰는 기본값이라, 체형 설명으로 읽기엔 일러요. 거울이나 사진을 보면서
+                다시 체크하면 결과가 달라질 수 있어요.
+              </p>
+              {onRemeasure && (
+                <button
+                  type="button"
+                  onClick={onRemeasure}
+                  style={{
+                    marginTop: '12px', minHeight: '44px', padding: '11px 18px',
+                    border: `1.5px solid ${BRAND.green}`, borderRadius: '14px',
+                    background: 'transparent', color: BRAND.green,
+                    fontSize: '0.8125rem', fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer',
+                  }}
+                >
+                  다시 체크하기
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {data.identityTitle && (
+                <p style={{ margin: '10px 0 0', color: BRAND.green, fontSize: '0.875rem', fontWeight: 800, wordBreak: 'keep-all' }}>
+                  {data.identityTitle}
+                </p>
+              )}
+              <p style={{ margin: '10px 0 0', color: BRAND.muted, fontSize: '0.84375rem', lineHeight: 1.55, wordBreak: 'keep-all' }}>
+                {data.summaryLine}
+              </p>
+              {headline.kind === 'type-hedged' && (
+                <p style={{ margin: '8px 0 0', color: BRAND.muted, fontSize: '0.75rem', lineHeight: 1.55, wordBreak: 'keep-all', opacity: 0.9 }}>
+                  {axisNames(headline.undetermined)} 축은 또렷하지 않았어요. 그만큼은 아직 확인된
+                  설명이 아니에요.
+                </p>
+              )}
+            </>
           )}
-          <p style={{ margin: '10px 0 0', color: BRAND.muted, fontSize: '0.84375rem', lineHeight: 1.55, wordBreak: 'keep-all' }}>
-            {data.summaryLine}
-          </p>
 
           {/* 결과 한 줄 액션 — 고정 자리 */}
           <div
@@ -359,11 +419,14 @@ export function HomeScreen({
                 정확히 그 경우입니다. 그 상태를 화면이 말해주지 않으면 **앱이 확인하지 못한 것을
                 확인한 것처럼** 보여주게 됩니다.
 
+                두 줄로 나눠 적습니다. 「못 정했다」와 「근거가 얇다」는 다른 말이고, 뭉쳐 놓으면
+                둘 다 안 읽힙니다. 박빙(45~55%)은 막대가 이미 보여주므로 여기 올리지 않습니다.
+
                 겁주지 않습니다. 틀렸다고도 하지 않습니다. 또렷하지 않았다는 사실과,
                 다시 해보면 달라질 수 있다는 것만 적습니다.
               */}
-              {data.undeterminedAxes.length > 0 && (
-                <p
+              {certainty && (certainty.undetermined.length > 0 || certainty.thinEvidence.length > 0) && (
+                <div
                   style={{
                     margin: '14px 0 0',
                     padding: '10px 12px',
@@ -373,16 +436,32 @@ export function HomeScreen({
                     lineHeight: 1.6,
                     color: BRAND.muted,
                     wordBreak: 'keep-all',
+                    display: 'grid',
+                    gap: '6px',
                   }}
                 >
-                  {data.undeterminedAxes.length === 4
-                    ? '이번에는 네 축 모두 어느 쪽인지 또렷하지 않았어요. '
-                    : `${data.undeterminedAxes
-                        .map((key) => AXIS_SHORT_LABEL[key])
-                        .join('·')} 축은 어느 쪽인지 또렷하지 않았어요. `}
-                  막대가 가운데에 가까운 것이 그 뜻입니다. 거울이나 사진을 보면서 다시 체크하면
-                  결과가 달라질 수 있어요.
-                </p>
+                  {certainty.undetermined.length > 0 && (
+                    <p style={{ margin: 0 }}>
+                      {certainty.nothingDetermined
+                        ? '네 축 막대가 모두 가운데인 것이 위에 적은 그 뜻이에요. '
+                        : `${axisNames(certainty.undetermined)} 축은 어느 쪽인지 또렷하지 않았어요. 막대가 가운데에 가까운 것이 그 뜻입니다. `}
+                      거울이나 사진을 보면서 다시 체크하면 결과가 달라질 수 있어요.
+                    </p>
+                  )}
+                  {/*
+                    **「못 정했다」와 「근거가 얇다」는 다른 말입니다.**
+
+                    2:0 도 막대에서는 100% 로 그려집니다. 화면이 가장 세게 단정해 보이는데
+                    실제 근거는 가장 얇은 자리라, 동점과 같은 줄에 묶지 않고 따로 적습니다.
+                    방향 자체는 갈린 것이므로 위의 유형 설명은 내리지 않습니다.
+                  */}
+                  {certainty.thinEvidence.length > 0 && (
+                    <p style={{ margin: 0 }}>
+                      {axisNames(certainty.thinEvidence)} 축은 기울기를 받치는 답변이 적었어요.
+                      막대는 크게 기울어 보여도 그만큼 또렷한 것은 아니에요.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}
