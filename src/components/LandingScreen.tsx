@@ -48,6 +48,18 @@ export function LandingScreen({
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   /** 짧은 뷰포트에서는 버튼을 위쪽에 두고 바깥 스크롤로 넘깁니다. */
   const isShortViewport = useMediaQuery('(max-height: 720px)');
+  /**
+   * 공유 링크로 들어온 화면.
+   *
+   * 평소 랜딩은 **한 화면에 딱 맞는 히어로**입니다(패널이 flex:1 + overflow:hidden).
+   * 그런데 친구 카드가 들어오면 내용이 두 배가 되고, 패널은 늘어나는 대신 **잘립니다.**
+   * 바깥에 overflowY:auto 가 있어도 패널이 스스로 줄어들어 넘칠 것이 없습니다.
+   *
+   * 짧은 뷰포트에서 이미 쓰던 "내용대로 늘리고 바깥에서 스크롤" 경로를 그대로 씁니다.
+   */
+  const shareMode = Boolean(sharedCode);
+  /** 자리 배분만 바꿉니다. 글자·로고 크기는 isShortViewport 가 계속 정합니다. */
+  const flowLayout = isShortViewport || shareMode;
   const scrollRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   // 로그인 상태에서 "분석 시작하기" 와 "지난 결과 보기" 가 사실상 같은 곳으로 가서
@@ -183,11 +195,11 @@ export function LandingScreen({
 
         <div
           style={{
-            flex: isShortViewport ? '0 0 auto' : '1 1 auto',
-            minHeight: isShortViewport ? undefined : 0,
+            flex: flowLayout ? '0 0 auto' : '1 1 auto',
+            minHeight: flowLayout ? undefined : 0,
             display: 'flex',
             flexDirection: 'column',
-            overflow: isShortViewport ? 'visible' : 'hidden',
+            overflow: flowLayout ? 'visible' : 'hidden',
             borderRadius: '24px',
             background: 'var(--mebody-s-w78, rgba(255,255,255,0.78))',
             boxShadow: '0 24px 48px var(--mebody-d-k12, rgba(1, 71, 37, 0.12))',
@@ -196,14 +208,22 @@ export function LandingScreen({
         >
           <div
             style={{
-              flex: isShortViewport ? undefined : 1,
-              minHeight: isShortViewport ? undefined : 0,
+              flex: flowLayout ? undefined : 1,
+              minHeight: flowLayout ? undefined : 0,
               display: 'flex',
               flexDirection: 'column',
               padding: isShortViewport ? '22px 22px 20px' : '28px 26px 28px',
             }}
           >
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
+              {/*
+                공유 링크로 들어온 사람에게 이 히어로는 **자리만 차지합니다.**
+                94px 아이콘과 3.25rem 로고가 첫 화면의 절반을 먹는 바람에
+                정작 보러 온 친구 카드가 아래로 밀려 잘렸습니다.
+                좌상단에 작은 mebody 알약이 이미 있어 브랜드는 빠지지 않습니다.
+              */}
+              {!shareMode && (
+              <>
               <div
                 style={{
                   position: 'relative',
@@ -246,6 +266,8 @@ export function LandingScreen({
               >
                 {PRODUCT.mark}
               </h1>
+              </>
+              )}
 
               {sharedCode && (
                 <div style={{ width: '100%', margin: '0 0 18px' }}>
@@ -315,13 +337,13 @@ export function LandingScreen({
             <div
               ref={ctaRef}
               style={{
-                flex: isShortViewport ? '0 0 auto' : '1 1 auto',
-                minHeight: isShortViewport ? undefined : '24px',
+                flex: flowLayout ? '0 0 auto' : '1 1 auto',
+                minHeight: flowLayout ? undefined : '24px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: isShortViewport ? 'flex-start' : 'center',
-                paddingTop: isShortViewport ? '10px' : 0,
+                justifyContent: flowLayout ? 'flex-start' : 'center',
+                paddingTop: flowLayout ? '10px' : 0,
               }}
             >
               <div style={{ width: '100%', display: 'grid', gap: '14px', justifyItems: 'stretch' }}>
