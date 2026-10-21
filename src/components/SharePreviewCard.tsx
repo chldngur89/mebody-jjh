@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchBodyCodeContentWithFallback, type BodyCodeContent } from '../api/questionnaire'
 import { BRAND, SURFACE } from '../theme/brand'
-import { PRODUCT } from '../theme/copy'
+import { DIAGNOSIS_SCALE, PRODUCT } from '../theme/copy'
 import { getCharacterStorageUrl } from '../utils/characterImages'
 import { compareBodyCodes } from '../utils/bodyCodeCompare'
 import { AXIS_LABELS, AXIS_ORDER, knobFromPercentLeft } from '../theme/axisLabels'
@@ -211,6 +211,14 @@ export function SharePreviewCard({
       <CTA onClick={onStartDiagnosis} style={{ marginTop: '14px' }}>
         나도 {PRODUCT.codeName} 찾아보기
       </CTA>
+      {/*
+        몇 문항인지, 얼마나 걸리는지 **누르기 전에** 알려줍니다.
+        공유 진입에서는 랜딩의 안내 블록을 숨기므로(중복) 그 한 줄이 여기로 옵니다.
+        숫자는 문항 세트와 같이 움직이니 theme/copy.ts 의 DIAGNOSIS_SCALE 한 곳만 봅니다.
+      */}
+      <p style={{ margin: '8px 0 0', fontSize: '0.75rem', fontWeight: 800, color: BRAND.muted }}>
+        {DIAGNOSIS_SCALE}
+      </p>
     </section>
   )
 }

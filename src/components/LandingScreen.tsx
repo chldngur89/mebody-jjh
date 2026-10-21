@@ -66,6 +66,12 @@ export function LandingScreen({
   // 버튼이 두 개 보이면 혼란스럽다. 코드가 있으면 주 버튼 하나로 합친다.
   // 다만 중간 진행이 있으면 이어서/처음부터 선택이 우선이다.
   const unifiedForMember = isLoggedIn && hasExistingCode && !hasIncompleteProgress;
+  /**
+   * 공유 진입의 주 CTA 가 친구 카드의 버튼과 **같은 동작**일 때만 숨깁니다.
+   * 이미 코드가 있는 사람에게는 「결과 보기」·「미션 이어하기」로 바뀌는데,
+   * 그건 자기 결과로 돌아가는 유일한 길이라 지우면 안 됩니다.
+   */
+  const hideDuplicateStart = Boolean(sharedCode) && !hasExistingCode && !unifiedForMember;
   const showQuickResult = !unifiedForMember && isLoggedIn && hasQuickResult && !!onQuickResult;
   const canChooseIncomplete = hasIncompleteProgress && !!onResumeIncomplete && !!onStartFresh;
   const normalizedBodyCode = latestBodyCode?.trim().toUpperCase();
@@ -280,6 +286,17 @@ export function LandingScreen({
                 </div>
               )}
 
+              {/*
+                공유 진입에서는 이 블록이 **바로 위 친구 카드와 같은 말**입니다.
+                카드 안의 「나도 mebody Code 찾아보기」 와 여기 「mebody Code 분석하기」 가
+                같은 onStart 를 부르고, 제목도 「나는 어떤 mebody Code 일까요?」 로 겹칩니다.
+                버튼 두 개가 나란히 있으면 어느 쪽이 진짜인지 고민하게 만듭니다.
+
+                분량 안내(32문항 · 약 4분)만 남는 CTA 쪽으로 옮겼습니다 —
+                SharePreviewCard 의 버튼 아래입니다. 모르고 들어오면 중간에 그만둡니다.
+              */}
+              {!shareMode && (
+              <>
               <h2
                 style={{
                   marginBottom: '12px',
@@ -331,6 +348,8 @@ export function LandingScreen({
               >
                 {DIAGNOSIS_SCALE}
               </p>
+              </>
+              )}
             </div>
 
             {/* 주 CTA — 짧은 화면에서는 위쪽, 빈 곳 클릭 시 여기로 스크롤 */}
@@ -420,7 +439,7 @@ export function LandingScreen({
                       {CTA.startFresh}
                     </button>
                   </div>
-                ) : (
+                ) : hideDuplicateStart ? null : (
                   <button
                     type="button"
                     onClick={onStart}
