@@ -458,8 +458,13 @@ export function HomeScreen({
                 >
                   <img src={video.thumbnail} alt="" style={{ width: '108px', height: '68px', objectFit: 'cover', borderRadius: '12px', flexShrink: 0 }} />
                   <div style={{ minWidth: 0 }}>
+                    {/*
+                      제목은 **영상에서 받아온 실제 제목**입니다(lib/youtubeTitle).
+                      손으로 쓴 부제는 뺐습니다 — 영상이 스스로 말하는 것 위에
+                      우리가 한 줄 더 얹으면 맞춰야 할 곳만 늘고,
+                      「거북목 완화를 위한」 같은 효능 주장이 거기서 나왔습니다.
+                    */}
                     <div style={{ fontSize: '0.875rem', fontWeight: 800, wordBreak: 'keep-all' }}>{video.title}</div>
-                    <div style={{ fontSize: '0.75rem', color: BRAND.muted, marginTop: '4px', wordBreak: 'keep-all' }}>{video.subtitle}</div>
                     <div style={{ fontSize: '0.8125rem', color: BRAND.green, fontWeight: 800, marginTop: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       유튜브에서 보기 <ExternalLink size={12} />
                     </div>

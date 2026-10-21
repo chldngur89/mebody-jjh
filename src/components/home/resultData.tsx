@@ -21,10 +21,11 @@ import {
 import { AXIS_GREEN_THEME } from '../../data/axisTheme';
 import { PRODUCT } from '../../theme/copy';
 import { AXIS_LABELS } from '../../theme/axisLabels';
+import { fetchYoutubeTitles } from '../../lib/youtubeTitle';
 import { fetchRewardBalance } from '../../api/journey';
 import { previewRewardUse } from '../../api/orders';
 import { SUPABASE_STORAGE_PUBLIC, supabase } from '../../lib/supabase';
-import { characterNames, getAxisScoreBreakdown, getUndeterminedAxes } from '../../utils/bodyCodeCalculator';
+import { characterNames, getAxisScoreBreakdown, getResultCertainty, type ResultCertainty } from '../../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../../utils/characterImages';
 
 export type { AxisKey } from '../../theme/axisLabels';
@@ -103,18 +104,35 @@ const AXIS_META: Record<
   flexibility: { ...AXIS_LABELS.flexibility, leftColor: AXIS_GREEN_THEME.primary, rightColor: AXIS_GREEN_THEME.deep, surface: AXIS_GREEN_THEME.cardSurfaces[3] },
 };
 
+/**
+ * 결과 화면 '가이드' 영상.
+ *
+ * **16코드 전부에게 같은 영상이 나갑니다.** 코드별로 고르지 않습니다 —
+ * 코드별 영상이 준비돼 있지 않은데 고르는 척하면 없는 것을 있다고 말하게 됩니다.
+ * 섹션 제목이 「가이드 · mebody 자세 사용 설명서」인 이유도 같습니다
+ * (옆의 마켓은 「결과에 맞는 용품」이라 거기만 코드를 봅니다).
+ *
+ * **우리 채널 것만 둡니다** — youtube.com/@mebody_health. 바깥 채널을 섞으면
+ * 앱이 남의 주장을 대신 하게 됩니다.
+ *
+ * 여기 title 은 **받아오기 전에 잠깐 보이는 값**일 뿐입니다. 실제 제목은
+ * lib/youtubeTitle 이 영상에서 직접 가져와 덮어씁니다 — 손으로 맞추던 때는
+ * 라벨이 「코어 강화 루틴」인데 열리는 영상은 마사지볼 목·어깨 이완이었습니다
+ * (2026-10-21 확인). subtitle 은 화면에서 쓰지 않습니다.
+ */
 const DEFAULT_YOUTUBE_VIDEOS: YoutubeVideo[] = [
   {
     videoId: 'OU4CdtJWPZs',
     title: '당신도 아마 일자목일 겁니다. 일자목 5분만에 C자 만드는 방법',
-    subtitle: '목 정렬과 거북목 완화를 위한 mebody 루틴',
+    // subtitle 은 화면에서 쓰지 않습니다. 타입 호환을 위해 빈 값으로 둡니다.
+    subtitle: '',
     url: 'https://www.youtube.com/watch?v=OU4CdtJWPZs',
     thumbnail: 'https://i.ytimg.com/vi/OU4CdtJWPZs/hqdefault.jpg',
   },
   {
     videoId: 'Q6WaIrMdZRw',
-    title: '코어 근육 그렇게 운동하는 거 아닙니다. 2단계 코어 강화 루틴',
-    subtitle: '코드 플랜과 함께 보기 좋은 코어 안정화 루틴',
+    title: '마사지볼로 10분만에 목 돌아가게 만드는 방법',
+    subtitle: '',
     url: 'https://www.youtube.com/watch?v=Q6WaIrMdZRw',
     thumbnail: 'https://i.ytimg.com/vi/Q6WaIrMdZRw/hqdefault.jpg',
   },
@@ -509,11 +527,16 @@ export function useResultData(
   const characterName = content?.character_name || characterNames[bodyCode] || `나의 ${PRODUCT.codeName}`;
   const characterImage = resolveCharacterImageUrl(bodyCode, appImages, failedImageUrls);
   const axisPercent = result?.answers ? getAxisScoreBreakdown(result.answers, scoringQuestions) : null;
-  /** 어느 쪽인지 정해지지 않은 축. 코드 문자열에는 드러나지 않습니다(계산기 주석 참고). */
-  const undeterminedAxes = useMemo(
-    () => (result?.answers ? getUndeterminedAxes(result.answers) : []),
+  /**
+   * 무엇을 확인했고 무엇을 확인하지 못했는가. 코드 문자열에는 드러나지 않습니다.
+   * 완전 동점이어도 코드는 FRRS 가 나오므로(계산기 주석 참고) 화면은 이걸 따로 받아야
+   * 확인하지 못한 것을 확인한 것처럼 말하지 않습니다.
+   */
+  const certainty = useMemo<ResultCertainty | null>(
+    () => (result?.answers ? getResultCertainty(result.answers) : null),
     [result?.answers],
   );
+  const undeterminedAxes = certainty?.undetermined ?? [];
   const identityTitle = content?.identity_title?.trim() || null;
   const identityKeywords = asStringList(content?.identity_keywords);
   const shareTitle = content?.share_title?.trim() || null;
@@ -581,10 +604,34 @@ export function useResultData(
     ];
   }, [bodyCode, content]);
 
-  const youtubeVideos = useMemo(() => {
+  const youtubeVideosBase = useMemo(() => {
     const parsed = parseYoutubeVideos(appContent.result_youtube_videos);
     return parsed.length ? parsed : DEFAULT_YOUTUBE_VIDEOS;
   }, [appContent]);
+
+  /**
+   * 제목은 **영상에서 받아옵니다.**
+   *
+   * 저장된 라벨은 사람이 손으로 맞춰야 해서 언젠가 어긋납니다(실제로 어긋나 있었습니다).
+   * 받아오기 전·실패했을 때만 저장된 값을 씁니다 — 제목이 비어 화면이 뜨지 않게.
+   */
+  const [liveTitles, setLiveTitles] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const ids = youtubeVideosBase.map((v) => v.videoId).filter(Boolean);
+    if (ids.length === 0) return;
+    let cancelled = false;
+    void fetchYoutubeTitles(ids).then((map) => {
+      if (!cancelled) setLiveTitles(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [youtubeVideosBase]);
+
+  const youtubeVideos = useMemo(
+    () => youtubeVideosBase.map((v) => ({ ...v, title: liveTitles[v.videoId] || v.title })),
+    [youtubeVideosBase, liveTitles],
+  );
 
   const storeItems = useMemo(
     () => buildStoreItems(storeProducts, content?.health_products, bodyCode),
@@ -595,6 +642,6 @@ export function useResultData(
     isLoading, error, errorKind, result, content, bodyCode, characterName, characterImage,
     identityTitle, summaryLine, identityKeywords, shareTitle, shareDescription,
     strategyTitle, strategySummary, journeyTitle, oneLineAction, recommendedStartMinutes,
-    axisRows, undeterminedAxes, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
+    axisRows, undeterminedAxes, certainty, axisDetails, axisReasons, youtubeVideos, storeItems, rewardBalance, handleImageError,
   };
 }
