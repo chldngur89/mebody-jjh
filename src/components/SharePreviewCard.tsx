@@ -7,7 +7,8 @@ import { BRAND, SURFACE } from '../theme/brand'
 import { PRODUCT } from '../theme/copy'
 import { getCharacterStorageUrl } from '../utils/characterImages'
 import { compareBodyCodes } from '../utils/bodyCodeCompare'
-import { Chip, CTA } from './ui'
+import { AXIS_LABELS, AXIS_ORDER, knobFromPercentLeft } from '../theme/axisLabels'
+import { AxisTrack, Chip, CTA } from './ui'
 
 function asKeywords(value: unknown): string[] {
   if (!Array.isArray(value)) return []
@@ -17,11 +18,17 @@ function asKeywords(value: unknown): string[] {
 export function SharePreviewCard({
   bodyCode,
   myBodyCode,
+  axes,
   onStartDiagnosis,
 }: {
   bodyCode: string
   /** 로그인한 사용자의 코드 — 있으면 친구 코드와 비교합니다 */
   myBodyCode?: string
+  /**
+   * 친구의 4축 치우침(0~100, 왼쪽 기준) 네 개. 공유 링크의 ax 에서 옵니다.
+   * 없으면(옛 링크·값이 깨진 링크) 막대 없이 코드만 보여줍니다.
+   */
+  axes?: number[]
   onStartDiagnosis: () => void
 }) {
   const [content, setContent] = useState<BodyCodeContent | null>(null)
@@ -38,6 +45,12 @@ export function SharePreviewCard({
       cancelled = true
     }
   }, [bodyCode])
+
+  /** ax 네 개를 축 키와 짝지어 둡니다. 순서는 코드 글자 순서와 같습니다. */
+  const friendAxes = useMemo(() => {
+    if (!axes || axes.length !== AXIS_ORDER.length) return null
+    return AXIS_ORDER.map((key, i) => ({ key, percentLeft: axes[i] }))
+  }, [axes])
 
   const compare = useMemo(() => {
     if (!myBodyCode || myBodyCode.toUpperCase() === bodyCode.toUpperCase()) return null
@@ -151,8 +164,49 @@ export function SharePreviewCard({
         </div>
       )}
 
+      {/*
+        4축 막대 — 공유 링크에 ax 가 실려 왔을 때만 그립니다.
+
+        예전에는 코드 네 글자만 보여줬습니다. 그런데 **카드 이미지로 받은 사람은
+        이미 막대까지 보고 있었습니다.** 같은 결과를 보내는데 경로에 따라 보이는
+        것이 달랐습니다. 여기가 비어 있으면 「친구가 FRRS 래」 에서 끝나고,
+        막대가 있으면 「나랑 어디가 다르지」 로 넘어갑니다.
+      */}
+      {friendAxes && (
+        <div
+          style={{
+            marginTop: '16px',
+            borderRadius: '16px',
+            border: `1px solid ${SURFACE.hairline}`,
+            background: SURFACE.subtle,
+            padding: '14px 12px',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
+            <strong style={{ fontSize: '0.8125rem', fontWeight: 800, color: BRAND.green }}>친구의 4축</strong>
+            <span style={{ fontSize: '0.6875rem', color: BRAND.muted, fontWeight: 700, flexShrink: 0 }}>
+              중앙에 가까울수록 균형
+            </span>
+          </div>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {friendAxes.map((row) => (
+              <AxisTrack
+                key={row.key}
+                label={AXIS_LABELS[row.key].short}
+                leftLabel={AXIS_LABELS[row.key].left}
+                rightLabel={AXIS_LABELS[row.key].right}
+                value={knobFromPercentLeft(row.percentLeft)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <p style={{ margin: '14px 0 0', fontSize: '0.8125rem', lineHeight: 1.5, color: BRAND.muted, wordBreak: 'keep-all' }}>
-        친구의 공개 유형만 보여요. 개인 측정·4축 점수는 공유되지 않습니다.
+        {friendAxes
+          ? '친구의 공개 유형과 4축 결과예요. 문항별 답변은 공유되지 않습니다.'
+          : '친구의 공개 유형이에요. 문항별 답변은 공유되지 않습니다.'}
       </p>
       <CTA onClick={onStartDiagnosis} style={{ marginTop: '14px' }}>
         나도 {PRODUCT.codeName} 찾아보기

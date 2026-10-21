@@ -1,10 +1,20 @@
 /**
- * 결과 공유 — 코드와 캐릭터 이름만 나갑니다.
+ * 결과 공유 — 코드·캐릭터 이름·4축 치우침까지 나갑니다.
  *
- * 공유 링크에 담는 것: ref=share, code=mebody Code. 그게 전부입니다.
- * **result id 를 넣지 않습니다.** id 가 링크에 실리면 받은 사람이
- * get_questionnaire_response 로 원 사용자의 32문항 응답을 그대로 열 수 있습니다.
- * code 는 결과를 복원하는 열쇠가 아니라 "친구는 FRRS 였다" 는 말풍선 재료입니다.
+ * 공유 링크에 담는 것: ref=share, code=mebody Code, ax=4축 위치. 그게 전부입니다.
+ *
+ * **result id 는 넣지 않습니다.** id 가 링크에 실리면 받은 사람이
+ * get_questionnaire_response 로 원 사용자의 **32문항 응답을 그대로** 열 수 있습니다.
+ * 이 선은 그대로 둡니다(verify:share-freeze 가 지킵니다).
+ *
+ * ── ax 를 넣는 이유
+ * 카드 이미지에는 이미 내 4축 막대가 그려져 나갑니다. 그런데 링크로 받은 사람은
+ * 코드 네 글자만 봤습니다. **같은 결과를 보내는데 경로에 따라 보이는 것이 달랐고**,
+ * 공유의 재미(내 막대가 어디에 찍혔나)가 링크에서는 사라졌습니다.
+ *
+ * ax 는 화면에 이미 보이는 좌우 치우침(0~100) 네 개뿐입니다. 원점수도, 문항별
+ * 답변도, 결과 id 도 아닙니다 — 카드 이미지로 나가던 것과 같은 범위입니다.
+ * 다만 **링크는 그대로 다시 전달됩니다.** 그래서 화면 문구도 그 범위로 적습니다.
  */
 import { track, type ShareChannel } from './analytics'
 import { PRODUCT } from '../theme/copy'
@@ -25,8 +35,48 @@ export function isShareableBodyCode(code: unknown): code is string {
   return typeof code === 'string' && BODY_CODE_PATTERN.test(code)
 }
 
-export function buildShareUrl(bodyCode: string): string {
+/** 공유 링크에 4축을 싣는 파라미터 이름. 값은 `72-65-58-22` 꼴입니다. */
+export const SHARE_AXES_PARAM = 'ax'
+
+/**
+ * 4축 → `72-65-58-22`.
+ *
+ * 순서는 theme/axisLabels 의 AXIS_ORDER(목·어깨·골반·하체)이고, 호출부가 그 순서로
+ * 넘겨 줍니다. 값은 **정수 0~100** 으로만 나갑니다 — 소수점을 실으면 원점수를
+ * 되짚을 여지가 생기고, 링크만 길어집니다.
+ */
+export function encodeShareAxes(axes?: ShareAxis[]): string | null {
+  if (!axes || axes.length !== 4) return null
+  const parts = axes.map((a) => {
+    const n = Math.round(Number(a?.percentLeft))
+    return Number.isFinite(n) ? String(Math.max(0, Math.min(100, n))) : null
+  })
+  return parts.every((p) => p !== null) ? parts.join('-') : null
+}
+
+/**
+ * `72-65-58-22` → [72, 65, 58, 22].
+ *
+ * 링크는 남이 손으로 고칠 수 있습니다. 네 개가 아니거나 0~100 을 벗어나면
+ * **없는 것으로 봅니다** — 이상한 값을 그리느니 막대를 안 보여주는 편이 낫습니다.
+ */
+export function parseShareAxes(raw: unknown): number[] | null {
+  if (typeof raw !== 'string') return null
+  const parts = raw.split('-')
+  if (parts.length !== 4) return null
+  const out: number[] = []
+  for (const p of parts) {
+    if (!/^\d{1,3}$/.test(p)) return null
+    const n = Number(p)
+    if (n < 0 || n > 100) return null
+    out.push(n)
+  }
+  return out
+}
+
+export function buildShareUrl(bodyCode: string, axes?: ShareAxis[]): string {
   const base = shareBaseUrl()
+  const ax = encodeShareAxes(axes)
   // 프로덕션: 코드별 **정적 공유 페이지** → 봇은 og 태그, 사람은 곧바로 앱으로.
   //
   // 예전에는 `/api/share-og?code=` 를 가리켰는데 **그 엔드포인트가 없었습니다.**
@@ -36,11 +86,16 @@ export function buildShareUrl(bodyCode: string): string {
   //
   // 로컬 Vite 에는 그 파일이 없으므로 개발 중에는 SPA 쿼리로 둡니다.
   if (!import.meta.env.DEV && isShareableBodyCode(bodyCode)) {
-    return `${base}/s/${encodeURIComponent(bodyCode)}`
+    // 정적 페이지는 코드별로 구워져 있어 ax 를 미리 담을 수 없습니다.
+    // 쿼리로 붙여 보내고, 그 페이지가 앱으로 넘길 때 **그대로 들고 갑니다**
+    // (scripts/build-share-pages.mjs 의 리다이렉트가 location.search 를 이어 붙입니다).
+    const path = `${base}/s/${encodeURIComponent(bodyCode)}`
+    return ax ? `${path}?${SHARE_AXES_PARAM}=${ax}` : path
   }
   const url = new URL(`${base}/`)
   url.searchParams.set('ref', SHARE_REF)
   if (isShareableBodyCode(bodyCode)) url.searchParams.set('code', bodyCode)
+  if (ax) url.searchParams.set(SHARE_AXES_PARAM, ax)
   return url.toString()
 }
 
@@ -50,6 +105,8 @@ export interface SharePayload {
   summaryLine?: string
   /** 예: C · L · L · F — 목 중앙, ... 링크에는 넣지 않고 공유 문구에만 씁니다. */
   tendencyLine?: string
+  /** body_code_content.identity_title — 카드 이미지에서 이름 아래 한 줄로 씁니다 */
+  identityTitle?: string
   /** body_code_content.share_title — 있으면 조합 제목 대신 사용 */
   shareTitle?: string
   /** body_code_content.share_description */
@@ -113,7 +170,7 @@ export async function shareNative(payload: SharePayload): Promise<ShareOutcome> 
     await navigator.share({
       title: buildShareTitle(payload),
       text: buildShareText(payload),
-      url: buildShareUrl(payload.bodyCode),
+      url: buildShareUrl(payload.bodyCode, payload.axes),
     })
     return 'shared'
   } catch (error) {

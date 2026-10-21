@@ -29,6 +29,8 @@ export interface ResultShareCardProps {
   characterName: string
   summaryLine?: string
   tendencyLine?: string
+  /** 유형명. 카드 이미지에서 캐릭터 이름 아래 한 줄로 들어갑니다. */
+  identityTitle?: string
   shareTitle?: string
   shareDescription?: string
   /** 4축 상세 결과 — 카드 이미지에 같이 그립니다. */
@@ -55,6 +57,7 @@ export function ResultShareCard({
   characterName,
   summaryLine,
   tendencyLine,
+  identityTitle,
   shareTitle,
   shareDescription,
   axes,
@@ -87,6 +90,7 @@ export function ResultShareCard({
     characterName,
     summaryLine,
     tendencyLine,
+    identityTitle,
     shareTitle,
     shareDescription,
     axes,
@@ -109,7 +113,7 @@ export function ResultShareCard({
 
     try {
       if (channel === 'copy') {
-        const url = buildShareUrl(bodyCode)
+        const url = buildShareUrl(bodyCode, axes)
         const copied = await copyShareLink(url)
         trackShareOutcome('copy', bodyCode, copied ? 'shared' : 'failed')
         setManualUrl(url)
@@ -166,14 +170,17 @@ export function ResultShareCard({
         }}
       >
         {/*
-          둘이 담는 것이 **다릅니다.** 예전에는 한 줄로 「개인 점수·응답은 포함되지 않아요」라고
-          적어 뒀는데, 바로 아래 버튼이 보내는 카드 이미지에는 **내 4축 막대 위치가 그려집니다.**
-          링크 기준으로는 맞는 말이지만 이미지 기준으로는 사실이 아닙니다.
-          화면은 시스템이 보장할 수 있는 것만 말해야 하므로 두 경로를 나눠 적습니다.
+          한때 둘이 담는 것이 **달랐습니다.** 카드 이미지에는 내 4축 막대가 그려져 나가는데
+          링크로 받은 사람은 코드 네 글자만 봤습니다. 같은 결과를 보내는데 경로에 따라
+          보이는 것이 달라서, 문구도 두 경로를 나눠 적어야 했습니다.
+
+          지금은 링크에도 4축을 실어 보냅니다(lib/share.ts 의 ax). 그래서 **범위가 같아졌고**
+          문구도 하나로 말할 수 있습니다. 다만 "같다"고 뭉뚱그리지 않고 각각 무엇이 가는지
+          그대로 적습니다 — 링크는 **다시 전달되는** 물건이라 더 그렇습니다.
         */}
-        <span style={{ fontWeight: 600 }}>링크</span>로 보내면 코드와 캐릭터만 전해져요.
+        <span style={{ fontWeight: 600 }}>링크</span>로 보내면 코드·캐릭터와 내 4축 위치가 전해져요.
         <br />
-        <span style={{ fontWeight: 600 }}>카드 이미지</span>에는 내 4축 결과가 함께 그려져요.
+        <span style={{ fontWeight: 600 }}>카드 이미지</span>에는 같은 내용이 그림으로 그려져요.
         <br />
         어느 쪽이든 문항별 답변은 보내지 않아요.
       </p>

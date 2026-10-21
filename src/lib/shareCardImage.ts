@@ -80,23 +80,29 @@ export async function renderShareCardBlob(payload: SharePayload): Promise<Blob |
   ctx.fillStyle = '#014725'
   ctx.font = `700 36px ${FONT}`
   ctx.textAlign = 'center'
-  ctx.fillText(PRODUCT.mark, W / 2, 180)
+  ctx.fillText(PRODUCT.mark, W / 2, 168)
 
   const charUrl = getCharacterStorageUrl(payload.bodyCode)
   const charImg = charUrl ? await loadImage(charUrl) : null
+  // 원본은 1024×1536 입니다. 예전 224×322 는 비율이 미묘하게 달라 캐릭터가 눌려 보였습니다.
+  const CHAR_H = 300
+  const CHAR_TOP = 182
+  const charBottom = CHAR_TOP + CHAR_H
   if (charImg) {
-    const iw = 224
-    const ih = 322
-    ctx.drawImage(charImg, (W - iw) / 2, 196, iw, ih)
+    const iw = Math.round((CHAR_H * 1024) / 1536)
+    ctx.drawImage(charImg, (W - iw) / 2, CHAR_TOP, iw, CHAR_H)
   }
+
+  const codeBaseline = charImg ? charBottom + 76 : 520
+  const nameBaseline = codeBaseline + 56
 
   ctx.fillStyle = '#016B38'
   ctx.font = `800 104px ${FONT}`
-  ctx.fillText(payload.bodyCode, W / 2, charImg ? 596 : 520)
+  ctx.fillText(payload.bodyCode, W / 2, codeBaseline)
 
   ctx.fillStyle = '#014725'
   ctx.font = `800 48px ${FONT}`
-  ctx.fillText(payload.characterName, W / 2, charImg ? 654 : 600)
+  ctx.fillText(payload.characterName, W / 2, nameBaseline)
 
   const title = payload.shareTitle?.trim() || `내 ${PRODUCT.codeName}는 ${payload.bodyCode}`
   const desc =
@@ -105,22 +111,55 @@ export async function renderShareCardBlob(payload: SharePayload): Promise<Blob |
     payload.tendencyLine?.trim() ||
     ''
 
-  // 축 블록의 자리를 먼저 잡습니다. 제목이 길어도 여기를 침범하지 못하게 합니다.
+  /*
+    ── 세로 자리를 **계산해서** 나눕니다 ───────────────────────────────────────
+
+    예전에는 상수를 손으로 박아 뒀습니다. 제목 시작 y 는 706, 축 블록 상단은 710.
+    그런데 그리기 조건이 `y > axisTop - 16` 이라 **706 > 694 가 항상 참**이어서
+    제목이 **한 줄도 그려지지 않았습니다.** 값을 4px 늘려 통과시켜 봐야
+    36px 글자(아래로 ~8px)와 34px 헤더(위로 ~26px)가 그대로 겹칩니다.
+    자리가 없는 것이지 조건이 잘못된 것이 아니었습니다.
+
+    그래서 위 블록(마크·그림·코드·이름)에서 52px 를 돌려받고, 아래 축 블록의
+    행 높이를 남은 공간에 맞춰 줄입니다. 한 줄이 안 들어가면 **말줄임이 아니라
+    글자를 줄여서** 넣습니다 — 조용히 사라지는 것이 가장 나쁩니다.
+  */
   const axes = payload.axes ?? []
-  const ROW_H = 108
   const HEAD_H = 52
   const footerY = H - 120
-  const axisTop = axes.length > 0 ? footerY - 36 - axes.length * ROW_H - HEAD_H : footerY
+
+  // 이름 아래 한 줄. 코드·캐릭터명은 바로 위에 이미 크게 있으므로 **유형명**을
+  // 우선합니다(결과 화면의 순서와 같습니다: 코드 → 캐릭터명 → 유형명).
+  const subtitle = payload.identityTitle?.trim() || title
+  const SUB_LH = 44
+  const subtitleTop = nameBaseline + 50
 
   ctx.fillStyle = '#2C5544'
-  ctx.font = `600 36px ${FONT}`
-  const titleLines = wrapText(ctx, title, W - 240)
-  let y = charImg ? 706 : 700
-  for (const line of titleLines) {
-    if (y > axisTop - 16) break // 축 자리를 넘지 않습니다
-    ctx.fillText(line, W / 2, y)
-    y += 48
+  let subPx = 36
+  ctx.font = `700 ${subPx}px ${FONT}`
+  let subLines = wrapText(ctx, subtitle, W - 240).slice(0, 2)
+  // 두 줄을 넘기면 축 자리를 먹습니다. 줄 수를 줄이는 대신 글자를 줄입니다.
+  while (subLines.length > 1 && subPx > 28) {
+    subPx -= 2
+    ctx.font = `700 ${subPx}px ${FONT}`
+    subLines = wrapText(ctx, subtitle, W - 240).slice(0, 2)
   }
+
+  for (let i = 0; i < subLines.length; i += 1) {
+    ctx.fillText(subLines[i], W / 2, subtitleTop + i * SUB_LH)
+  }
+
+  // 마지막 제목 줄 baseline 에서 56px 아래가 축 헤더 baseline 입니다.
+  // (제목은 아래로 ~8px, 헤더는 위로 ~26px 뻗으므로 22px 가 실제 간격입니다)
+  const axisTop = axes.length > 0
+    ? subtitleTop + (subLines.length - 1) * SUB_LH + 56
+    : footerY
+
+  // 남은 세로를 행 수로 나눕니다. 108 이 기존 값이고, 100 보다 좁아지면
+  // 트랙과 다음 축 이름이 붙으므로 거기서 멈춥니다.
+  const ROW_H = axes.length > 0
+    ? Math.max(100, Math.min(108, Math.floor((footerY - 36 - (axisTop + HEAD_H)) / axes.length)))
+    : 108
 
   // 설명 문구는 이미지에 넣지 않습니다 — 공유 메시지(text)에 들어가고,
   // 여기서는 4축이 들어갈 자리를 남겨야 합니다.
@@ -223,7 +262,7 @@ export async function shareShareCardImage(payload: SharePayload): Promise<'share
   // 들어도 들어올 방법이 없습니다 — 바이럴이 거기서 끊깁니다.
   //
   // url 필드는 파일을 함께 보낼 때 무시하는 앱이 많아서 **본문에도 한 줄 넣습니다.**
-  const link = buildShareUrl(payload.bodyCode)
+  const link = buildShareUrl(payload.bodyCode, payload.axes)
   const body = `${payload.shareDescription || payload.summaryLine || ''}\n${link}`.trim()
 
   if (nav && typeof nav.canShare === 'function' && nav.canShare({ files: [file] }) && typeof nav.share === 'function') {

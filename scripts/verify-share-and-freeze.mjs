@@ -49,10 +49,38 @@ const read = async (id) => (await c.query('SELECT * FROM public.get_questionnair
 // ── 1. 공유 링크에 무엇이 실리나 (실제 앱 코드를 그대로 읽습니다) ─────────────
 console.log('\n■ 공유 링크에 실리는 값')
 const shareSrc = readFileSync(new URL('../src/lib/share.ts', import.meta.url).pathname, 'utf8')
+// ax 는 화면에 이미 보이는 좌우 치우침(0~100) 네 개입니다. 원점수도 응답도 아닙니다.
+// **허용 목록을 손으로 늘리게** 해 둡니다 — 자동으로 통과시키면 언젠가 id 가 섞입니다.
+const ALLOWED_SHARE_PARAMS = ['ref', 'code', 'ax']
 const params = [...shareSrc.matchAll(/searchParams\.set\('([^']+)'/g)].map((m) => m[1])
-ok('공유 URL 파라미터는 ref·code 뿐', params.length === 2 && params.includes('ref') && params.includes('code'), params.join(', '))
+const strayParams = params.filter((p) => !ALLOWED_SHARE_PARAMS.includes(p))
+ok('공유 URL 파라미터는 ref·code·ax 뿐', strayParams.length === 0, params.join(', '))
 ok('공유 코드에 result id 를 넣지 않는다', !/result|questionnaireId|\.id\b/.test(shareSrc.split('buildShareUrl')[1]?.slice(0, 400) ?? ''))
-ok('몸BTI 코드 형식만 허용', /\^\[FC\]\[RL\]\[RL\]\[SF\]\$/.test(shareSrc))
+ok('코드 형식 [FC][RL][RL][SF] 만 허용', /\^\[FC\]\[RL\]\[RL\]\[SF\]\$/.test(shareSrc))
+
+// ax 는 **정수 0~100 네 개**만 통과해야 합니다. 링크는 남이 손으로 고칠 수 있습니다.
+{
+  const mod = await import(new URL('../src/lib/share.ts', import.meta.url).pathname).catch(() => null)
+  if (!mod) {
+    // .ts 를 그대로 import 할 수 없는 환경에서는 정규식만 확인합니다.
+    ok('ax 파서가 네 칸·0~100 으로 제한한다',
+       /parts\.length !== 4/.test(shareSrc) && /n < 0 \|\| n > 100/.test(shareSrc))
+  } else {
+    const bad = ['', '1-2-3', '1-2-3-4-5', '101-0-0-0', '-1-0-0-0', 'a-b-c-d', '1.5-2-3-4']
+      .filter((v) => mod.parseShareAxes(v) !== null)
+    ok('이상한 ax 는 버린다', bad.length === 0, bad.join(' / ') || '전부 거부')
+    const good = mod.parseShareAxes('72-65-58-22')
+    ok('정상 ax 는 네 칸으로 읽는다', Array.isArray(good) && good.join(',') === '72,65,58,22', String(good))
+  }
+}
+
+// 정적 공유 페이지가 ax 를 **떨어뜨리지 않고** 앱으로 넘기는가.
+// 여기서 끊기면 링크로 받은 사람 화면에 막대가 안 뜹니다.
+{
+  const page = readFileSync(new URL('../public/s/FRRS.html', import.meta.url).pathname, 'utf8')
+  ok('정적 공유 페이지가 쿼리를 앱으로 넘긴다', /location\.search/.test(page),
+     'ax 가 여기서 끊기면 친구 화면에 4축이 안 뜹니다')
+}
 
 // ── 1-2. 공유 미리보기가 **실제로 뜨는가** ────────────────────────────────────
 // 카드 16장을 만들어 두고도 미리보기에 아무것도 안 뜬 적이 있습니다(2026-10-13).

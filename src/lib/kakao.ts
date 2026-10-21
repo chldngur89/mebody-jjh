@@ -96,7 +96,7 @@ export async function shareToKakao(payload: SharePayload): Promise<ShareOutcome>
   const sdk = await ready()
   if (!sdk?.Share) return 'unsupported'
 
-  const url = buildShareUrl(payload.bodyCode)
+  const url = buildShareUrl(payload.bodyCode, payload.axes)
   const link: KakaoLink = { mobileWebUrl: url, webUrl: url }
 
   try {

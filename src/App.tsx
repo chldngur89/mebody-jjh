@@ -4,7 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import { useMediaQuery } from './utils/useMediaQuery';
 import { LandingScreen } from './components/LandingScreen';
 import { track } from './lib/analytics';
-import { SHARE_REF, isShareableBodyCode } from './lib/share';
+import { SHARE_AXES_PARAM, SHARE_REF, isShareableBodyCode, parseShareAxes } from './lib/share';
 import { AnalyzingScreen } from './components/AnalyzingScreen';
 import { lazyImportWithReload } from './lib/chunkLoadRecovery';
 
@@ -132,10 +132,20 @@ export default function App() {
    * 공유 링크로 들어왔는지. 첫 진입에서 한 번만 읽고 그 뒤로는 URL 에서 지웁니다(flowUrl).
    * code 는 결과를 여는 열쇠가 아니라 랜딩 문구 재료일 뿐입니다.
    */
-  const sharedCode = useRef(
+  const sharedCodeParam =
     bootSearchParams.get('ref') === SHARE_REF && isShareableBodyCode(bootSearchParams.get('code'))
       ? String(bootSearchParams.get('code'))
-      : undefined,
+      : undefined;
+  const sharedCode = useRef(sharedCodeParam).current;
+  /**
+   * 공유자가 링크에 실어 보낸 4축 치우침(`ax=72-65-58-22`).
+   *
+   * 코드와 **같이 와야만** 의미가 있습니다. ax 만 있고 code 가 없으면 무시합니다.
+   * 값이 네 개가 아니거나 범위를 벗어나면 parseShareAxes 가 null 을 주고,
+   * 그러면 친구 카드는 예전처럼 코드만 보여줍니다(막대만 빠집니다).
+   */
+  const sharedAxes = useRef(
+    sharedCodeParam ? parseShareAxes(bootSearchParams.get(SHARE_AXES_PARAM)) : null,
   ).current;
   useEffect(() => {
     if (sharedCode) track('shared_link_opened', { ref: SHARE_REF, body_code: sharedCode });
@@ -994,6 +1004,7 @@ export default function App() {
                   : undefined
               }
               latestBodyCode={bodyCode}
+              sharedAxes={sharedAxes ?? undefined}
               onAccount={currentUser ? openMyPage : () => openAuth('landing')}
               sharedCode={sharedCode}
             />

@@ -399,6 +399,7 @@ export function HomeScreen({
             characterName={data.characterName}
             summaryLine={data.summaryLine}
             tendencyLine={tendencyLine}
+            identityTitle={data.identityTitle ?? undefined}
             shareTitle={data.shareTitle ?? undefined}
             shareDescription={data.shareDescription ?? undefined}
           />

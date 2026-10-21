@@ -20,13 +20,15 @@ import {
 } from '../../api/content';
 import { AXIS_GREEN_THEME } from '../../data/axisTheme';
 import { PRODUCT } from '../../theme/copy';
+import { AXIS_LABELS } from '../../theme/axisLabels';
 import { fetchRewardBalance } from '../../api/journey';
 import { previewRewardUse } from '../../api/orders';
 import { SUPABASE_STORAGE_PUBLIC, supabase } from '../../lib/supabase';
 import { characterNames, getAxisScoreBreakdown, getUndeterminedAxes } from '../../utils/bodyCodeCalculator';
 import { LOCAL_FALLBACK_CHARACTER_IMAGE, resolveCharacterImageUrl } from '../../utils/characterImages';
 
-export type AxisKey = 'neck' | 'shoulder' | 'pelvis' | 'flexibility';
+export type { AxisKey } from '../../theme/axisLabels';
+import type { AxisKey } from '../../theme/axisLabels';
 type ResultWithContent = QuestionnaireResponse & { body_code_content?: BodyCodeContent | null };
 
 export type AxisRow = {
@@ -92,38 +94,13 @@ const AXIS_META: Record<
     surface: string;
   }
 > = {
-  neck: {
-    title: '목 위치',
-    left: '전방',
-    right: '중앙',
-    leftColor: AXIS_GREEN_THEME.primary,
-    rightColor: AXIS_GREEN_THEME.deep,
-    surface: AXIS_GREEN_THEME.cardSurfaces[0],
-  },
-  shoulder: {
-    title: '어깨 높이',
-    left: '오른쪽 높음',
-    right: '왼쪽 높음',
-    leftColor: AXIS_GREEN_THEME.primary,
-    rightColor: AXIS_GREEN_THEME.deep,
-    surface: AXIS_GREEN_THEME.cardSurfaces[1],
-  },
-  pelvis: {
-    title: '골반 회전',
-    left: '오른쪽 회전',
-    right: '왼쪽 회전',
-    leftColor: AXIS_GREEN_THEME.primary,
-    rightColor: AXIS_GREEN_THEME.deep,
-    surface: AXIS_GREEN_THEME.cardSurfaces[2],
-  },
-  flexibility: {
-    title: '하체 유연성',
-    left: '유연',
-    right: '뻣뻣',
-    leftColor: AXIS_GREEN_THEME.primary,
-    rightColor: AXIS_GREEN_THEME.deep,
-    surface: AXIS_GREEN_THEME.cardSurfaces[3],
-  },
+  // 축 이름과 좌·우 라벨은 **theme/axisLabels 한 곳**에서 옵니다.
+  // 친구 공유 카드도 같은 값을 읽습니다 — 여기에 베껴 적으면 내 화면과
+  // 친구 화면이 같은 축을 다르게 부르게 됩니다.
+  neck: { ...AXIS_LABELS.neck, leftColor: AXIS_GREEN_THEME.primary, rightColor: AXIS_GREEN_THEME.deep, surface: AXIS_GREEN_THEME.cardSurfaces[0] },
+  shoulder: { ...AXIS_LABELS.shoulder, leftColor: AXIS_GREEN_THEME.primary, rightColor: AXIS_GREEN_THEME.deep, surface: AXIS_GREEN_THEME.cardSurfaces[1] },
+  pelvis: { ...AXIS_LABELS.pelvis, leftColor: AXIS_GREEN_THEME.primary, rightColor: AXIS_GREEN_THEME.deep, surface: AXIS_GREEN_THEME.cardSurfaces[2] },
+  flexibility: { ...AXIS_LABELS.flexibility, leftColor: AXIS_GREEN_THEME.primary, rightColor: AXIS_GREEN_THEME.deep, surface: AXIS_GREEN_THEME.cardSurfaces[3] },
 };
 
 const DEFAULT_YOUTUBE_VIDEOS: YoutubeVideo[] = [

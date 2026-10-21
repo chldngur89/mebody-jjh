@@ -77,6 +77,11 @@ for (const code of codes) {
   const desc = `자세·체형 셀프 체크로 나온 mebody Code 는 ${code}(${names[code]})입니다. 나의 코드도 확인해보세요.`
   // 사람이 열면 앱으로 보냅니다. ref=share 로 유입을 구분합니다(lib/share.ts 와 같은 값).
   const to = `/?ref=share&code=${code}`
+  // 공유자가 붙인 4축(`?ax=72-65-58-22`)을 **그대로 들고 넘어갑니다.**
+  // 이 페이지는 코드별로 미리 구워져 있어 ax 를 담을 수 없으므로, 받는 쪽 주소에
+  // 이어 붙이는 일은 여기서 해야 합니다. 떨어뜨리면 친구 화면에 막대가 안 뜹니다.
+  // (JS 가 꺼져 있으면 meta refresh 가 ax 없이 보냅니다 — 코드만 보이고 막대만 빠집니다)
+  const forward = `location.replace(${JSON.stringify(to)} + location.search.replace(/^\\?/, '&'))`
   const cardUrl = `${ORIGIN}/share-cards/${code}.png`
   // canonical 은 **이 페이지 자신**입니다. 넘어갈 주소(ref=share 가 붙은)를 적으면
   // 추적 파라미터가 원본으로 색인됩니다.
@@ -106,7 +111,7 @@ for (const code of codes) {
     <meta name="twitter:title" content="${esc(title)}" />
     <meta name="twitter:description" content="${esc(desc)}" />
     <meta name="twitter:image" content="${cardUrl}" />
-    <script>location.replace(${JSON.stringify(to)})</script>
+    <script>${forward}</script>
   </head>
   <body>
     <p>mebody 로 이동 중입니다… <a href="${to}">바로 가기</a></p>

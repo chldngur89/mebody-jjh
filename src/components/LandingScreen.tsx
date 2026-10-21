@@ -27,6 +27,8 @@ interface LandingScreenProps {
   onAccount?: () => void;
   /** 공유 링크(?ref=share&code=FRRS) — 공개 미리보기 카드용. 개인 결과는 열지 않습니다. */
   sharedCode?: string;
+  /** 공유 링크의 ax — 친구의 4축 치우침 4개(0~100). 없으면 막대를 그리지 않습니다. */
+  sharedAxes?: number[];
 }
 
 export function LandingScreen({
@@ -41,6 +43,7 @@ export function LandingScreen({
   latestBodyCode,
   onAccount,
   sharedCode,
+  sharedAxes,
 }: LandingScreenProps) {
   const isDesktopMockup = useMediaQuery('(min-width: 768px)');
   /** 짧은 뷰포트에서는 버튼을 위쪽에 두고 바깥 스크롤로 넘깁니다. */
@@ -249,6 +252,7 @@ export function LandingScreen({
                   <SharePreviewCard
                     bodyCode={sharedCode}
                     myBodyCode={normalizedBodyCode}
+                    axes={sharedAxes}
                     onStartDiagnosis={onStart}
                   />
                 </div>
