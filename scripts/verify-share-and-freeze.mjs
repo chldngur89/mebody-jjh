@@ -131,6 +131,35 @@ ok('링크와 카드 이미지를 나눠 설명한다',
    /링크<\/span>로 보내면/.test(shareUi) && /카드 이미지<\/span>에는/.test(shareUi))
 ok('문항별 답변은 안 나간다고만 말한다', /문항별 답변은 보내지 않아요/.test(shareUi))
 
+// ── 1-2-3-b. 공유 문구의 **제품명** ──────────────────────────────────────────
+// theme/copy.ts 는 "MEBODY / 몸Bti / 체형코드 혼용 금지" 라고 적어 두었는데,
+// 정작 밖으로 나가는 문장(body_code_content.share_title/description) 16개가
+// **전부 구표기**였습니다. 링크 복사는 URL 만 보내서 눈에 안 띄었고,
+// 카카오·OS 공유 시트를 쓴 사람에게만 "내 몸BTI는 …" 이 나갔습니다(075).
+//
+// SQL 원문을 봅니다. DB 쪽은 아래 「공유 문구 제품명(DB)」에서 실제 값으로 다시 확인합니다.
+console.log('\n■ 공유 문구 제품명(SQL 원문)')
+// 잡아야 하는 것은 **저장되는 문구**입니다 — `share_title = '…몸BTI…'` 같은 대입.
+// 075 의 replace() 인자와 WHERE … LIKE '%몸BTI%' 는 구표기를 **찾아 없애는 쪽**이라
+// 그대로 남아 있어야 정상입니다. 그래서 대입 형태만 봅니다.
+const LEGACY_ASSIGN = /share_(?:title|description)\s*=\s*'[^']*(?:몸BTI|몸Bti|MEBODY 코드)/
+for (const rel of ['../db/journey/046_body_code_content_identity_care.sql',
+                   '../db/journey/075_share_copy_brand.sql',
+                   '../db/bootstrap/130_seed_content.sql',
+                   '../db/bootstrap/000_full_bootstrap.sql']) {
+  const path = new URL(rel, import.meta.url).pathname
+  const name = path.split('/').pop()
+  // 주석은 뺍니다 — 왜 바꿨는지 적어 둔 설명이 옛 문구를 인용합니다.
+  const body = readFileSync(path, 'utf8').replace(/^\s*--.*$/gm, ' ')
+  const bad = body.split('\n').filter((l) => LEGACY_ASSIGN.test(l))
+  ok(`${name} 에 구표기가 남지 않았다`, bad.length === 0, bad.length ? `${bad.length}줄` : '')
+}
+// 폴백과 같은 모양인지. share.ts 가 DB 값이 없을 때 쓰는 문장과 어긋나면
+// 사람에 따라 다른 말이 나갑니다.
+ok('share.ts 폴백이 PRODUCT.codeName 을 쓴다',
+   /내 \$\{PRODUCT\.codeName\}는/.test(shareSrc),
+   'DB 값이 없을 때도 같은 제품명이어야 합니다')
+
 // ── 1-2-4. 캐릭터 그림 16장이 살아 있는가 ────────────────────────────────────
 // 그림은 저장소가 아니라 Supabase Storage 에 있습니다. 코드로는 안 보이므로 여기서 확인합니다.
 // 한 장이라도 없으면 그 코드가 나온 사람의 결과 화면과 공유 카드에 그림이 빠집니다.
@@ -226,6 +255,29 @@ try {
   await svc()
   const uid = (await c.query('SELECT id FROM auth.users WHERE email=$1', [EMAIL])).rows[0].id
   const total = Number((await c.query('SELECT count(*)::int n FROM public.questionnaire_responses')).rows[0].n)
+
+  // ── 공유 문구 제품명 — **실제 DB 값**을 봅니다 ─────────────────────────────
+  // SQL 원문만 보면 "파일은 고쳤는데 운영에는 안 올렸다" 를 못 잡습니다.
+  // 밖으로 나가는 문장이므로 DB 가 기준입니다(075).
+  console.log('\n■ 공유 문구 제품명(DB)')
+  const brand = (await c.query(`
+    SELECT count(*) FILTER (WHERE share_title       LIKE '%몸BTI%'
+                              OR share_title       LIKE '%MEBODY 코드%'
+                              OR share_description LIKE '%몸BTI%'
+                              OR share_description LIKE '%MEBODY 코드%')::int AS legacy,
+           count(*) FILTER (WHERE share_title LIKE '내 mebody Code는 %')::int   AS titled,
+           count(*)::int AS rows
+    FROM public.body_code_content`)).rows[0]
+  ok('코드 16행이 있다', brand.rows === 16, `${brand.rows}행`)
+  ok('구표기(몸BTI·MEBODY 코드)가 DB 에 없다', brand.legacy === 0,
+     brand.legacy ? `${brand.legacy}행 남음 — db/journey/075_share_copy_brand.sql 적용 필요` : '')
+  ok('16행 전부 「내 mebody Code는 …」 로 시작한다', brand.titled === 16, `${brand.titled}/16`)
+
+  // 075 를 다시 실행해도 안전한가. 트랜잭션 안이라 끝나면 되돌아갑니다.
+  const brandSql = readFileSync(new URL('../db/journey/075_share_copy_brand.sql', import.meta.url).pathname, 'utf8')
+    .replace(/^\s*(BEGIN|COMMIT)\s*;\s*$/gm, '')   // 바깥 트랜잭션을 끊지 않습니다
+  const brandTwice = await T(() => c.query(brandSql))
+  ok('075 를 다시 실행해도 통과', brandTwice.ok, brandTwice.ok ? '' : brandTwice.msg)
 
   console.log('\n■ 적용 전 — 문제 재현')
   // 045 가 이미 적용된 DB 에서는 재현할 수 없습니다.
